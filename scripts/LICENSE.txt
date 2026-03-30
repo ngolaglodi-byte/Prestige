@@ -1,0 +1,45 @@
+CONTRAT DE LICENCE UTILISATEUR FINAL
+PRESTIGE AI — Logiciel Broadcast Professionnel
+
+Copyright (c) 2024-2026 Prestige Technologie Company
+Tous droits réservés.
+
+============================================================
+
+EN INSTALLANT CE LOGICIEL, VOUS ACCEPTEZ LES TERMES SUIVANTS :
+
+1. LICENCE
+   Ce logiciel est la propriété de Prestige Technologie Company.
+   Une licence valide est requise pour utiliser ce logiciel.
+   Chaque licence est liée à une machine unique.
+
+2. RESTRICTIONS
+   Vous ne pouvez pas :
+   - Copier, distribuer ou revendre ce logiciel
+   - Modifier, décompiler ou désassembler le code source
+   - Utiliser ce logiciel sans licence valide
+   - Transférer votre licence à un tiers sans autorisation
+
+3. PROPRIÉTÉ INTELLECTUELLE
+   Ce logiciel, son code source, ses algorithmes et son design
+   sont la propriété exclusive de Prestige Technologie Company.
+
+4. GARANTIE
+   Ce logiciel est fourni "tel quel". Prestige Technologie Company
+   ne garantit pas l'absence de défauts ou d'interruptions.
+
+5. RESPONSABILITÉ
+   Prestige Technologie Company ne peut être tenu responsable
+   des dommages directs ou indirects liés à l'utilisation
+   de ce logiciel.
+
+6. RÉSILIATION
+   Cette licence est résiliée automatiquement si vous violez
+   l'un de ces termes. Vous devez alors désinstaller le logiciel.
+
+============================================================
+
+Pour toute question de licence :
+contact@prestigetech.com
+
+Prestige Technologie Company

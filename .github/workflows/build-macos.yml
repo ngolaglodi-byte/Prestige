@@ -1,4 +1,4 @@
-# Prestige AI — macOS Build
+# Prestige AI — macOS Build + DMG Installer
 # Copyright (c) 2024-2026 Prestige Technologie Company
 
 name: Build macOS Installer
@@ -28,7 +28,7 @@ jobs:
         cache: true
 
     - name: Install dependencies
-      run: brew install zeromq ffmpeg ninja pkg-config
+      run: brew install zeromq ffmpeg ninja pkg-config create-dmg
 
     - name: Build
       run: |
@@ -47,41 +47,72 @@ jobs:
         ai_engine/venv/bin/pip install insightface onnxruntime opencv-python-headless pyzmq numpy
         ai_engine/venv/bin/pip install faster-whisper sounddevice
 
-    - name: Package DMG
+    - name: Create app bundle
       run: |
         APP="dist/Prestige AI.app"
-        DMG="dist/PrestigeAI-1.0-beta-macOS.dmg"
-        rm -rf dist
         mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+
+        # Binaries
         cp build/control_room/prestige_control "$APP/Contents/MacOS/"
         cp build/vision_engine/prestige_vision "$APP/Contents/MacOS/"
+
+        # Launcher
         cp scripts/launcher.sh "$APP/Contents/MacOS/PrestigeAI"
         chmod +x "$APP/Contents/MacOS/PrestigeAI"
+
+        # Info.plist and icon
         cp scripts/Info.plist "$APP/Contents/Info.plist"
         [ -f resources/prestige.icns ] && cp resources/prestige.icns "$APP/Contents/Resources/AppIcon.icns"
+
+        # AI Engine
         mkdir -p "$APP/Contents/Resources/ai_engine"
         for f in main.py detector.py zmq_publisher.py frame_receiver.py talent_manager.py tracker.py subtitle_engine.py social_chat.py talents.json; do
           [ -f "ai_engine/$f" ] && cp "ai_engine/$f" "$APP/Contents/Resources/ai_engine/"
         done
         [ -d ai_engine/models ] && cp -r ai_engine/models "$APP/Contents/Resources/ai_engine/"
         [ -d ai_engine/venv ] && cp -r ai_engine/venv "$APP/Contents/Resources/ai_engine/"
+
+    - name: Bundle Qt frameworks
+      run: |
+        APP="dist/Prestige AI.app"
         MACDEPLOYQT=$(find "${QT_ROOT_DIR}" -name macdeployqt -type f 2>/dev/null | head -1)
         if [ -n "$MACDEPLOYQT" ]; then
           sed -i '' 's|<string>PrestigeAI</string>|<string>prestige_control</string>|' "$APP/Contents/Info.plist"
-          "$MACDEPLOYQT" "$APP" -executable="$APP/Contents/MacOS/prestige_vision" -qmldir=control_room/qml -qmldir=vision_engine/qml -always-overwrite 2>&1 || true
+          "$MACDEPLOYQT" "$APP" \
+            -executable="$APP/Contents/MacOS/prestige_vision" \
+            -qmldir=control_room/qml \
+            -qmldir=vision_engine/qml \
+            -always-overwrite 2>&1 || true
           sed -i '' 's|<string>prestige_control</string>|<string>PrestigeAI</string>|' "$APP/Contents/Info.plist"
         fi
         codesign --force --deep --sign - "$APP" 2>/dev/null || true
-        STAGING="dist/dmg_staging"
-        mkdir -p "$STAGING"
-        cp -R "$APP" "$STAGING/"
-        ln -sf /Applications "$STAGING/Applications"
-        hdiutil create -volname "Prestige AI" -srcfolder "$STAGING" -ov -format UDZO "$DMG"
-        rm -rf "$STAGING"
-        echo "DMG created: $DMG"
 
-    - name: Upload
+    - name: Create professional DMG
+      run: |
+        create-dmg \
+          --volname "Prestige AI" \
+          --volicon "resources/prestige.icns" \
+          --window-pos 200 120 \
+          --window-size 660 400 \
+          --icon-size 80 \
+          --icon "Prestige AI.app" 180 200 \
+          --app-drop-link 480 200 \
+          --hide-extension "Prestige AI.app" \
+          --no-internet-enable \
+          "dist/PrestigeAI-1.0.0-macOS-arm64.dmg" \
+          "dist/Prestige AI.app" \
+        || {
+          echo "create-dmg failed, falling back to hdiutil..."
+          STAGING="dist/dmg_staging"
+          mkdir -p "$STAGING"
+          cp -R "dist/Prestige AI.app" "$STAGING/"
+          ln -sf /Applications "$STAGING/Applications"
+          hdiutil create -volname "Prestige AI" -srcfolder "$STAGING" -ov -format UDZO "dist/PrestigeAI-1.0.0-macOS-arm64.dmg"
+          rm -rf "$STAGING"
+        }
+
+    - name: Upload DMG
       uses: actions/upload-artifact@v4
       with:
-        name: PrestigeAI-macOS
-        path: dist/PrestigeAI-*-macOS.dmg
+        name: PrestigeAI-macOS-Installer
+        path: dist/PrestigeAI-*.dmg

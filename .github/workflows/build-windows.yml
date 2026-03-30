@@ -1,4 +1,4 @@
-# Prestige AI — Windows Build
+# Prestige AI — Windows Build + Installer
 # Copyright (c) 2024-2026 Prestige Technologie Company
 
 name: Build Windows Installer
@@ -41,7 +41,7 @@ jobs:
     - name: Build
       run: cmake --build build --config Release --parallel
 
-    - name: Find built executables
+    - name: Find executables
       shell: pwsh
       id: find-exe
       run: |
@@ -49,8 +49,6 @@ jobs:
         $vis = Get-ChildItem -Recurse build -Filter prestige_vision.exe | Select-Object -First 1
         echo "CTRL=$($ctrl.FullName)" >> $env:GITHUB_OUTPUT
         echo "VIS=$($vis.FullName)" >> $env:GITHUB_OUTPUT
-        echo "Found control: $($ctrl.FullName)"
-        echo "Found vision: $($vis.FullName)"
 
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -65,7 +63,7 @@ jobs:
         ai_engine\venv\Scripts\pip install insightface onnxruntime opencv-python-headless pyzmq numpy
         ai_engine\venv\Scripts\pip install faster-whisper sounddevice
 
-    - name: Package
+    - name: Package application
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path dist\PrestigeAI | Out-Null
@@ -78,12 +76,24 @@ jobs:
         Copy-Item resources\prestige.ico dist\PrestigeAI\
         Set-Content -Path dist\PrestigeAI\PrestigeAI.bat -Value "@echo off`ntitle Prestige AI`nstart /B prestige_vision.exe`ntimeout /t 2 /nobreak >nul`nstart /B ai_engine\venv\Scripts\python.exe ai_engine\main.py`ntimeout /t 2 /nobreak >nul`nprestige_control.exe`ntaskkill /f /im prestige_vision.exe >nul 2>&1"
 
-    - name: Create ZIP
+    - name: Create Inno Setup installer
       shell: pwsh
-      run: Compress-Archive -Path dist\PrestigeAI -DestinationPath dist\PrestigeAI-Windows-x64.zip
+      run: |
+        choco install innosetup -y --no-progress
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" scripts\installer.iss
 
-    - name: Upload
+    - name: Upload Setup.exe
       uses: actions/upload-artifact@v4
       with:
-        name: PrestigeAI-Windows-x64
+        name: PrestigeAI-Windows-Setup
+        path: dist/PrestigeAI-*-Setup-Windows-x64.exe
+
+    - name: Upload ZIP
+      uses: actions/upload-artifact@v4
+      with:
+        name: PrestigeAI-Windows-ZIP
         path: dist/PrestigeAI-Windows-x64.zip
+
+    - name: Create ZIP backup
+      shell: pwsh
+      run: Compress-Archive -Path dist\PrestigeAI -DestinationPath dist\PrestigeAI-Windows-x64.zip
