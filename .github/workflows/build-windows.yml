@@ -24,6 +24,7 @@ jobs:
         host: windows
         target: desktop
         arch: win64_msvc2019_64
+        modules: qtmultimedia qtshadertools
         cache: true
 
     - name: Install ZeroMQ

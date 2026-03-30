@@ -24,6 +24,7 @@ jobs:
         host: mac
         target: desktop
         arch: clang_64
+        modules: qtmultimedia qtshadertools
         cache: true
 
     - name: Install dependencies
