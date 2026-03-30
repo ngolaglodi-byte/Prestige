@@ -1,4 +1,4 @@
-# Prestige AI — Windows Build (GitHub Actions)
+# Prestige AI — Windows Build
 # Copyright (c) 2024-2026 Prestige Technologie Company
 
 name: Build Windows Installer
@@ -8,10 +8,6 @@ on:
     branches: [main]
     tags: ['v*']
   workflow_dispatch:
-
-env:
-  QT_VERSION: '6.7.2'
-  BUILD_TYPE: Release
 
 jobs:
   build-windows:
@@ -24,26 +20,33 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
       with:
-        version: ${{ env.QT_VERSION }}
+        version: '6.7.3'
         host: windows
         target: desktop
-        arch: win64_msvc2022_64
-        modules: qtmultimedia
+        arch: win64_msvc2019_64
         cache: true
 
-    - name: Install ZeroMQ (vcpkg)
-      run: |
-        vcpkg install zeromq:x64-windows
+    - name: Install ZeroMQ
+      run: vcpkg install zeromq:x64-windows
 
     - name: Configure CMake
       shell: pwsh
       run: |
-        cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}"
+        cmake -B build -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
+          -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}"
 
     - name: Build
-      run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+      run: cmake --build build --config Release --parallel
 
-    - name: Setup Python AI Engine
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Python deps
+      shell: pwsh
       run: |
         python -m venv ai_engine\venv
         ai_engine\venv\Scripts\pip install --upgrade pip
@@ -53,14 +56,14 @@ jobs:
     - name: Package
       shell: pwsh
       run: |
-        New-Item -ItemType Directory -Force -Path dist\PrestigeAI
-        Copy-Item build\control_room\${{ env.BUILD_TYPE }}\prestige_control.exe dist\PrestigeAI\
-        Copy-Item build\vision_engine\${{ env.BUILD_TYPE }}\prestige_vision.exe dist\PrestigeAI\
+        New-Item -ItemType Directory -Force -Path dist\PrestigeAI | Out-Null
+        Copy-Item build\control_room\Release\prestige_control.exe dist\PrestigeAI\
+        Copy-Item build\vision_engine\Release\prestige_vision.exe dist\PrestigeAI\
         & windeployqt --qmldir control_room\qml --qmldir vision_engine\qml dist\PrestigeAI\prestige_control.exe
         & windeployqt dist\PrestigeAI\prestige_vision.exe
-        Copy-Item -Recurse ai_engine dist\PrestigeAI\ai_engine
+        Copy-Item -Recurse ai_engine dist\PrestigeAI\ai_engine -Force
         Copy-Item resources\prestige.ico dist\PrestigeAI\
-        @"
+        Set-Content -Path dist\PrestigeAI\PrestigeAI.bat -Value @"
         @echo off
         title Prestige AI
         start /B prestige_vision.exe
@@ -69,16 +72,14 @@ jobs:
         timeout /t 2 /nobreak >nul
         prestige_control.exe
         taskkill /f /im prestige_vision.exe >nul 2>&1
-        "@ | Out-File -Encoding ASCII dist\PrestigeAI\PrestigeAI.bat
+        "@
 
     - name: Create ZIP
       shell: pwsh
-      run: |
-        Compress-Archive -Path dist\PrestigeAI -DestinationPath dist\PrestigeAI-Windows-x64.zip
+      run: Compress-Archive -Path dist\PrestigeAI -DestinationPath dist\PrestigeAI-Windows-x64.zip
 
-    - name: Upload artifact
+    - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: PrestigeAI-Windows-x64
         path: dist/PrestigeAI-Windows-x64.zip
-        retention-days: 30

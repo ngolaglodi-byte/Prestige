@@ -8,7 +8,11 @@ ARCH=$(uname -m)
 echo "Architecture: $ARCH"
 
 # Find Qt6
-if [ -d "/opt/homebrew/opt/qt" ]; then
+if [ -n "$CMAKE_PREFIX_PATH" ]; then
+    QT_PATH="$CMAKE_PREFIX_PATH"
+elif [ -n "$Qt6_DIR" ]; then
+    QT_PATH="$Qt6_DIR"
+elif [ -d "/opt/homebrew/opt/qt" ]; then
     QT_PATH="/opt/homebrew"
 elif [ -d "/opt/homebrew/opt/qt@6" ]; then
     QT_PATH="/opt/homebrew/opt/qt@6"
