@@ -36,10 +36,21 @@ jobs:
         cmake -B build -G "Visual Studio 17 2022" -A x64 `
           -DCMAKE_BUILD_TYPE=Release `
           -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
-          -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}"
+          -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR"
 
     - name: Build
       run: cmake --build build --config Release --parallel
+
+    - name: Find built executables
+      shell: pwsh
+      id: find-exe
+      run: |
+        $ctrl = Get-ChildItem -Recurse build -Filter prestige_control.exe | Select-Object -First 1
+        $vis = Get-ChildItem -Recurse build -Filter prestige_vision.exe | Select-Object -First 1
+        echo "CTRL=$($ctrl.FullName)" >> $env:GITHUB_OUTPUT
+        echo "VIS=$($vis.FullName)" >> $env:GITHUB_OUTPUT
+        echo "Found control: $($ctrl.FullName)"
+        echo "Found vision: $($vis.FullName)"
 
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -58,22 +69,14 @@ jobs:
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path dist\PrestigeAI | Out-Null
-        Copy-Item build\control_room\Release\prestige_control.exe dist\PrestigeAI\
-        Copy-Item build\vision_engine\Release\prestige_vision.exe dist\PrestigeAI\
+        Copy-Item "${{ steps.find-exe.outputs.CTRL }}" dist\PrestigeAI\prestige_control.exe
+        Copy-Item "${{ steps.find-exe.outputs.VIS }}" dist\PrestigeAI\prestige_vision.exe
+        $env:Path = "$env:QT_ROOT_DIR\bin;$env:Path"
         & windeployqt --qmldir control_room\qml --qmldir vision_engine\qml dist\PrestigeAI\prestige_control.exe
         & windeployqt dist\PrestigeAI\prestige_vision.exe
         Copy-Item -Recurse ai_engine dist\PrestigeAI\ai_engine -Force
         Copy-Item resources\prestige.ico dist\PrestigeAI\
-        Set-Content -Path dist\PrestigeAI\PrestigeAI.bat -Value @"
-        @echo off
-        title Prestige AI
-        start /B prestige_vision.exe
-        timeout /t 2 /nobreak >nul
-        start /B ai_engine\venv\Scripts\python.exe ai_engine\main.py
-        timeout /t 2 /nobreak >nul
-        prestige_control.exe
-        taskkill /f /im prestige_vision.exe >nul 2>&1
-        "@
+        Set-Content -Path dist\PrestigeAI\PrestigeAI.bat -Value "@echo off`ntitle Prestige AI`nstart /B prestige_vision.exe`ntimeout /t 2 /nobreak >nul`nstart /B ai_engine\venv\Scripts\python.exe ai_engine\main.py`ntimeout /t 2 /nobreak >nul`nprestige_control.exe`ntaskkill /f /im prestige_vision.exe >nul 2>&1"
 
     - name: Create ZIP
       shell: pwsh

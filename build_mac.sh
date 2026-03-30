@@ -8,7 +8,9 @@ ARCH=$(uname -m)
 echo "Architecture: $ARCH"
 
 # Find Qt6
-if [ -n "$CMAKE_PREFIX_PATH" ]; then
+if [ -n "$QT_ROOT_DIR" ]; then
+    QT_PATH="$QT_ROOT_DIR"
+elif [ -n "$CMAKE_PREFIX_PATH" ]; then
     QT_PATH="$CMAKE_PREFIX_PATH"
 elif [ -n "$Qt6_DIR" ]; then
     QT_PATH="$Qt6_DIR"

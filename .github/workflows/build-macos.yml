@@ -30,14 +30,10 @@ jobs:
     - name: Install dependencies
       run: brew install zeromq ffmpeg ninja pkg-config
 
-    - name: Configure CMake
-      run: |
-        cmake -B build -G Ninja \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH="${Qt6_DIR}"
-
     - name: Build
-      run: cmake --build build --parallel
+      run: |
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR}" -Wno-dev
+        cmake --build build --parallel
 
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -53,8 +49,36 @@ jobs:
 
     - name: Package DMG
       run: |
-        export CMAKE_PREFIX_PATH="${Qt6_DIR}"
-        bash scripts/package_mac.sh
+        APP="dist/Prestige AI.app"
+        DMG="dist/PrestigeAI-1.0-beta-macOS.dmg"
+        rm -rf dist
+        mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+        cp build/control_room/prestige_control "$APP/Contents/MacOS/"
+        cp build/vision_engine/prestige_vision "$APP/Contents/MacOS/"
+        cp scripts/launcher.sh "$APP/Contents/MacOS/PrestigeAI"
+        chmod +x "$APP/Contents/MacOS/PrestigeAI"
+        cp scripts/Info.plist "$APP/Contents/Info.plist"
+        [ -f resources/prestige.icns ] && cp resources/prestige.icns "$APP/Contents/Resources/AppIcon.icns"
+        mkdir -p "$APP/Contents/Resources/ai_engine"
+        for f in main.py detector.py zmq_publisher.py frame_receiver.py talent_manager.py tracker.py subtitle_engine.py social_chat.py talents.json; do
+          [ -f "ai_engine/$f" ] && cp "ai_engine/$f" "$APP/Contents/Resources/ai_engine/"
+        done
+        [ -d ai_engine/models ] && cp -r ai_engine/models "$APP/Contents/Resources/ai_engine/"
+        [ -d ai_engine/venv ] && cp -r ai_engine/venv "$APP/Contents/Resources/ai_engine/"
+        MACDEPLOYQT=$(find "${QT_ROOT_DIR}" -name macdeployqt -type f 2>/dev/null | head -1)
+        if [ -n "$MACDEPLOYQT" ]; then
+          sed -i '' 's|<string>PrestigeAI</string>|<string>prestige_control</string>|' "$APP/Contents/Info.plist"
+          "$MACDEPLOYQT" "$APP" -executable="$APP/Contents/MacOS/prestige_vision" -qmldir=control_room/qml -qmldir=vision_engine/qml -always-overwrite 2>&1 || true
+          sed -i '' 's|<string>prestige_control</string>|<string>PrestigeAI</string>|' "$APP/Contents/Info.plist"
+        fi
+        codesign --force --deep --sign - "$APP" 2>/dev/null || true
+        STAGING="dist/dmg_staging"
+        mkdir -p "$STAGING"
+        cp -R "$APP" "$STAGING/"
+        ln -sf /Applications "$STAGING/Applications"
+        hdiutil create -volname "Prestige AI" -srcfolder "$STAGING" -ov -format UDZO "$DMG"
+        rm -rf "$STAGING"
+        echo "DMG created: $DMG"
 
     - name: Upload
       uses: actions/upload-artifact@v4
