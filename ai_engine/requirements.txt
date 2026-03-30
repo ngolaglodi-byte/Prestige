@@ -1,0 +1,11 @@
+# Prestige AI — Python AI Engine dependencies
+opencv-python>=4.9
+insightface>=0.7
+pyzmq>=25
+onnxruntime-gpu>=1.17; sys_platform == 'win32'
+onnxruntime>=1.17; sys_platform == 'darwin'
+onnxruntime>=1.17; sys_platform == 'linux'
+numpy>=1.24
+Pillow>=10.0
+tqdm>=4.66
+pyyaml>=6.0

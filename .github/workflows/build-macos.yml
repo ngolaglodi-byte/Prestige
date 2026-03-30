@@ -1,0 +1,74 @@
+# ============================================================
+# Prestige AI — macOS Build (GitHub Actions)
+# Copyright (c) 2024-2026 Prestige Technologie Company
+# All rights reserved.
+# ============================================================
+
+name: Build macOS Installer
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  QT_VERSION: '6.7.2'
+  BUILD_TYPE: Release
+
+jobs:
+  build-macos:
+    runs-on: macos-14  # Apple Silicon M1
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: mac
+        target: desktop
+        arch: clang_64
+        modules: qtmultimedia qtnetworkauth
+        cache: true
+
+    - name: Install dependencies (Homebrew)
+      run: |
+        brew install zeromq ffmpeg ninja pkg-config
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+          -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}"
+
+    - name: Build
+      run: cmake --build build --parallel
+
+    - name: Setup Python AI Engine
+      run: |
+        python3 -m venv ai_engine/venv
+        ai_engine/venv/bin/pip install --upgrade pip
+        ai_engine/venv/bin/pip install -r ai_engine/requirements.txt
+        ai_engine/venv/bin/pip install faster-whisper sounddevice
+
+    - name: Package macOS DMG
+      run: bash scripts/package_mac.sh
+
+    - name: Upload macOS artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PrestigeAI-macOS
+        path: dist/PrestigeAI-*-macOS.dmg
+        retention-days: 30
+
+    - name: Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/PrestigeAI-*-macOS.dmg
+        generate_release_notes: true

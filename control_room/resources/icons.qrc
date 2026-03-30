@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="prestige_icon.png">../../resources/prestige_icon.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>Prestige AI</string>
+    <key>CFBundleDisplayName</key>
+    <string>Prestige AI</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.prestigeai.broadcast</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0 Beta</string>
+    <key>CFBundleExecutable</key>
+    <string>PrestigeAI</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Prestige AI utilise la caméra pour détecter les visages des talents en direct.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Prestige AI peut accéder au micro pour la synchronisation audio/vidéo.</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.video</string>
+    <key>NSSupportsAutomaticGraphicsSwitching</key>
+    <true/>
+</dict>
+</plist>

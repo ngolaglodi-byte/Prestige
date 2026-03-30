@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "talents": [
+    {
+      "id": "talent_001",
+      "name": "Marie Dupont",
+      "role": "Présentatrice",
+      "embeddings": [],
+      "overlay_style": "default",
+      "active": true
+    },
+    {
+      "id": "talent_002",
+      "name": "Jean Martin",
+      "role": "Journaliste",
+      "embeddings": [],
+      "overlay_style": "default",
+      "active": true
+    },
+    {
+      "id": "talent_003",
+      "name": "Pierre Durand",
+      "role": "Correspondant",
+      "embeddings": [],
+      "overlay_style": "default",
+      "active": true
+    },
+    {
+      "id": "talent_004",
+      "name": "Débat du Soir",
+      "role": "En direct du plateau",
+      "embeddings": [],
+      "overlay_style": "default",
+      "active": true
+    }
+  ]
+}

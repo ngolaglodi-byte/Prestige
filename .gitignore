@@ -1,0 +1,33 @@
+# Build
+build/
+dist/
+*.o
+*.a
+*.dylib
+
+# Python
+ai_engine/venv/
+ai_engine/__pycache__/
+*.pyc
+__pycache__/
+
+# AI Models (too large for git — download separately)
+ai_engine/models/buffalo_l/*.onnx
+
+# Qt
+.qmlls.ini
+*.qmlc
+*.jsc
+
+# macOS
+.DS_Store
+resources/*.iconset/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Config
+*.user
