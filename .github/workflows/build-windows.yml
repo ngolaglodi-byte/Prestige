@@ -1,0 +1,109 @@
+# ============================================================
+     # Prestige AI — Windows Build (GitHub Actions)
+     # Copyright (c) 2024-2026 Prestige Technologie Company
+     # All rights reserved.
+     # ============================================================
+
+     name: Build Windows Installer
+
+     on:
+       push:
+         branches: [main]
+         tags: ['v*']
+       workflow_dispatch:
+
+     env:
+       QT_VERSION: '6.7.2'
+       BUILD_TYPE: Release
+
+     jobs:
+       build-windows:
+         runs-on: windows-latest
+
+         steps:
+         - name: Checkout
+           uses: actions/checkout@v4
+           with:
+             submodules: recursive
+
+         - name: Install Qt
+           uses: jurplel/install-qt-action@v4
+           with:
+             version: ${{ env.QT_VERSION }}
+             host: windows
+             target: desktop
+             arch: win64_msvc2022_64
+             modules: qtmultimedia qtnetworkauth
+             cache: true
+
+         - name: Install dependencies (vcpkg)
+           run: |
+             vcpkg install zeromq:x64-windows
+             vcpkg install ffmpeg[avcodec,avformat,avutil,swscale]:x64-windows
+
+         - name: Configure CMake
+           run: |
+             cmake -B build -G "Visual Studio 17 2022" -A x64 `
+               -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+               -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
+               -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}"
+
+         - name: Build
+           run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+         - name: Setup Python AI Engine
+           run: |
+             python -m venv ai_engine/venv
+             ai_engine/venv/Scripts/pip install -r ai_engine/requirements.txt
+             ai_engine/venv/Scripts/pip install faster-whisper sounddevice
+
+         - name: Package Windows Installer
+           run: |
+             mkdir -p dist/PrestigeAI
+
+             # Copy binaries
+             cp build/control_room/${{ env.BUILD_TYPE }}/prestige_control.exe dist/PrestigeAI/
+             cp build/vision_engine/${{ env.BUILD_TYPE }}/prestige_vision.exe dist/PrestigeAI/
+
+             # Deploy Qt dependencies
+             windeployqt --qmldir control_room/qml --qmldir vision_engine/qml dist/PrestigeAI/prestige_control.exe
+             windeployqt dist/PrestigeAI/prestige_vision.exe
+
+             # Copy AI Engine
+             cp -r ai_engine dist/PrestigeAI/ai_engine
+
+             # Copy icon
+             cp resources/prestige.ico dist/PrestigeAI/
+             cp resources/prestige_icon.png dist/PrestigeAI/
+
+             # Copy launcher
+             @"
+             @echo off
+             title Prestige AI
+             echo Starting Prestige AI...
+             start /B prestige_vision.exe
+             timeout /t 2 /nobreak >nul
+             start /B ai_engine\venv\Scripts\python.exe ai_engine\main.py
+             timeout /t 2 /nobreak >nul
+             prestige_control.exe
+             taskkill /f /im prestige_vision.exe >nul 2>&1
+             "@ | Out-File -Encoding ASCII dist/PrestigeAI/PrestigeAI.bat
+
+         - name: Create ZIP archive
+           run: |
+             Compress-Archive -Path dist/PrestigeAI -DestinationPath dist/PrestigeAI-${{ github.ref_name }}-Windows-x64.zip
+
+         - name: Upload Windows artifact
+           uses: actions/upload-artifact@v4
+           with:
+             name: PrestigeAI-Windows-x64
+             path: dist/PrestigeAI-*-Windows-x64.zip
+             retention-days: 30
+
+         - name: Release (on tag)
+           if: startsWith(github.ref, 'refs/tags/')
+           uses: softprops/action-gh-release@v2
+           with:
+             files: dist/PrestigeAI-*-Windows-x64.zip
+             generate_release_notes: true
+
