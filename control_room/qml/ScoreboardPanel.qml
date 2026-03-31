@@ -26,7 +26,9 @@ Item {
         Label { text: "Score Board"; font.pixelSize: 14; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Sport:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
-            ComboBox { model: ["Football","Basketball","Tennis","Rugby","Handball"]; Layout.fillWidth: true; background: Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"} }
+            ComboBox { model: ["Football","Basketball","Tennis","Rugby","Handball"]; Layout.fillWidth: true;
+                onActivated: console.log("[Scoreboard] Sport:", currentText)
+                background: Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"} }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Rectangle { Layout.preferredWidth:18;Layout.preferredHeight:18;radius:4;color:sb.colorA; MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{var c=sb.colorA==="#CC0000"?"#FF6B00":"#CC0000";sb.colorA=c;setupController.scoreboardColorA=c}} }

@@ -263,6 +263,7 @@ Item {
                 ComboBox {
                     model: ["1920x1080 (Full HD)", "3840x2160 (4K UHD)", "1280x720 (HD)"]
                     Layout.preferredWidth: 220
+                    onActivated: console.log("[Source] Resolution:", currentText)
                     background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                     contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
                 }
@@ -270,6 +271,7 @@ Item {
                 ComboBox {
                     model: ["25", "30", "50", "60"]
                     Layout.preferredWidth: 80
+                    onActivated: console.log("[Source] FPS:", currentText)
                     background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                     contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
                 }

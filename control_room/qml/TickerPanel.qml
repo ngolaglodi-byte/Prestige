@@ -113,6 +113,17 @@ Item {
             }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label { text: "Texte:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+            Repeater {
+                model: ["#FFFFFF", "#FFFF00", "#00FF00", "#00CCFF"]
+                Rectangle {
+                    width: 20; height: 20; radius: 4; color: modelData
+                    border.color: modelData === setupController.tickerTextColor ? "white" : "transparent"; border.width: 2
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { tk.textColor = modelData; setupController.tickerTextColor = modelData } }
+                }
+            }
+        }
+        RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Vitesse:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Slider { from: 1; to: 5; stepSize: 1; value: setupController.tickerSpeed; Layout.fillWidth: true; onMoved: { tk.scrollSpeed = value; setupController.tickerSpeed = value } }
             Label { text: tk.scrollSpeed + "x"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
