@@ -12,6 +12,7 @@
 #include "AnalyticsEngine.h"
 #include "SubtitleController.h"
 #include "RssFetcher.h"
+#include "GraphicsQueue.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -148,6 +149,9 @@ void WebRemoteServer::handleRequest(QTcpSocket* socket, const QByteArray& reques
     }
     else if (method == "GET" && path == "/api/talents") {
         response = makeJsonResponse(serveApiTalents());
+    }
+    else if (method == "GET" && path == "/api/queue") {
+        response = makeJsonResponse(serveApiQueue());
     }
     else if (method == "GET" && path == "/api/docs") {
         response = makeHtmlResponse(serveApiDocs());
@@ -427,12 +431,59 @@ QByteArray WebRemoteServer::handlePost(const QString& path, const QByteArray& bo
             result["clockVisible"] = newState;
         }
     }
+    else if (path == "/api/queue/add") {
+        if (m_queue) {
+            QString type = bodyObj.value("type").toString();
+            if (type == "lower_third") {
+                m_queue->addLowerThird(bodyObj.value("name").toString(), bodyObj.value("role").toString());
+            } else if (type == "ticker") {
+                m_queue->addTicker(bodyObj.value("text").toString());
+            } else if (type == "message") {
+                m_queue->addMessage(bodyObj.value("text").toString());
+            } else if (type == "qr_code") {
+                m_queue->addQrCode(bodyObj.value("url").toString());
+            } else {
+                result["ok"] = false;
+                result["error"] = "Unknown queue item type";
+            }
+            result["count"] = m_queue->count();
+        }
+    }
+    else if (path == "/api/queue/take") {
+        if (m_queue) {
+            m_queue->takeNext();
+            result["currentIndex"] = m_queue->currentIndex();
+        }
+    }
+    else if (path == "/api/queue/clear") {
+        if (m_queue) {
+            m_queue->clearProgram();
+            result["currentIndex"] = m_queue->currentIndex();
+        }
+    }
     else {
         result["ok"] = false;
         result["error"] = "Unknown endpoint";
     }
 
     return QJsonDocument(result).toJson(QJsonDocument::Compact);
+}
+
+QByteArray WebRemoteServer::serveApiQueue()
+{
+    QJsonObject obj;
+    if (m_queue) {
+        QJsonArray arr;
+        for (const auto& v : m_queue->items()) {
+            arr.append(QJsonObject::fromVariantMap(v.toMap()));
+        }
+        obj["items"] = arr;
+        obj["currentIndex"] = m_queue->currentIndex();
+        obj["count"] = m_queue->count();
+        obj["currentItem"] = QJsonObject::fromVariantMap(m_queue->currentItem());
+        obj["nextItem"] = QJsonObject::fromVariantMap(m_queue->nextItem());
+    }
+    return QJsonDocument(obj).toJson(QJsonDocument::Compact);
 }
 
 QByteArray WebRemoteServer::serveApiDocs()

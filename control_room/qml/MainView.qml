@@ -935,7 +935,7 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true; Layout.preferredHeight: 36; spacing: 0
                             Repeater {
-                                model: ["\u26BD Score", "\u2601 Meteo", "\uD83D\uDCAC Ticker", "\uD83C\uDF99 ST", "\uD83D\uDCF1 Chat", "\uD83D\uDCDD Prompt"]
+                                model: ["\u26BD Score", "\u2601 Meteo", "\uD83D\uDCAC Ticker", "\uD83C\uDF99 ST", "\uD83D\uDCF1 Chat", "\uD83D\uDCDD Prompt", "\uD83C\uDFAC Queue"]
                                 Rectangle {
                                     Layout.fillWidth: true; Layout.preferredHeight: 36
                                     color: toolsStack.currentIndex === index ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : "transparent"
@@ -954,6 +954,126 @@ ApplicationWindow {
                             SubtitlePanel {}
                             SocialChatPanel {}
                             TeleprompterPanel {}
+
+                            // Queue panel
+                            Item {
+                                Flickable {
+                                    anchors.fill: parent; contentHeight: queueCol.implicitHeight; clip: true
+                                    flickableDirection: Flickable.VerticalFlick
+                                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                                    ColumnLayout {
+                                        id: queueCol; width: parent.width; spacing: 10
+                                        Item { implicitHeight: 8 }
+
+                                        // Status
+                                        Label { text: "Graphics Queue"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                                        Label { text: graphicsQueue.count + " element(s) — " + (graphicsQueue.currentIndex >= 0 ? "ON AIR: #" + (graphicsQueue.currentIndex + 1) : "Aucun a l'antenne"); font.pixelSize: 10; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
+
+                                        // Add Lower Third
+                                        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+                                        Label { text: "Lower Third"; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "#CCC" : "#333"; leftPadding: 12 }
+                                        RowLayout {
+                                            spacing: 6; Layout.leftMargin: 12; Layout.rightMargin: 12
+                                            TextField {
+                                                id: queueNameField; Layout.fillWidth: true
+                                                placeholderText: "Nom"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
+                                                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                            }
+                                            TextField {
+                                                id: queueRoleField; Layout.fillWidth: true
+                                                placeholderText: "Role"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
+                                                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                            }
+                                            Rectangle {
+                                                Layout.preferredWidth: 30; Layout.preferredHeight: 28; radius: 6; color: "#5B4FDB"
+                                                Label { anchors.centerIn: parent; text: "+"; color: "white"; font.pixelSize: 14; font.bold: true }
+                                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                                    onClicked: { if (queueNameField.text !== "") { graphicsQueue.addLowerThird(queueNameField.text, queueRoleField.text); queueNameField.text = ""; queueRoleField.text = "" } }
+                                                }
+                                            }
+                                        }
+
+                                        // Add Ticker
+                                        Label { text: "Ticker"; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "#CCC" : "#333"; leftPadding: 12 }
+                                        RowLayout {
+                                            spacing: 6; Layout.leftMargin: 12; Layout.rightMargin: 12
+                                            TextField {
+                                                id: queueTickerField; Layout.fillWidth: true
+                                                placeholderText: "Texte du ticker"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
+                                                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                            }
+                                            Rectangle {
+                                                Layout.preferredWidth: 30; Layout.preferredHeight: 28; radius: 6; color: "#5B4FDB"
+                                                Label { anchors.centerIn: parent; text: "+"; color: "white"; font.pixelSize: 14; font.bold: true }
+                                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                                    onClicked: { if (queueTickerField.text !== "") { graphicsQueue.addTicker(queueTickerField.text); queueTickerField.text = "" } }
+                                                }
+                                            }
+                                        }
+
+                                        // Add Message
+                                        Label { text: "Message"; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "#CCC" : "#333"; leftPadding: 12 }
+                                        RowLayout {
+                                            spacing: 6; Layout.leftMargin: 12; Layout.rightMargin: 12
+                                            TextField {
+                                                id: queueMsgField; Layout.fillWidth: true
+                                                placeholderText: "Message a afficher"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
+                                                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                            }
+                                            Rectangle {
+                                                Layout.preferredWidth: 30; Layout.preferredHeight: 28; radius: 6; color: "#5B4FDB"
+                                                Label { anchors.centerIn: parent; text: "+"; color: "white"; font.pixelSize: 14; font.bold: true }
+                                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                                    onClicked: { if (queueMsgField.text !== "") { graphicsQueue.addMessage(queueMsgField.text); queueMsgField.text = "" } }
+                                                }
+                                            }
+                                        }
+
+                                        // Add QR Code
+                                        Label { text: "QR Code"; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "#CCC" : "#333"; leftPadding: 12 }
+                                        RowLayout {
+                                            spacing: 6; Layout.leftMargin: 12; Layout.rightMargin: 12
+                                            TextField {
+                                                id: queueQrField; Layout.fillWidth: true
+                                                placeholderText: "https://..."; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
+                                                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                            }
+                                            Rectangle {
+                                                Layout.preferredWidth: 30; Layout.preferredHeight: 28; radius: 6; color: "#5B4FDB"
+                                                Label { anchors.centerIn: parent; text: "+"; color: "white"; font.pixelSize: 14; font.bold: true }
+                                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                                    onClicked: { if (queueQrField.text !== "") { graphicsQueue.addQrCode(queueQrField.text); queueQrField.text = "" } }
+                                                }
+                                            }
+                                        }
+
+                                        // Actions
+                                        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+                                        RowLayout {
+                                            spacing: 8; Layout.leftMargin: 12
+                                            Rectangle {
+                                                Layout.preferredWidth: 80; Layout.preferredHeight: 32; radius: 6; color: "#CC0000"
+                                                Label { anchors.centerIn: parent; text: "TAKE"; color: "white"; font.pixelSize: 11; font.bold: true }
+                                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.takeNext() }
+                                            }
+                                            Rectangle {
+                                                Layout.preferredWidth: 80; Layout.preferredHeight: 32; radius: 6
+                                                color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)
+                                                Label { anchors.centerIn: parent; text: "CLEAR"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11; font.bold: true }
+                                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.clearProgram() }
+                                            }
+                                            Rectangle {
+                                                Layout.preferredWidth: 100; Layout.preferredHeight: 32; radius: 6
+                                                color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
+                                                Label { anchors.centerIn: parent; text: "Vider queue"; color: window.darkMode ? "#666" : "#888"; font.pixelSize: 10 }
+                                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.clearQueue() }
+                                            }
+                                        }
+
+                                        Item { implicitHeight: 12 }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

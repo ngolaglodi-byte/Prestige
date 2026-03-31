@@ -30,6 +30,7 @@ class SocialChatController;
 class WebRemoteServer;
 class LicenseManager;
 class AnalyticsEngine;
+class GraphicsQueue;
 
 class MainWindow : public QObject {
     Q_OBJECT
@@ -115,6 +116,9 @@ private:
 
     // Analytics
     AnalyticsEngine*   m_analytics      = nullptr;
+
+    // Graphics Queue
+    GraphicsQueue*     m_graphicsQueue  = nullptr;
 
     // i18n
     QString            m_language        = "fr";

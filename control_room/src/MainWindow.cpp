@@ -23,6 +23,7 @@
 #include "WebRemoteServer.h"
 #include "LicenseManager.h"
 #include "AnalyticsEngine.h"
+#include "GraphicsQueue.h"
 
 #include <QQmlContext>
 #include <QDebug>
@@ -51,6 +52,8 @@ MainWindow::MainWindow(QObject* parent)
     m_webRemote = new WebRemoteServer(m_liveController, m_overlay, m_macroEngine,
                                       m_setupController, m_analytics, m_subtitleCtrl,
                                       m_rssFetcher, this);
+    m_graphicsQueue = new GraphicsQueue(this);
+    m_webRemote->setGraphicsQueue(m_graphicsQueue);
     m_license = new LicenseManager(this);
 
     // Connect LiveController signals to AnalyticsEngine
@@ -88,6 +91,10 @@ MainWindow::MainWindow(QObject* parent)
 
     // Publish config when social chat config changes
     connect(m_socialChatCtrl, &SocialChatController::configChanged, this, &MainWindow::publishConfig);
+
+    // Publish config when graphics queue item is taken
+    connect(m_graphicsQueue, &GraphicsQueue::itemTaken, this, &MainWindow::publishConfig);
+    connect(m_graphicsQueue, &GraphicsQueue::queueChanged, this, &MainWindow::publishConfig);
 
     // Publish config when channel name changes
     connect(m_config, &ConfigManager::channelNameChanged, this, &MainWindow::publishConfig);
@@ -158,6 +165,7 @@ bool MainWindow::initialize(QQmlApplicationEngine* engine)
     ctx->setContextProperty("webRemote", m_webRemote);
     ctx->setContextProperty("licenseManager", m_license);
     ctx->setContextProperty("analyticsEngine", m_analytics);
+    ctx->setContextProperty("graphicsQueue", m_graphicsQueue);
 
     // Validate stored license on startup
     m_license->validateStoredKey();
@@ -441,6 +449,9 @@ void MainWindow::publishConfig()
     obj["show_title_visible"] = m_overlaysActive && m_liveController->isShowTitleVisible();
     obj["talent_nameplate_visible"] = m_overlaysActive && m_liveController->isTalentNameplateVisible();
     obj["bypass_active"] = m_liveController->isBypassed();
+
+    // Graphics queue current item
+    obj["queue_current"] = QJsonObject::fromVariantMap(m_graphicsQueue->currentItem());
 
     QByteArray payload = QJsonDocument(obj).toJson(QJsonDocument::Compact);
     zmq_send(m_configZmqSock, payload.constData(), payload.size(), ZMQ_NOBLOCK);

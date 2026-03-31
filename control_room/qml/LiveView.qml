@@ -68,6 +68,11 @@ Item {
         enabled: mainWindow.isLiveMode
         onActivated: { /* tools now in nav drawer */ }
     }
+    Shortcut {
+        sequence: "N"
+        enabled: mainWindow.isLiveMode
+        onActivated: graphicsQueue.takeNext()
+    }
 
     ColumnLayout {
         anchors.fill: parent; spacing: 0
@@ -542,6 +547,179 @@ Item {
                         }
                     }
                 }
+
+                // ── Queue: Lower Third overlay (cross-fade) ──
+                Rectangle {
+                    id: queueLowerThird
+                    visible: opacity > 0
+                    opacity: graphicsQueue.currentIndex >= 0 && graphicsQueue.currentItem.type === "lower_third" ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.InOutQuad } }
+
+                    anchors.bottom: wysiwygTickerBar.visible ? wysiwygTickerBar.top : parent.bottom
+                    anchors.left: parent.left
+                    anchors.margins: wysiwygOverlay.pw * 0.008
+
+                    width: Math.max(wysiwygOverlay.pw * 0.2, queueNameLbl.implicitWidth + wysiwygOverlay.pw * 0.02)
+                    height: wysiwygOverlay.ph * 0.045
+                    radius: wysiwygOverlay.ph * 0.004
+                    color: Qt.rgba(0, 0, 0, setupController.backgroundOpacity > 0 ? setupController.backgroundOpacity : 0.82)
+
+                    Rectangle { width: wysiwygOverlay.pw * 0.002; height: parent.height; color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#5B4FDB" }
+
+                    ColumnLayout {
+                        anchors.centerIn: parent; spacing: 1
+                        Label { id: queueNameLbl; text: graphicsQueue.currentItem.name || ""; font.pixelSize: wysiwygOverlay.ph * 0.015; font.weight: Font.Bold; color: "white" }
+                        Label { text: graphicsQueue.currentItem.role || ""; font.pixelSize: wysiwygOverlay.ph * 0.011; color: Qt.rgba(1,1,1,0.7); visible: text !== "" }
+                    }
+                }
+
+                // ── Queue: Message overlay (cross-fade, centered) ──
+                Rectangle {
+                    visible: opacity > 0
+                    opacity: graphicsQueue.currentIndex >= 0 && graphicsQueue.currentItem.type === "message" ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.InOutQuad } }
+                    anchors.centerIn: parent
+                    width: Math.max(wysiwygOverlay.pw * 0.3, queueMsgLbl.implicitWidth + wysiwygOverlay.pw * 0.02)
+                    height: queueMsgLbl.implicitHeight + wysiwygOverlay.ph * 0.02
+                    radius: wysiwygOverlay.ph * 0.006
+                    color: Qt.rgba(0, 0, 0, 0.8)
+                    Label { id: queueMsgLbl; anchors.centerIn: parent; text: graphicsQueue.currentItem.text || ""; font.pixelSize: wysiwygOverlay.ph * 0.018; font.weight: Font.Bold; color: "white"; wrapMode: Text.WordWrap; width: parent.width - wysiwygOverlay.pw * 0.02; horizontalAlignment: Text.AlignHCenter }
+                }
+
+                // ── Queue: Ticker overlay (cross-fade) ──
+                Rectangle {
+                    visible: opacity > 0
+                    opacity: graphicsQueue.currentIndex >= 0 && graphicsQueue.currentItem.type === "ticker" ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.InOutQuad } }
+                    anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right
+                    height: wysiwygOverlay.ph * 0.033
+                    color: setupController.tickerBgColor
+                    clip: true
+                    Label {
+                        id: queueTickerText
+                        text: graphicsQueue.currentItem.text || ""
+                        font.pixelSize: setupController.tickerFontSize * (wysiwygOverlay.ph / 1080.0); font.weight: Font.Bold; color: setupController.tickerTextColor
+                        y: (parent.height - height) / 2
+                        NumberAnimation on x {
+                            from: wysiwygOverlay.pw
+                            to: -queueTickerText.implicitWidth
+                            duration: Math.max(4000, queueTickerText.implicitWidth * 30)
+                            loops: Animation.Infinite; running: queueTickerText.parent.opacity > 0
+                        }
+                    }
+                }
+
+                // ── Drag handles for overlay repositioning ──
+                // Drag handle: Channel Name
+                Rectangle {
+                    visible: previewChannelName.visible
+                    x: previewChannelName.x + previewChannelName.width - 8
+                    y: previewChannelName.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragNameMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragNameMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: previewChannelName
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            var pos = setupController.channelLogoPosition
+                            var baseMargin = wysiwygOverlay.pw * 0.005
+                            if (pos === "top_left" || pos === "bottom_left")
+                                setupController.channelNameOffsetX = Math.round((previewChannelName.x - baseMargin) * 1920.0 / wysiwygOverlay.pw)
+                            else
+                                setupController.channelNameOffsetX = Math.round((previewChannelName.x - (wysiwygOverlay.pw - previewChannelName.width - baseMargin)) * 1920.0 / wysiwygOverlay.pw)
+                            setupController.channelNameOffsetY = Math.round(previewChannelName.y * 1080.0 / wysiwygOverlay.ph)
+                        }
+                    }
+                }
+
+                // Drag handle: Logo
+                Rectangle {
+                    visible: previewLogo.visible
+                    x: previewLogo.x + previewLogo.width - 8
+                    y: previewLogo.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragLogoMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragLogoMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: previewLogo
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            var pos = setupController.channelLogoPosition
+                            var baseMargin = wysiwygOverlay.pw * 0.008
+                            if (pos === "top_left" || pos === "bottom_left")
+                                setupController.channelLogoOffsetX = Math.round((previewLogo.x - baseMargin) * 1920.0 / wysiwygOverlay.pw)
+                            else
+                                setupController.channelLogoOffsetX = Math.round((previewLogo.x - (wysiwygOverlay.pw - previewLogo.width - baseMargin)) * 1920.0 / wysiwygOverlay.pw)
+                            if (pos === "top_left" || pos === "top_right")
+                                setupController.channelLogoOffsetY = Math.round((previewLogo.y - baseMargin) * 1080.0 / wysiwygOverlay.ph)
+                            else
+                                setupController.channelLogoOffsetY = Math.round((previewLogo.y - (wysiwygOverlay.ph - previewLogo.height - baseMargin)) * 1080.0 / wysiwygOverlay.ph)
+                        }
+                    }
+                }
+
+                // Drag handle: Show Title
+                Rectangle {
+                    visible: previewShowTitle.visible
+                    x: previewShowTitle.x + previewShowTitle.width - 8
+                    y: previewShowTitle.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragTitleMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragTitleMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: previewShowTitle
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            var pos = setupController.showTitlePosition
+                            var baseMargin = wysiwygOverlay.pw * 0.008
+                            if (pos === "bottom_left" || pos === "top_left")
+                                setupController.showTitleOffsetX = Math.round((previewShowTitle.x - baseMargin) * 1920.0 / wysiwygOverlay.pw)
+                            else
+                                setupController.showTitleOffsetX = Math.round((previewShowTitle.x - (wysiwygOverlay.pw - previewShowTitle.width - baseMargin)) * 1920.0 / wysiwygOverlay.pw)
+                            if (pos === "top_left" || pos === "top_right")
+                                setupController.showTitleOffsetY = Math.round((previewShowTitle.y - baseMargin) * 1080.0 / wysiwygOverlay.ph)
+                            else
+                                setupController.showTitleOffsetY = Math.round((previewShowTitle.y - (wysiwygOverlay.ph - previewShowTitle.height - baseMargin)) * 1080.0 / wysiwygOverlay.ph)
+                        }
+                    }
+                }
+
+                // Drag handle: Scoreboard
+                Rectangle {
+                    visible: wysiwygScoreboard.visible
+                    x: wysiwygScoreboard.x + wysiwygScoreboard.width - 8
+                    y: wysiwygScoreboard.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragScoreMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragScoreMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: wysiwygScoreboard
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            setupController.scoreboardOffsetX = Math.round(wysiwygScoreboard.x * 1920.0 / wysiwygOverlay.pw)
+                            setupController.scoreboardOffsetY = Math.round(wysiwygScoreboard.y * 1080.0 / wysiwygOverlay.ph)
+                        }
+                    }
+                }
+
+                // Drag handle: Weather
+                Rectangle {
+                    visible: wysiwygWeather.visible
+                    x: wysiwygWeather.x + wysiwygWeather.width - 8
+                    y: wysiwygWeather.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragWeatherMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragWeatherMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: wysiwygWeather
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            setupController.weatherOffsetX = Math.round((wysiwygWeather.x - (wysiwygOverlay.pw - wysiwygWeather.width - wysiwygOverlay.pw * 0.008)) * 1920.0 / wysiwygOverlay.pw)
+                            setupController.weatherOffsetY = Math.round((wysiwygWeather.y - (wysiwygOverlay.ph - wysiwygWeather.height - wysiwygOverlay.ph * 0.074)) * 1080.0 / wysiwygOverlay.ph)
+                        }
+                    }
+                }
             }
 
             // Resolution + FPS badge (on top of everything)
@@ -693,6 +871,117 @@ Item {
                         font.pixelSize: 11; font.weight: Font.Bold
                     }
                     MouseArea { id: msOverlay; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: liveController.toggleOverlays() }
+                }
+            }
+        }
+
+        // ── Graphics Queue Bar ───────────────────────────────
+        Rectangle {
+            id: queueBar
+            Layout.fillWidth: true; Layout.preferredHeight: queueBar.queueExpanded ? 160 : 36
+            color: window.darkMode ? "#0A0A0E" : "#E8E8EE"
+            property bool queueExpanded: false
+
+            Behavior on Layout.preferredHeight { NumberAnimation { duration: 200 } }
+
+            Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
+
+            ColumnLayout {
+                anchors.fill: parent; spacing: 0
+
+                // Header (always visible)
+                Rectangle {
+                    Layout.fillWidth: true; Layout.preferredHeight: 36
+                    color: "transparent"
+                    RowLayout {
+                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 8
+
+                        Label { text: "QUEUE"; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 2; color: window.darkMode ? "#666" : "#999" }
+                        Label { text: graphicsQueue.count + " items"; font.pixelSize: 10; color: window.darkMode ? "#555" : "#AAA" }
+
+                        Item { Layout.fillWidth: true }
+
+                        // Preview next
+                        Label {
+                            visible: graphicsQueue.nextItem.type !== undefined
+                            text: "NEXT: " + (graphicsQueue.nextItem.name || graphicsQueue.nextItem.text || "")
+                            font.pixelSize: 10; color: "#5B4FDB"; elide: Text.ElideRight; Layout.maximumWidth: 200
+                        }
+
+                        // TAKE button
+                        Rectangle {
+                            Layout.preferredWidth: 60; Layout.preferredHeight: 26; radius: 6
+                            color: queueTakeMa.containsMouse ? "#DD0000" : "#CC0000"
+                            visible: graphicsQueue.count > 0
+                            Label { anchors.centerIn: parent; text: "TAKE"; color: "white"; font.pixelSize: 10; font.weight: Font.Bold }
+                            MouseArea { id: queueTakeMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.takeNext() }
+                        }
+
+                        // Clear
+                        Rectangle {
+                            Layout.preferredWidth: 50; Layout.preferredHeight: 26; radius: 6
+                            color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
+                            visible: graphicsQueue.currentIndex >= 0
+                            Label { anchors.centerIn: parent; text: "CLEAR"; color: window.darkMode ? "#888" : "#666"; font.pixelSize: 9; font.weight: Font.Bold }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.clearProgram() }
+                        }
+
+                        // Expand/collapse
+                        Rectangle {
+                            Layout.preferredWidth: 26; Layout.preferredHeight: 26; radius: 4
+                            color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
+                            Label { anchors.centerIn: parent; text: queueBar.queueExpanded ? "\u25BC" : "\u25B2"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: queueBar.queueExpanded = !queueBar.queueExpanded }
+                        }
+                    }
+                }
+
+                // Queue items list (expanded)
+                ListView {
+                    Layout.fillWidth: true; Layout.fillHeight: true; clip: true; spacing: 2
+                    visible: queueBar.queueExpanded
+                    model: graphicsQueue.items
+                    orientation: ListView.Horizontal
+                    delegate: Rectangle {
+                        width: 160; height: ListView.view ? ListView.view.height - 4 : 100
+                        radius: 6
+                        color: graphicsQueue.currentIndex === index
+                            ? Qt.rgba(204/255,0,0,0.15)
+                            : (window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.03))
+                        border.color: graphicsQueue.currentIndex === index ? "#CC0000" : (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08))
+
+                        ColumnLayout {
+                            anchors.fill: parent; anchors.margins: 8; spacing: 2
+                            Label {
+                                text: {
+                                    if (modelData.type === "lower_third") return "LOWER THIRD"
+                                    if (modelData.type === "ticker") return "TICKER"
+                                    if (modelData.type === "message") return "MESSAGE"
+                                    if (modelData.type === "qr_code") return "QR CODE"
+                                    return modelData.type || ""
+                                }
+                                font.pixelSize: 8; font.weight: Font.Bold; color: "#5B4FDB"
+                            }
+                            Label {
+                                text: modelData.name || modelData.text || modelData.url || ""
+                                font.pixelSize: 10; font.weight: Font.DemiBold; color: window.darkMode ? "white" : "#1A1A1A"
+                                elide: Text.ElideRight; Layout.fillWidth: true
+                            }
+                            Label {
+                                text: modelData.role || ""
+                                font.pixelSize: 9; color: window.darkMode ? "#888" : "#666"
+                                visible: modelData.role !== undefined && modelData.role !== ""
+                            }
+                            Item { Layout.fillHeight: true }
+                            Label {
+                                text: graphicsQueue.currentIndex === index ? "ON AIR" : (index < graphicsQueue.currentIndex ? "DONE" : "READY")
+                                font.pixelSize: 8; font.weight: Font.Bold
+                                color: graphicsQueue.currentIndex === index ? "#CC0000" : (index < graphicsQueue.currentIndex ? "#1DB954" : (window.darkMode ? "#666" : "#999"))
+                            }
+                        }
+
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.takeItem(index) }
+                    }
                 }
             }
         }

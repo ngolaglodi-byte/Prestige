@@ -20,6 +20,7 @@ set(CONTROL_SOURCES
     src/WebRemoteServer.cpp
     src/LicenseManager.cpp
     src/AnalyticsEngine.cpp
+    src/GraphicsQueue.cpp
 )
 
 set(CONTROL_HEADERS
@@ -41,6 +42,7 @@ set(CONTROL_HEADERS
     src/WebRemoteServer.h
     src/LicenseManager.h
     src/AnalyticsEngine.h
+    src/GraphicsQueue.h
 )
 
 qt_add_executable(prestige_control ${CONTROL_SOURCES} ${CONTROL_HEADERS}

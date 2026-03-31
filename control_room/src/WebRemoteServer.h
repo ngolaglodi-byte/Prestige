@@ -20,6 +20,7 @@ class SetupController;
 class AnalyticsEngine;
 class SubtitleController;
 class RssFetcher;
+class GraphicsQueue;
 
 class WebRemoteServer : public QObject {
     Q_OBJECT
@@ -32,6 +33,8 @@ public:
                              MacroEngine* macros, SetupController* setup,
                              AnalyticsEngine* analytics, SubtitleController* subtitles,
                              RssFetcher* rss, QObject* parent = nullptr);
+
+    void setGraphicsQueue(GraphicsQueue* queue) { m_queue = queue; }
 
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
@@ -56,6 +59,7 @@ private:
     QByteArray serveApiPrograms();
     QByteArray serveApiTalents();
     QByteArray handlePost(const QString& path, const QByteArray& body);
+    QByteArray serveApiQueue();
 
     QTcpServer*        m_server     = nullptr;
     LiveController*    m_live       = nullptr;
@@ -65,6 +69,7 @@ private:
     AnalyticsEngine*   m_analytics  = nullptr;
     SubtitleController* m_subtitles = nullptr;
     RssFetcher*        m_rss        = nullptr;
+    GraphicsQueue*     m_queue      = nullptr;
     int                m_port       = 8080;
 };
 
