@@ -152,12 +152,312 @@ Item {
                 }
             }
 
-            // Resolution + FPS badge
+            // ── WYSIWYG Preview Overlays ─────────────────
+            // Shows exactly what the viewer sees on TV
+            Item {
+                id: wysiwygOverlay
+                anchors.fill: parent
+                visible: true  // Always visible to show branding even without Vision Engine
+
+                // Scale factor for overlay positioning (preview is smaller than actual output)
+                property real sx: parent.width / 1920.0
+                property real sy: parent.height / 1080.0
+                property real sf: Math.min(sx, sy)  // Uniform scale factor
+
+                // ── Layer 1: Channel Logo ────────────────────
+                Image {
+                    id: previewLogo
+                    visible: setupController.channelLogoPath !== "" && !liveController.isBypassed
+                    source: setupController.channelLogoPath ? ("file:///" + setupController.channelLogoPath) : ""
+
+                    // Position based on config
+                    property string pos: setupController.channelLogoPosition
+                    anchors.top: (pos === "top_right" || pos === "top_left") ? parent.top : undefined
+                    anchors.bottom: (pos === "bottom_right" || pos === "bottom_left") ? parent.bottom : undefined
+                    anchors.right: (pos === "top_right" || pos === "bottom_right") ? parent.right : undefined
+                    anchors.left: (pos === "top_left" || pos === "bottom_left") ? parent.left : undefined
+                    anchors.margins: 16 * wysiwygOverlay.sf
+
+                    height: setupController.channelLogoSize * wysiwygOverlay.sf
+                    fillMode: Image.PreserveAspectFit
+
+                    // Loop animation
+                    property string loopAnim: setupController.logoLoopAnim
+                    SequentialAnimation on scale {
+                        loops: Animation.Infinite; running: previewLogo.loopAnim === "pulse"
+                        NumberAnimation { to: 1.03; duration: 1200; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
+                    }
+                    opacity: 1.0
+                    // Entry animation
+                    NumberAnimation on opacity { from: 0; to: 1; duration: 800; running: true }
+                }
+
+                // ── Layer 1b: Channel Name ───────────────────
+                Rectangle {
+                    id: previewChannelName
+                    visible: setupController.showChannelNameText && configManager.channelName !== "" && !liveController.isBypassed
+
+                    property string pos: setupController.channelLogoPosition
+                    // Position below logo or standalone
+                    anchors.top: previewLogo.visible ? previewLogo.bottom : ((pos === "top_right" || pos === "top_left") ? parent.top : undefined)
+                    anchors.bottom: (!previewLogo.visible && (pos === "bottom_right" || pos === "bottom_left")) ? parent.bottom : undefined
+                    anchors.right: (pos === "top_right" || pos === "bottom_right") ? parent.right : undefined
+                    anchors.left: (pos === "top_left" || pos === "bottom_left") ? parent.left : undefined
+                    anchors.margins: 10 * wysiwygOverlay.sf
+                    anchors.topMargin: previewLogo.visible ? 4 * wysiwygOverlay.sf : 16 * wysiwygOverlay.sf
+
+                    width: nameLbl.implicitWidth + 16 * wysiwygOverlay.sf
+                    height: nameLbl.implicitHeight + 8 * wysiwygOverlay.sf
+                    radius: {
+                        var shape = setupController.channelNameShape
+                        if (shape === "pill") return height / 2
+                        if (shape === "square" || shape === "rectangle") return 3 * wysiwygOverlay.sf
+                        return 0
+                    }
+                    color: setupController.channelNameShape === "frameless" ? "transparent" : setupController.channelNameBgColor
+                    border.color: setupController.channelNameShape === "frameless" ? "transparent" : setupController.channelNameBorderColor
+                    border.width: setupController.channelNameShape === "frameless" ? 0 : 1
+
+                    // Skew for angled shape
+                    transform: Rotation {
+                        angle: setupController.channelNameShape === "angled" ? -5 : 0
+                        origin.x: previewChannelName.width / 2; origin.y: previewChannelName.height / 2
+                    }
+
+                    Label {
+                        id: nameLbl; anchors.centerIn: parent
+                        text: configManager.channelName
+                        font.pixelSize: setupController.channelNameFontSize * wysiwygOverlay.sf
+                        font.weight: Font.Bold
+                        color: setupController.channelNameTextColor
+                    }
+
+                    // Pulse animation
+                    SequentialAnimation on scale {
+                        loops: Animation.Infinite; running: setupController.nameLoopAnim === "pulse"
+                        NumberAnimation { to: 1.03; duration: 1200; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
+                    }
+                }
+
+                // ── Layer 2: Show Title ──────────────────────
+                Rectangle {
+                    id: previewShowTitle
+                    visible: setupController.showTitleEnabled && setupController.showTitle !== "" && liveController.showTitleVisible && !liveController.isBypassed
+
+                    property string pos: setupController.showTitlePosition
+                    anchors.bottom: (pos === "bottom_left" || pos === "bottom_right") ? wysiwygTickerBar.top : undefined
+                    anchors.top: (pos === "top_left" || pos === "top_right") ? parent.top : undefined
+                    anchors.left: (pos === "bottom_left" || pos === "top_left") ? parent.left : undefined
+                    anchors.right: (pos === "bottom_right" || pos === "top_right") ? parent.right : undefined
+                    anchors.margins: 16 * wysiwygOverlay.sf
+
+                    width: titleCol.implicitWidth + 24 * wysiwygOverlay.sf
+                    height: titleCol.implicitHeight + 12 * wysiwygOverlay.sf
+                    radius: {
+                        var shape = setupController.showTitleShape
+                        if (shape === "pill") return height / 2
+                        if (shape === "rectangle" || shape === "square") return 4 * wysiwygOverlay.sf
+                        return 0
+                    }
+                    color: setupController.showTitleShape === "frameless" ? "transparent" : setupController.showTitleBgColor
+                    border.color: setupController.showTitleShape === "frameless" ? "transparent" : setupController.showTitleBorderColor
+                    border.width: 1
+                    opacity: liveController.showTitleVisible ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 400 } }
+
+                    // Accent bar on left
+                    Rectangle {
+                        width: 3 * wysiwygOverlay.sf; height: parent.height
+                        color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#5B4FDB"
+                        visible: setupController.showTitleShape !== "frameless"
+                    }
+
+                    ColumnLayout {
+                        id: titleCol; anchors.centerIn: parent; spacing: 2
+                        Label {
+                            text: setupController.showTitle
+                            font.pixelSize: setupController.showTitleFontSize * wysiwygOverlay.sf
+                            font.weight: Font.Bold; color: setupController.showTitleTextColor
+                        }
+                        Label {
+                            visible: setupController.showSubtitle !== ""
+                            text: setupController.showSubtitle
+                            font.pixelSize: (setupController.showTitleFontSize - 3) * wysiwygOverlay.sf
+                            color: Qt.rgba(1,1,1,0.7)
+                        }
+                    }
+                }
+
+                // ── Layer 3: Talent Nameplate (from IA detection) ──
+                Rectangle {
+                    id: previewNameplate
+                    visible: liveController.talentNameplateVisible && liveController.talentDetected && !liveController.isBypassed
+
+                    anchors.bottom: wysiwygTickerBar.top; anchors.left: parent.left
+                    anchors.margins: 16 * wysiwygOverlay.sf
+
+                    width: talentCol.implicitWidth + 32 * wysiwygOverlay.sf
+                    height: talentCol.implicitHeight + 16 * wysiwygOverlay.sf
+                    radius: 4 * wysiwygOverlay.sf
+                    color: Qt.rgba(0, 0, 0, setupController.backgroundOpacity > 0 ? setupController.backgroundOpacity : 0.82)
+
+                    // Accent bar left
+                    Rectangle {
+                        width: 4 * wysiwygOverlay.sf; height: parent.height; radius: 2
+                        color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#E30613"
+                    }
+
+                    ColumnLayout {
+                        id: talentCol; anchors.centerIn: parent; spacing: 1
+                        Label {
+                            text: liveController.detectedName || ""
+                            font.pixelSize: 16 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white"
+                        }
+                        Label {
+                            visible: liveController.detectedRole !== ""
+                            text: liveController.detectedRole || ""
+                            font.pixelSize: 12 * wysiwygOverlay.sf; color: Qt.rgba(1,1,1,0.7)
+                        }
+                    }
+
+                    opacity: liveController.talentNameplateVisible ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 300 } }
+                }
+
+                // ── Ticker bar (bottom) ─────────────────────
+                Rectangle {
+                    id: wysiwygTickerBar
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: wysiwygSubtitleBar.visible ? (wysiwygSubtitleBar.height + 8 * wysiwygOverlay.sf) : 0
+                    anchors.left: parent.left; anchors.right: parent.right
+                    height: visible ? 28 * wysiwygOverlay.sf : 0
+                    visible: rssFetcher.headlines !== "" && mainWindow.overlaysActive && !liveController.isBypassed
+                    color: "#CC0000"
+                    clip: true
+
+                    Label {
+                        id: tickerText
+                        text: rssFetcher.headlines || ""
+                        font.pixelSize: 12 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white"
+                        y: (parent.height - height) / 2
+                        NumberAnimation on x {
+                            from: wysiwygTickerBar.width
+                            to: -tickerText.implicitWidth
+                            duration: Math.max(8000, tickerText.implicitWidth * 30)
+                            loops: Animation.Infinite; running: wysiwygTickerBar.visible
+                        }
+                    }
+                }
+
+                // ── Subtitles ────────────────────────────────
+                Rectangle {
+                    id: wysiwygSubtitleBar
+                    anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottomMargin: 4 * wysiwygOverlay.sf
+                    visible: subtitleController.enabled && subtitleController.currentText !== "" && !liveController.isBypassed
+
+                    width: subLbl.implicitWidth + 24 * wysiwygOverlay.sf
+                    height: subLbl.implicitHeight + 12 * wysiwygOverlay.sf
+                    radius: 6 * wysiwygOverlay.sf
+                    color: Qt.rgba(0, 0, 0, subtitleController.bgOpacity)
+
+                    Label {
+                        id: subLbl; anchors.centerIn: parent
+                        text: subtitleController.currentText
+                        font.pixelSize: subtitleController.fontSize * wysiwygOverlay.sf
+                        color: subtitleController.textColor
+                    }
+                }
+
+                // ── Countdown (top-left area) ────────────────
+                Rectangle {
+                    visible: liveController.countdownActive && !liveController.isBypassed
+                    anchors.top: parent.top; anchors.left: parent.left
+                    anchors.margins: 16 * wysiwygOverlay.sf
+                    anchors.topMargin: (previewLogo.visible ? previewLogo.height + 24 : 16) * wysiwygOverlay.sf
+
+                    width: cdLbl.implicitWidth + 20 * wysiwygOverlay.sf
+                    height: cdLbl.implicitHeight + 10 * wysiwygOverlay.sf
+                    radius: height / 2
+                    color: Qt.rgba(204/255, 0, 0, 0.85)
+
+                    Label {
+                        id: cdLbl; anchors.centerIn: parent
+                        text: {
+                            var s = liveController.countdownSeconds
+                            var mm = Math.floor(s / 60)
+                            var ss = s % 60
+                            var label = liveController.countdownLabel
+                            var time = (mm < 10 ? "0" : "") + mm + ":" + (ss < 10 ? "0" : "") + ss
+                            return label ? label + " " + time : time
+                        }
+                        font.pixelSize: 14 * wysiwygOverlay.sf; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
+                    }
+                }
+
+                // ── Clock (top-right) ────────────────────────
+                Rectangle {
+                    visible: mainWindow.overlaysActive
+                    anchors.top: parent.top; anchors.right: parent.right
+                    anchors.margins: 16 * wysiwygOverlay.sf
+
+                    width: clockLbl.implicitWidth + 14 * wysiwygOverlay.sf
+                    height: clockLbl.implicitHeight + 8 * wysiwygOverlay.sf
+                    radius: 4 * wysiwygOverlay.sf
+                    color: Qt.rgba(0, 0, 0, 0.6)
+
+                    Label {
+                        id: clockLbl; anchors.centerIn: parent
+                        text: Qt.formatTime(new Date(), "HH:mm:ss")
+                        font.pixelSize: 12 * wysiwygOverlay.sf; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
+                    }
+                    Timer { interval: 1000; running: true; repeat: true; onTriggered: clockLbl.text = Qt.formatTime(new Date(), "HH:mm:ss") }
+                }
+
+                // ── QR Code placeholder (when active) ────────
+                Rectangle {
+                    visible: liveController.qrCodeVisible && liveController.qrCodeUrl !== "" && !liveController.isBypassed
+
+                    property string pos: liveController.qrCodePosition || "bottom_right"
+                    anchors.bottom: (pos === "bottom_right" || pos === "bottom_left") ? wysiwygTickerBar.top : undefined
+                    anchors.top: (pos === "top_right" || pos === "top_left") ? parent.top : undefined
+                    anchors.right: (pos === "bottom_right" || pos === "top_right") ? parent.right : undefined
+                    anchors.left: (pos === "bottom_left" || pos === "top_left") ? parent.left : undefined
+                    anchors.margins: 16 * wysiwygOverlay.sf
+
+                    width: 80 * wysiwygOverlay.sf; height: 80 * wysiwygOverlay.sf
+                    radius: 6 * wysiwygOverlay.sf
+                    color: "white"
+
+                    // QR pattern placeholder
+                    Grid {
+                        anchors.centerIn: parent; columns: 5; spacing: 2 * wysiwygOverlay.sf
+                        Repeater {
+                            model: 25
+                            Rectangle {
+                                width: 10 * wysiwygOverlay.sf; height: 10 * wysiwygOverlay.sf
+                                color: (index % 3 === 0 || index % 7 === 0) ? "#000" : "white"
+                            }
+                        }
+                    }
+
+                    Label {
+                        anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottomMargin: 2 * wysiwygOverlay.sf
+                        text: "SCAN"; font.pixelSize: 6 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "#5B4FDB"
+                    }
+                }
+            }
+
+            // Resolution + FPS badge (on top of everything)
             Rectangle {
                 anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 10
                 width: fpsLbl.implicitWidth + 14; height: 22; radius: 6
                 color: Qt.rgba(0, 0, 0, 0.5)
                 visible: previewMonitor.active
+                z: 10
                 Label {
                     id: fpsLbl; anchors.centerIn: parent
                     text: previewMonitor.sourceWidth + "\u00D7" + previewMonitor.sourceHeight + " @ " + previewMonitor.fps.toFixed(0) + "fps"
