@@ -1553,61 +1553,93 @@ ApplicationWindow {
     // ── About Dialog ───────────────────────────────────────
     Dialog {
         id: aboutDialog
-        anchors.centerIn: parent; width: 380; modal: true
+        anchors.centerIn: parent; width: 440; modal: true
         standardButtons: Dialog.NoButton
-        background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; radius: 12; border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.1) }
+        background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; radius: 16; border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.1) }
         Overlay.modal: Rectangle { color: Qt.rgba(0,0,0,0.6) }
 
-        contentItem: Flickable {
-            contentHeight: aboutCol.implicitHeight; clip: true
-            flickableDirection: Flickable.VerticalFlick
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-            ColumnLayout {
-                id: aboutCol; width: parent.width; spacing: 10
-                Item { Layout.preferredHeight: 8 }
-                Label { text: "PRESTIGE AI"; font.pixelSize: 24; font.weight: Font.Bold; font.letterSpacing: 3; color: "#5B4FDB"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "v1.0.0"; font.pixelSize: 14; color: window.darkMode ? "#888" : "#666"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Professional Broadcast Overlay System"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; Layout.alignment: Qt.AlignHCenter }
-                Item { Layout.preferredHeight: 4 }
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
-                Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 12; font.weight: Font.DemiBold; color: window.darkMode ? "#CCC" : "#333"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Tous droits r\u00E9serv\u00E9s"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+        contentItem: ColumnLayout {
+            spacing: 0
 
-                // Features
-                Label { text: "Fonctionnalit\u00E9s"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#AAA" : "#444"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "20 styles \u2022 8 animations \u2022 5 langues \u2022 4K"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "IA: InsightFace + Whisper (100% offline)"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Sorties: RTMP \u2022 SRT \u2022 NDI \u2022 SDI \u2022 Fichier"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "SDKs: DeckLink \u2022 AJA \u2022 NDI \u2022 Magewell"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "API REST: 20+ endpoints \u2022 Web Remote"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
-
-                // System requirements
-                Label { text: "Configuration requise"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#AAA" : "#444"; Layout.alignment: Qt.AlignHCenter }
-                GridLayout {
-                    columns: 2; columnSpacing: 8; rowSpacing: 3; Layout.alignment: Qt.AlignHCenter
-                    Label { text: "Minimum:"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
-                    Label { text: "i5-8400 (3.0 GHz) \u2022 8 GB \u2022 10 GB SSD"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
-                    Label { text: "Recommand\u00E9:"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
-                    Label { text: "i7-10700 (3.8 GHz) \u2022 16 GB \u2022 GTX 1650"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
-                    Label { text: "Optimal:"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
-                    Label { text: "i9-12900K (3.9 GHz) \u2022 32 GB \u2022 RTX 3060"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
+            // ── Header with icon ──────────────────────
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 120
+                color: "transparent"
+                ColumnLayout {
+                    anchors.centerIn: parent; spacing: 6
+                    // App icon
+                    Rectangle {
+                        Layout.preferredWidth: 56; Layout.preferredHeight: 56; radius: 14
+                        Layout.alignment: Qt.AlignHCenter
+                        color: "#5B4FDB"
+                        Label { anchors.centerIn: parent; text: "P"; font.pixelSize: 28; font.weight: Font.Bold; color: "white" }
+                    }
+                    Label { text: "PRESTIGE AI"; font.pixelSize: 22; font.weight: Font.Bold; font.letterSpacing: 3; color: "#5B4FDB"; Layout.alignment: Qt.AlignHCenter }
+                    Label { text: "v1.0.0 (Build 2026.03)"; font.pixelSize: 12; color: window.darkMode ? "#888" : "#666"; Layout.alignment: Qt.AlignHCenter }
                 }
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
-
-                // License
-                Label { text: "Licence: " + licenseManager.licenseType; font.pixelSize: 11; color: "#1DB954"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Expire: " + licenseManager.expirationDate; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Item { Layout.preferredHeight: 4 }
-                Rectangle {
-                    Layout.preferredWidth: 80; Layout.preferredHeight: 32; radius: 6; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                    Layout.alignment: Qt.AlignHCenter
-                    Label { anchors.centerIn: parent; text: window.t("close"); color: window.darkMode ? "#888" : "#666"; font.pixelSize: 12 }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: aboutDialog.close() }
-                }
-                Item { Layout.preferredHeight: 8 }
             }
+
+            // ── Description ──────────────────────────
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08); Layout.leftMargin: 24; Layout.rightMargin: 24 }
+            Item { Layout.preferredHeight: 12 }
+
+            Label {
+                text: window.lang === "en" ? "Professional Broadcast Overlay System\nwith AI Face Recognition"
+                    : window.lang === "es" ? "Sistema profesional de overlay broadcast\ncon reconocimiento facial IA"
+                    : window.lang === "ar" ? "\u0646\u0638\u0627\u0645 \u0628\u062B \u0645\u0647\u0646\u064A \u0645\u0639 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A"
+                    : window.lang === "zh" ? "\u4E13\u4E1A\u5E7F\u64AD\u53E0\u52A0\u7CFB\u7EDF\nAI\u4EBA\u8138\u8BC6\u522B"
+                    : "Logiciel broadcast professionnel\navec reconnaissance faciale IA"
+                font.pixelSize: 13; color: window.darkMode ? "#AAA" : "#555"
+                horizontalAlignment: Text.AlignHCenter; Layout.alignment: Qt.AlignHCenter
+                wrapMode: Text.WordWrap; Layout.fillWidth: true; Layout.leftMargin: 24; Layout.rightMargin: 24
+            }
+
+            Item { Layout.preferredHeight: 12 }
+
+            // ── Features grid ─────────────────────────
+            GridLayout {
+                columns: 2; columnSpacing: 16; rowSpacing: 8
+                Layout.alignment: Qt.AlignHCenter; Layout.leftMargin: 32; Layout.rightMargin: 32
+
+                Label { text: "\u2022 20 styles \u2022 8 animations"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
+                Label { text: "\u2022 5 langues \u2022 RTL"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
+                Label { text: "\u2022 IA: InsightFace + Whisper"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
+                Label { text: "\u2022 100% offline"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
+                Label { text: "\u2022 RTMP \u2022 SRT \u2022 NDI \u2022 SDI"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
+                Label { text: "\u2022 4K \u2022 Multi-\u00E9cran"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
+                Label { text: "\u2022 REST API (25 endpoints)"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
+                Label { text: "\u2022 Graphics Queue"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
+            }
+
+            Item { Layout.preferredHeight: 12 }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08); Layout.leftMargin: 24; Layout.rightMargin: 24 }
+            Item { Layout.preferredHeight: 12 }
+
+            // ── License info ──────────────────────────
+            RowLayout {
+                Layout.alignment: Qt.AlignHCenter; spacing: 8
+                Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: licenseManager.isActivated ? "#1DB954" : "#CC3333" }
+                Label { text: licenseManager.licenseType + " \u2014 " + licenseManager.expirationDate; font.pixelSize: 12; font.weight: Font.DemiBold; color: licenseManager.isActivated ? "#1DB954" : "#CC3333" }
+            }
+
+            Item { Layout.preferredHeight: 16 }
+
+            // ── Copyright ─────────────────────────────
+            Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 12; font.weight: Font.DemiBold; color: window.darkMode ? "#CCC" : "#333"; Layout.alignment: Qt.AlignHCenter }
+            Label { text: "Tous droits r\u00E9serv\u00E9s"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+
+            Item { Layout.preferredHeight: 16 }
+
+            // ── Close button ──────────────────────────
+            Rectangle {
+                Layout.preferredWidth: 100; Layout.preferredHeight: 36; radius: 8
+                Layout.alignment: Qt.AlignHCenter
+                color: aboutCloseMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.08)) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04))
+                Behavior on color { ColorAnimation { duration: 150 } }
+                Label { anchors.centerIn: parent; text: window.t("close"); color: window.darkMode ? "#AAA" : "#555"; font.pixelSize: 13 }
+                MouseArea { id: aboutCloseMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: aboutDialog.close() }
+            }
+            Item { Layout.preferredHeight: 16 }
         }
     }
 
