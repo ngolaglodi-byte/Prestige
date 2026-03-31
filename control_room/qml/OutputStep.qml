@@ -151,7 +151,7 @@ Item {
                                     Layout.preferredWidth: 24; Layout.preferredHeight: 24; radius: 4
                                     color: eyeMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.08)) : "transparent"
                                     Label { anchors.centerIn: parent; text: "\u25CE"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 12 }
-                                    MouseArea { id: eyeMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor }
+                                    MouseArea { id: eyeMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: socialSwitch.toggle() }
                                 }
                             }
 
