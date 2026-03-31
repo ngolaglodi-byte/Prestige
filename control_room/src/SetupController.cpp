@@ -191,6 +191,13 @@ void SetupController::setChannelLogoSize(int v) { if (m_channelLogoSize == v) re
 void SetupController::setShowChannelNameText(bool v) { if (m_showChannelNameText == v) return; m_showChannelNameText = v; emit brandingChanged(); }
 void SetupController::setKeepLogoDuringAds(bool v) { if (m_keepLogoDuringAds == v) return; m_keepLogoDuringAds = v; emit brandingChanged(); }
 
+// ── Channel logo/name offsets ────────────────────────────────
+
+void SetupController::setChannelLogoOffsetX(int v) { if (m_channelLogoOffsetX == v) return; m_channelLogoOffsetX = v; emit brandingChanged(); }
+void SetupController::setChannelLogoOffsetY(int v) { if (m_channelLogoOffsetY == v) return; m_channelLogoOffsetY = v; emit brandingChanged(); }
+void SetupController::setChannelNameOffsetX(int v) { if (m_channelNameOffsetX == v) return; m_channelNameOffsetX = v; emit brandingChanged(); }
+void SetupController::setChannelNameOffsetY(int v) { if (m_channelNameOffsetY == v) return; m_channelNameOffsetY = v; emit brandingChanged(); }
+
 // ── Channel name design ─────────────────────────────────────
 
 void SetupController::setChannelNameShape(const QString& v) { if (m_channelNameShape == v) return; m_channelNameShape = v; emit brandingChanged(); }

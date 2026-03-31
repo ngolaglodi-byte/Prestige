@@ -352,8 +352,12 @@ void MainWindow::publishConfig()
     // Channel branding
     obj["channel_logo_position"] = m_setupController->channelLogoPosition();
     obj["channel_logo_size"] = m_setupController->channelLogoSize();
+    obj["channel_logo_offset_x"] = m_setupController->channelLogoOffsetX();
+    obj["channel_logo_offset_y"] = m_setupController->channelLogoOffsetY();
     obj["show_channel_name_text"] = m_setupController->showChannelNameText();
     obj["keep_logo_during_ads"] = m_setupController->keepLogoDuringAds();
+    obj["channel_name_offset_x"] = m_setupController->channelNameOffsetX();
+    obj["channel_name_offset_y"] = m_setupController->channelNameOffsetY();
 
     // Channel name design
     obj["channel_name_shape"] = m_setupController->channelNameShape();

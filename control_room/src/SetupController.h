@@ -62,6 +62,12 @@ class SetupController : public QObject {
     Q_PROPERTY(bool showChannelNameText READ showChannelNameText WRITE setShowChannelNameText NOTIFY brandingChanged)
     Q_PROPERTY(bool keepLogoDuringAds READ keepLogoDuringAds WRITE setKeepLogoDuringAds NOTIFY brandingChanged)
 
+    // Channel logo/name offsets
+    Q_PROPERTY(int channelLogoOffsetX READ channelLogoOffsetX WRITE setChannelLogoOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int channelLogoOffsetY READ channelLogoOffsetY WRITE setChannelLogoOffsetY NOTIFY brandingChanged)
+    Q_PROPERTY(int channelNameOffsetX READ channelNameOffsetX WRITE setChannelNameOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int channelNameOffsetY READ channelNameOffsetY WRITE setChannelNameOffsetY NOTIFY brandingChanged)
+
     // Channel name design
     Q_PROPERTY(QString channelNameShape READ channelNameShape WRITE setChannelNameShape NOTIFY brandingChanged)
     Q_PROPERTY(QString channelNameBgColor READ channelNameBgColor WRITE setChannelNameBgColor NOTIFY brandingChanged)
@@ -172,6 +178,16 @@ public:
     bool keepLogoDuringAds() const { return m_keepLogoDuringAds; }
     void setKeepLogoDuringAds(bool v);
 
+    // Channel logo/name offsets
+    int channelLogoOffsetX() const { return m_channelLogoOffsetX; }
+    void setChannelLogoOffsetX(int v);
+    int channelLogoOffsetY() const { return m_channelLogoOffsetY; }
+    void setChannelLogoOffsetY(int v);
+    int channelNameOffsetX() const { return m_channelNameOffsetX; }
+    void setChannelNameOffsetX(int v);
+    int channelNameOffsetY() const { return m_channelNameOffsetY; }
+    void setChannelNameOffsetY(int v);
+
     // Channel name design
     QString channelNameShape() const { return m_channelNameShape; }
     void setChannelNameShape(const QString& v);
@@ -259,6 +275,10 @@ private:
     int     m_channelLogoSize = 60;
     bool    m_showChannelNameText = true;
     bool    m_keepLogoDuringAds = true;
+    int     m_channelLogoOffsetX = 0;
+    int     m_channelLogoOffsetY = 0;
+    int     m_channelNameOffsetX = 0;
+    int     m_channelNameOffsetY = 0;
 
     // Channel name design
     QString m_channelNameShape = "rectangle";

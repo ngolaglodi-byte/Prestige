@@ -170,16 +170,24 @@ Item {
                     visible: setupController.channelLogoPath !== "" && !liveController.isBypassed
                     source: setupController.channelLogoPath ? ("file:///" + setupController.channelLogoPath) : ""
 
-                    // Position based on config
-                    property string pos: setupController.channelLogoPosition
-                    anchors.top: (pos === "top_right" || pos === "top_left") ? parent.top : undefined
-                    anchors.bottom: (pos === "bottom_right" || pos === "bottom_left") ? parent.bottom : undefined
-                    anchors.right: (pos === "top_right" || pos === "bottom_right") ? parent.right : undefined
-                    anchors.left: (pos === "top_left" || pos === "bottom_left") ? parent.left : undefined
-                    anchors.margins: 16 * wysiwygOverlay.sf
-
                     height: setupController.channelLogoSize * wysiwygOverlay.sf
                     fillMode: Image.PreserveAspectFit
+
+                    // Base position + offset
+                    property string pos: setupController.channelLogoPosition
+                    property real baseMargin: 16 * wysiwygOverlay.sf
+                    x: {
+                        if (pos === "top_left" || pos === "bottom_left")
+                            return baseMargin + setupController.channelLogoOffsetX * wysiwygOverlay.sf
+                        else
+                            return parent.width - width - baseMargin + setupController.channelLogoOffsetX * wysiwygOverlay.sf
+                    }
+                    y: {
+                        if (pos === "top_left" || pos === "top_right")
+                            return baseMargin + setupController.channelLogoOffsetY * wysiwygOverlay.sf
+                        else
+                            return parent.height - height - baseMargin + setupController.channelLogoOffsetY * wysiwygOverlay.sf
+                    }
 
                     // Loop animation
                     property string loopAnim: setupController.logoLoopAnim
@@ -198,17 +206,24 @@ Item {
                     id: previewChannelName
                     visible: setupController.showChannelNameText && configManager.channelName !== "" && !liveController.isBypassed
 
-                    property string pos: setupController.channelLogoPosition
-                    // Position below logo or standalone
-                    anchors.top: previewLogo.visible ? previewLogo.bottom : ((pos === "top_right" || pos === "top_left") ? parent.top : undefined)
-                    anchors.bottom: (!previewLogo.visible && (pos === "bottom_right" || pos === "bottom_left")) ? parent.bottom : undefined
-                    anchors.right: (pos === "top_right" || pos === "bottom_right") ? parent.right : undefined
-                    anchors.left: (pos === "top_left" || pos === "bottom_left") ? parent.left : undefined
-                    anchors.margins: 10 * wysiwygOverlay.sf
-                    anchors.topMargin: previewLogo.visible ? 4 * wysiwygOverlay.sf : 16 * wysiwygOverlay.sf
-
                     width: nameLbl.implicitWidth + 16 * wysiwygOverlay.sf
                     height: nameLbl.implicitHeight + 8 * wysiwygOverlay.sf
+
+                    property string pos: setupController.channelLogoPosition
+                    property real baseMargin: 10 * wysiwygOverlay.sf
+                    x: {
+                        if (pos === "top_left" || pos === "bottom_left")
+                            return baseMargin + setupController.channelNameOffsetX * wysiwygOverlay.sf
+                        else
+                            return parent.width - width - baseMargin + setupController.channelNameOffsetX * wysiwygOverlay.sf
+                    }
+                    y: {
+                        var logoBottom = previewLogo.visible ? (previewLogo.y + previewLogo.height + 4 * wysiwygOverlay.sf) : 0
+                        if (pos === "top_left" || pos === "top_right")
+                            return (previewLogo.visible ? logoBottom : baseMargin) + setupController.channelNameOffsetY * wysiwygOverlay.sf
+                        else
+                            return parent.height - height - baseMargin + setupController.channelNameOffsetY * wysiwygOverlay.sf
+                    }
                     radius: {
                         var shape = setupController.channelNameShape
                         if (shape === "pill") return height / 2

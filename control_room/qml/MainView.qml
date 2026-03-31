@@ -1247,6 +1247,16 @@ ApplicationWindow {
                         contentItem: Label { text: logoPosCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
                     }
                 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelLogoOffsetX; Layout.fillWidth: true; onMoved: setupController.channelLogoOffsetX = value }
+                    Label { text: setupController.channelLogoOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelLogoOffsetY; Layout.fillWidth: true; onMoved: setupController.channelLogoOffsetY = value }
+                    Label { text: setupController.channelLogoOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
                 RowLayout {
                     spacing: 8
                     Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666" }
@@ -1334,6 +1344,16 @@ ApplicationWindow {
                     Label { text: "Taille police:"; color: window.darkMode ? "#999" : "#666" }
                     Slider { id: nameFontSlider; from: 8; to: 36; stepSize: 1; value: setupController.channelNameFontSize; onMoved: setupController.channelNameFontSize = value }
                     Label { text: Math.round(nameFontSlider.value) + "pt"; color: window.darkMode ? "#999" : "#666" }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetX; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetX = value }
+                    Label { text: setupController.channelNameOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetY; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetY = value }
+                    Label { text: setupController.channelNameOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                 }
                 RowLayout {
                     spacing: 8
