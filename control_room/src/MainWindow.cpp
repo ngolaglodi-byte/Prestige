@@ -331,6 +331,10 @@ void MainWindow::publishConfig()
     obj["accent_color"] = m_setupController->accentColor().name();
     obj["bg_opacity"] = m_setupController->backgroundOpacity();
 
+    // Input source config
+    obj["input_type"] = m_setupController->inputType();
+    obj["input_source"] = m_setupController->inputSource();
+
     // Ticker config
     obj["ticker_visible"] = !m_rssFetcher->headlines().isEmpty();
     obj["ticker_text"] = m_rssFetcher->headlines();

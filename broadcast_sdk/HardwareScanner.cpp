@@ -56,13 +56,50 @@ void HardwareScanner::scanWebcams()
     auto cameras = QMediaDevices::videoInputs();
     for (const auto& cam : cameras) {
         QVariantMap dev;
-        dev["type"] = "webcam";
-        dev["name"] = cam.description();
-        dev["driver"] = "Système";
+        QString name = cam.description();
+        QString devType = "webcam";
+        QString driver = "Système";
+        QString mixerBrand;
+
+        // Detect mixer brands from USB device name
+        if (name.contains("Blackmagic", Qt::CaseInsensitive) || name.contains("ATEM", Qt::CaseInsensitive)) {
+            devType = "mixer_usb";
+            mixerBrand = "Blackmagic ATEM";
+            driver = "ATEM USB (UVC)";
+        } else if (name.contains("Roland", Qt::CaseInsensitive) || name.contains("VR-", Qt::CaseInsensitive) || name.contains("V-8HD", Qt::CaseInsensitive)) {
+            devType = "mixer_usb";
+            mixerBrand = "Roland";
+            driver = "Roland USB (UVC)";
+        } else if (name.contains("Panasonic", Qt::CaseInsensitive) || name.contains("AV-HS", Qt::CaseInsensitive)) {
+            devType = "mixer_usb";
+            mixerBrand = "Panasonic";
+            driver = "Panasonic USB";
+        } else if (name.contains("Elgato", Qt::CaseInsensitive) || name.contains("Cam Link", Qt::CaseInsensitive) || name.contains("HD60", Qt::CaseInsensitive)) {
+            devType = "capture_card";
+            mixerBrand = "Elgato";
+            driver = "Elgato Capture";
+        } else if (name.contains("Magewell", Qt::CaseInsensitive) || name.contains("USB Capture", Qt::CaseInsensitive)) {
+            devType = "capture_card";
+            mixerBrand = "Magewell USB";
+            driver = "Magewell USB Capture";
+        } else if (name.contains("AVerMedia", Qt::CaseInsensitive)) {
+            devType = "capture_card";
+            mixerBrand = "AVerMedia";
+            driver = "AVerMedia Capture";
+        }
+
+        dev["type"] = devType;
+        dev["name"] = name;
+        dev["driver"] = driver;
         dev["available"] = true;
         dev["id"] = cam.id();
+        dev["mixerBrand"] = mixerBrand;
         m_devices.append(dev);
-        qInfo() << "[HardwareScanner]   Webcam:" << cam.description();
+
+        if (!mixerBrand.isEmpty())
+            qInfo() << "[HardwareScanner]   Mixer détecté:" << mixerBrand << "—" << name;
+        else
+            qInfo() << "[HardwareScanner]   Webcam:" << name;
     }
 }
 

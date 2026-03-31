@@ -78,6 +78,91 @@ Item {
             }
         }
 
+        // ── Detected Devices Section ─────────────────────────
+        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 12; Layout.rightMargin: 12 }
+        Label { text: "Appareils détectés"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+        Label { text: hardwareScanner.devices.length + " appareil(s) trouvé(s)"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
+
+        ListView {
+            Layout.fillWidth: true; Layout.preferredHeight: Math.min(200, hardwareScanner.devices.length * 52); clip: true
+            model: hardwareScanner.devices
+            spacing: 4
+            delegate: Rectangle {
+                width: ListView.view.width - 24; height: 48; x: 12; radius: 8
+                color: window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.03)
+                border.color: modelData.available ? (window.darkMode ? Qt.rgba(29/255,185/255,84/255,0.2) : Qt.rgba(29/255,185/255,84/255,0.3)) : "transparent"
+
+                RowLayout {
+                    anchors.fill: parent; anchors.margins: 10; spacing: 10
+
+                    // Icon based on type
+                    Label {
+                        text: {
+                            var t = modelData.type
+                            if (t === "mixer_usb") return "\uD83C\uDFAC"
+                            if (t === "capture_card") return "\uD83D\uDCF9"
+                            if (t === "decklink") return "\uD83D\uDD33"
+                            if (t === "ndi") return "\uD83C\uDF10"
+                            if (t === "aja") return "\uD83D\uDD33"
+                            if (t === "magewell") return "\uD83D\uDCF9"
+                            return "\uD83D\uDCF7"
+                        }
+                        font.pixelSize: 20
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true; spacing: 1
+                        Label {
+                            text: modelData.name
+                            font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: window.darkMode ? "white" : "#1A1A1A"
+                            elide: Text.ElideRight; Layout.fillWidth: true
+                        }
+                        Label {
+                            text: modelData.driver + (modelData.mixerBrand ? (" \u2014 " + modelData.mixerBrand) : "")
+                            font.pixelSize: 9; color: window.darkMode ? "#888" : "#666"
+                        }
+                    }
+
+                    // Status indicator
+                    Rectangle {
+                        Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4
+                        color: modelData.available ? "#1DB954" : "#CC3333"
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent; cursorShape: modelData.available ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: {
+                        if (modelData.available) {
+                            if (modelData.type === "ndi") {
+                                setupController.inputType = "ndi"
+                                setupController.inputSource = modelData.name
+                            } else if (modelData.type === "decklink") {
+                                setupController.inputType = "decklink"
+                                setupController.inputSource = modelData.name
+                            } else if (modelData.type === "aja") {
+                                setupController.inputType = "aja"
+                            } else if (modelData.type === "magewell") {
+                                setupController.inputType = "magewell"
+                            } else {
+                                setupController.inputType = "webcam"
+                                setupController.inputSource = modelData.name
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Refresh button
+        Rectangle {
+            Layout.preferredWidth: 140; Layout.preferredHeight: 32; Layout.leftMargin: 12; radius: 6
+            color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
+            Label { anchors.centerIn: parent; text: "\u21BB Scanner le matériel"; font.pixelSize: 10; color: "#5B4FDB" }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: hardwareScanner.scan() }
+        }
+
         // ── NDI Source Discovery Panel ──────────────────────
         Rectangle {
             Layout.fillWidth: true

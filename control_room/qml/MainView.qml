@@ -1771,6 +1771,72 @@ ApplicationWindow {
         }
     }
 
+    // ── Setup Assistant Dialog (first launch) ───────────────
+    Dialog {
+        id: setupAssistantDialog
+        anchors.centerIn: parent; width: 560; modal: true
+        standardButtons: Dialog.NoButton
+        background: Rectangle { color: window.darkMode ? "#12121A" : "#FFFFFF"; radius: 16; border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.1) }
+        Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.7) }
+
+        // Show after channel name is set AND no source configured
+        Connections {
+            target: configManager
+            function onChannelNameChanged() {
+                if (configManager.channelName !== "" && setupController.inputSource === "")
+                    setupAssistantDialog.open()
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 16
+            Item { Layout.preferredHeight: 8 }
+            Label { text: "Configuration rapide"; font.pixelSize: 20; font.weight: Font.Bold; color: window.darkMode ? "white" : "#1A1A1A"; Layout.alignment: Qt.AlignHCenter }
+            Label { text: "Comment recevez-vous le signal vidéo ?"; font.pixelSize: 13; color: window.darkMode ? "#999" : "#666"; Layout.alignment: Qt.AlignHCenter }
+            Item { Layout.preferredHeight: 4 }
+
+            // Option cards
+            Repeater {
+                model: [
+                    { icon: "\uD83D\uDCF7", title: "Webcam / Caméra USB", desc: "Connectée directement en USB", action: "webcam" },
+                    { icon: "\uD83C\uDFAC", title: "Mixer USB (ATEM, Roland...)", desc: "La sortie programme du mixer en USB", action: "mixer" },
+                    { icon: "\uD83C\uDF10", title: "NDI (réseau)", desc: "vMix, OBS, TriCaster via réseau local", action: "ndi" },
+                    { icon: "\uD83D\uDD33", title: "SDI / HDMI (carte capture)", desc: "DeckLink, AJA, Magewell, Elgato", action: "sdi" }
+                ]
+                Rectangle {
+                    Layout.fillWidth: true; Layout.leftMargin: 20; Layout.rightMargin: 20
+                    Layout.preferredHeight: 56; radius: 10
+                    color: assistCardMa.containsMouse ? (window.darkMode ? Qt.rgba(91/255,79/255,219/255,0.1) : Qt.rgba(91/255,79/255,219/255,0.08)) : (window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.03))
+                    border.color: assistCardMa.containsMouse ? "#5B4FDB" : (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08))
+                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                    RowLayout {
+                        anchors.fill: parent; anchors.margins: 12; spacing: 12
+                        Label { text: modelData.icon; font.pixelSize: 24 }
+                        ColumnLayout { Layout.fillWidth: true; spacing: 2
+                            Label { text: modelData.title; font.pixelSize: 13; font.weight: Font.DemiBold; color: window.darkMode ? "white" : "#1A1A1A" }
+                            Label { text: modelData.desc; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                        }
+                        Label { text: "\u203A"; font.pixelSize: 20; color: "#5B4FDB" }
+                    }
+
+                    MouseArea {
+                        id: assistCardMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            setupAssistantDialog.close()
+                            navPanelDrawer.activePanel = 0
+                            navPanelDrawer.open()
+                        }
+                    }
+                }
+            }
+
+            Item { Layout.preferredHeight: 4 }
+            Label { text: "Vous pourrez changer ce réglage à tout moment\ndans le panneau Entrées"; font.pixelSize: 10; color: window.darkMode ? "#555" : "#999"; Layout.alignment: Qt.AlignHCenter; horizontalAlignment: Text.AlignHCenter }
+            Item { Layout.preferredHeight: 8 }
+        }
+    }
+
     // ── Output Window (2nd Monitor) ─────────────────────────
     Window {
         id: outputWindow
