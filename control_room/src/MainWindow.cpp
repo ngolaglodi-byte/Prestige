@@ -391,6 +391,23 @@ void MainWindow::publishConfig()
     obj["show_title_entry_anim"] = m_setupController->showTitleEntryAnim();
     obj["show_title_loop_anim"] = m_setupController->showTitleLoopAnim();
 
+    // Overlay element offsets
+    obj["show_title_offset_x"] = m_setupController->showTitleOffsetX();
+    obj["show_title_offset_y"] = m_setupController->showTitleOffsetY();
+    obj["ticker_offset_y"] = m_setupController->tickerOffsetY();
+    obj["subtitle_offset_x"] = m_setupController->subtitleOffsetX();
+    obj["subtitle_offset_y"] = m_setupController->subtitleOffsetY();
+    obj["countdown_offset_x"] = m_setupController->countdownOffsetX();
+    obj["countdown_offset_y"] = m_setupController->countdownOffsetY();
+    obj["clock_offset_x"] = m_setupController->clockOffsetX();
+    obj["clock_offset_y"] = m_setupController->clockOffsetY();
+    obj["qr_offset_x"] = m_setupController->qrCodeOffsetX();
+    obj["qr_offset_y"] = m_setupController->qrCodeOffsetY();
+    obj["scoreboard_offset_x"] = m_setupController->scoreboardOffsetX();
+    obj["scoreboard_offset_y"] = m_setupController->scoreboardOffsetY();
+    obj["weather_offset_x"] = m_setupController->weatherOffsetX();
+    obj["weather_offset_y"] = m_setupController->weatherOffsetY();
+
     // Visibility states — gated behind overlays_active
     // Channel branding (logo, name) is sent unconditionally above
     // Only talent nameplates and show title depend on overlay activation

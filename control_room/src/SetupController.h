@@ -89,6 +89,37 @@ class SetupController : public QObject {
     Q_PROPERTY(bool showTitleEnabled READ showTitleEnabled WRITE setShowTitleEnabled NOTIFY showTitleChanged)
     Q_PROPERTY(QString showTitlePosition READ showTitlePosition WRITE setShowTitlePosition NOTIFY showTitleChanged)
 
+    // Show title offsets
+    Q_PROPERTY(int showTitleOffsetX READ showTitleOffsetX WRITE setShowTitleOffsetX NOTIFY showTitleChanged)
+    Q_PROPERTY(int showTitleOffsetY READ showTitleOffsetY WRITE setShowTitleOffsetY NOTIFY showTitleChanged)
+
+    // Ticker offset (Y only — horizontal position is full width)
+    Q_PROPERTY(int tickerOffsetY READ tickerOffsetY WRITE setTickerOffsetY NOTIFY brandingChanged)
+
+    // Subtitle offsets
+    Q_PROPERTY(int subtitleOffsetX READ subtitleOffsetX WRITE setSubtitleOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int subtitleOffsetY READ subtitleOffsetY WRITE setSubtitleOffsetY NOTIFY brandingChanged)
+
+    // Countdown offsets
+    Q_PROPERTY(int countdownOffsetX READ countdownOffsetX WRITE setCountdownOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int countdownOffsetY READ countdownOffsetY WRITE setCountdownOffsetY NOTIFY brandingChanged)
+
+    // Clock offsets
+    Q_PROPERTY(int clockOffsetX READ clockOffsetX WRITE setClockOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int clockOffsetY READ clockOffsetY WRITE setClockOffsetY NOTIFY brandingChanged)
+
+    // QR Code offsets
+    Q_PROPERTY(int qrCodeOffsetX READ qrCodeOffsetX WRITE setQrCodeOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int qrCodeOffsetY READ qrCodeOffsetY WRITE setQrCodeOffsetY NOTIFY brandingChanged)
+
+    // Scoreboard offsets
+    Q_PROPERTY(int scoreboardOffsetX READ scoreboardOffsetX WRITE setScoreboardOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int scoreboardOffsetY READ scoreboardOffsetY WRITE setScoreboardOffsetY NOTIFY brandingChanged)
+
+    // Weather offsets
+    Q_PROPERTY(int weatherOffsetX READ weatherOffsetX WRITE setWeatherOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int weatherOffsetY READ weatherOffsetY WRITE setWeatherOffsetY NOTIFY brandingChanged)
+
     // Show title design & animation
     Q_PROPERTY(QString showTitleShape READ showTitleShape WRITE setShowTitleShape NOTIFY showTitleChanged)
     Q_PROPERTY(QString showTitleBgColor READ showTitleBgColor WRITE setShowTitleBgColor NOTIFY showTitleChanged)
@@ -238,6 +269,52 @@ public:
     QString showTitleLoopAnim() const { return m_showTitleLoopAnim; }
     void setShowTitleLoopAnim(const QString& v);
 
+    // Show title offsets
+    int showTitleOffsetX() const { return m_showTitleOffsetX; }
+    void setShowTitleOffsetX(int v);
+    int showTitleOffsetY() const { return m_showTitleOffsetY; }
+    void setShowTitleOffsetY(int v);
+
+    // Ticker offset
+    int tickerOffsetY() const { return m_tickerOffsetY; }
+    void setTickerOffsetY(int v);
+
+    // Subtitle offsets
+    int subtitleOffsetX() const { return m_subtitleOffsetX; }
+    void setSubtitleOffsetX(int v);
+    int subtitleOffsetY() const { return m_subtitleOffsetY; }
+    void setSubtitleOffsetY(int v);
+
+    // Countdown offsets
+    int countdownOffsetX() const { return m_countdownOffsetX; }
+    void setCountdownOffsetX(int v);
+    int countdownOffsetY() const { return m_countdownOffsetY; }
+    void setCountdownOffsetY(int v);
+
+    // Clock offsets
+    int clockOffsetX() const { return m_clockOffsetX; }
+    void setClockOffsetX(int v);
+    int clockOffsetY() const { return m_clockOffsetY; }
+    void setClockOffsetY(int v);
+
+    // QR Code offsets
+    int qrCodeOffsetX() const { return m_qrCodeOffsetX; }
+    void setQrCodeOffsetX(int v);
+    int qrCodeOffsetY() const { return m_qrCodeOffsetY; }
+    void setQrCodeOffsetY(int v);
+
+    // Scoreboard offsets
+    int scoreboardOffsetX() const { return m_scoreboardOffsetX; }
+    void setScoreboardOffsetX(int v);
+    int scoreboardOffsetY() const { return m_scoreboardOffsetY; }
+    void setScoreboardOffsetY(int v);
+
+    // Weather offsets
+    int weatherOffsetX() const { return m_weatherOffsetX; }
+    void setWeatherOffsetX(int v);
+    int weatherOffsetY() const { return m_weatherOffsetY; }
+    void setWeatherOffsetY(int v);
+
     // Talent display timing
     int talentDisplayDurationSec() const { return m_talentDisplayDurationSec; }
     void setTalentDisplayDurationSec(int v);
@@ -309,6 +386,37 @@ private:
     int     m_showTitleFontSize = 16;
     QString m_showTitleEntryAnim = "slide_up";
     QString m_showTitleLoopAnim = "none";
+
+    // Show title offsets
+    int     m_showTitleOffsetX = 0;
+    int     m_showTitleOffsetY = 0;
+
+    // Ticker offset
+    int     m_tickerOffsetY = 0;
+
+    // Subtitle offsets
+    int     m_subtitleOffsetX = 0;
+    int     m_subtitleOffsetY = 0;
+
+    // Countdown offsets
+    int     m_countdownOffsetX = 0;
+    int     m_countdownOffsetY = 0;
+
+    // Clock offsets
+    int     m_clockOffsetX = 0;
+    int     m_clockOffsetY = 0;
+
+    // QR Code offsets
+    int     m_qrCodeOffsetX = 0;
+    int     m_qrCodeOffsetY = 0;
+
+    // Scoreboard offsets
+    int     m_scoreboardOffsetX = 0;
+    int     m_scoreboardOffsetY = 0;
+
+    // Weather offsets
+    int     m_weatherOffsetX = 0;
+    int     m_weatherOffsetY = 0;
 
     // Talent display timing
     int     m_talentDisplayDurationSec = 8;

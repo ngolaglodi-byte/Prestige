@@ -1210,7 +1210,7 @@ ApplicationWindow {
     // ── Branding Dialog (Habillage chaine) ────────────────
     Dialog {
         id: brandingDialog
-        anchors.centerIn: parent; width: 560; height: 740; modal: true
+        anchors.centerIn: parent; width: 560; height: 920; modal: true
         standardButtons: Dialog.NoButton
         background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; radius: 12; border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.1) }
         Overlay.modal: Rectangle { color: Qt.rgba(0,0,0,0.6) }
@@ -1405,6 +1405,16 @@ ApplicationWindow {
                         contentItem: Label { text: titlePosCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
                     }
                 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.showTitleOffsetX; Layout.fillWidth: true; onMoved: setupController.showTitleOffsetX = value }
+                    Label { text: setupController.showTitleOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.showTitleOffsetY; Layout.fillWidth: true; onMoved: setupController.showTitleOffsetY = value }
+                    Label { text: setupController.showTitleOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
 
                 // Show title design
                 RowLayout {
@@ -1482,6 +1492,97 @@ ApplicationWindow {
                         background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                         contentItem: Label { text: stLoopCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
                     }
+                }
+
+                // ── OVERLAY POSITIONS SECTION ─────────────────
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+                Label { text: "Positions des overlays"; font.pixelSize: 12; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
+                Label { text: "Ajustez la position de chaque element sur l'ecran"; font.pixelSize: 9; color: window.darkMode ? "#666" : "#999"; leftPadding: 8 }
+
+                // Ticker
+                Label { text: "Ticker"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -100; to: 100; stepSize: 1; value: setupController.tickerOffsetY; Layout.fillWidth: true; onMoved: setupController.tickerOffsetY = value }
+                    Label { text: setupController.tickerOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+
+                // Sous-titres
+                Label { text: "Sous-titres"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -300; to: 300; stepSize: 1; value: setupController.subtitleOffsetX; Layout.fillWidth: true; onMoved: setupController.subtitleOffsetX = value }
+                    Label { text: setupController.subtitleOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.subtitleOffsetY; Layout.fillWidth: true; onMoved: setupController.subtitleOffsetY = value }
+                    Label { text: setupController.subtitleOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+
+                // Countdown
+                Label { text: "Countdown"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.countdownOffsetX; Layout.fillWidth: true; onMoved: setupController.countdownOffsetX = value }
+                    Label { text: setupController.countdownOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.countdownOffsetY; Layout.fillWidth: true; onMoved: setupController.countdownOffsetY = value }
+                    Label { text: setupController.countdownOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+
+                // Horloge
+                Label { text: "Horloge"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.clockOffsetX; Layout.fillWidth: true; onMoved: setupController.clockOffsetX = value }
+                    Label { text: setupController.clockOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.clockOffsetY; Layout.fillWidth: true; onMoved: setupController.clockOffsetY = value }
+                    Label { text: setupController.clockOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+
+                // QR Code
+                Label { text: "QR Code"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.qrCodeOffsetX; Layout.fillWidth: true; onMoved: setupController.qrCodeOffsetX = value }
+                    Label { text: setupController.qrCodeOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.qrCodeOffsetY; Layout.fillWidth: true; onMoved: setupController.qrCodeOffsetY = value }
+                    Label { text: setupController.qrCodeOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+
+                // Scoreboard
+                Label { text: "Scoreboard"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.scoreboardOffsetX; Layout.fillWidth: true; onMoved: setupController.scoreboardOffsetX = value }
+                    Label { text: setupController.scoreboardOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.scoreboardOffsetY; Layout.fillWidth: true; onMoved: setupController.scoreboardOffsetY = value }
+                    Label { text: setupController.scoreboardOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+
+                // Meteo
+                Label { text: "Meteo"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.weatherOffsetX; Layout.fillWidth: true; onMoved: setupController.weatherOffsetX = value }
+                    Label { text: setupController.weatherOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                }
+                RowLayout { spacing: 4; Layout.leftMargin: 8
+                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.weatherOffsetY; Layout.fillWidth: true; onMoved: setupController.weatherOffsetY = value }
+                    Label { text: setupController.weatherOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                 }
 
                 // ── TIMING SECTION ────────────────────────────

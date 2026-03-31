@@ -262,11 +262,21 @@ Item {
                     visible: setupController.showTitleEnabled && setupController.showTitle !== "" && liveController.showTitleVisible && !liveController.isBypassed
 
                     property string pos: setupController.showTitlePosition
-                    anchors.bottom: (pos === "bottom_left" || pos === "bottom_right") ? wysiwygTickerBar.top : undefined
-                    anchors.top: (pos === "top_left" || pos === "top_right") ? parent.top : undefined
-                    anchors.left: (pos === "bottom_left" || pos === "top_left") ? parent.left : undefined
-                    anchors.right: (pos === "bottom_right" || pos === "top_right") ? parent.right : undefined
-                    anchors.margins: 16 * wysiwygOverlay.sf
+                    property real baseMargin: 16 * wysiwygOverlay.sf
+                    x: {
+                        if (pos === "bottom_left" || pos === "top_left")
+                            return baseMargin + setupController.showTitleOffsetX * wysiwygOverlay.sf
+                        else
+                            return parent.width - width - baseMargin + setupController.showTitleOffsetX * wysiwygOverlay.sf
+                    }
+                    y: {
+                        if (pos === "top_left" || pos === "top_right")
+                            return baseMargin + setupController.showTitleOffsetY * wysiwygOverlay.sf
+                        else {
+                            var tickerH = wysiwygTickerBar.visible ? wysiwygTickerBar.height + 8 * wysiwygOverlay.sf : 0
+                            return parent.height - height - baseMargin - tickerH + setupController.showTitleOffsetY * wysiwygOverlay.sf
+                        }
+                    }
 
                     width: titleCol.implicitWidth + 24 * wysiwygOverlay.sf
                     height: titleCol.implicitHeight + 12 * wysiwygOverlay.sf
@@ -345,7 +355,7 @@ Item {
                 Rectangle {
                     id: wysiwygTickerBar
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: wysiwygSubtitleBar.visible ? (wysiwygSubtitleBar.height + 8 * wysiwygOverlay.sf) : 0
+                    anchors.bottomMargin: (wysiwygSubtitleBar.visible ? (wysiwygSubtitleBar.height + 8 * wysiwygOverlay.sf) : 0) - setupController.tickerOffsetY * wysiwygOverlay.sf
                     anchors.left: parent.left; anchors.right: parent.right
                     height: visible ? 28 * wysiwygOverlay.sf : 0
                     visible: rssFetcher.headlines !== "" && mainWindow.overlaysActive && !liveController.isBypassed
@@ -369,8 +379,8 @@ Item {
                 // ── Subtitles ────────────────────────────────
                 Rectangle {
                     id: wysiwygSubtitleBar
-                    anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottomMargin: 4 * wysiwygOverlay.sf
+                    x: (parent.width - width) / 2 + setupController.subtitleOffsetX * wysiwygOverlay.sf
+                    y: parent.height - height - 4 * wysiwygOverlay.sf + setupController.subtitleOffsetY * wysiwygOverlay.sf
                     visible: subtitleController.enabled && subtitleController.currentText !== "" && !liveController.isBypassed
 
                     width: subLbl.implicitWidth + 24 * wysiwygOverlay.sf
@@ -389,9 +399,8 @@ Item {
                 // ── Countdown (top-left area) ────────────────
                 Rectangle {
                     visible: liveController.countdownActive && !liveController.isBypassed
-                    anchors.top: parent.top; anchors.left: parent.left
-                    anchors.margins: 16 * wysiwygOverlay.sf
-                    anchors.topMargin: (previewLogo.visible ? previewLogo.height + 24 : 16) * wysiwygOverlay.sf
+                    x: 16 * wysiwygOverlay.sf + setupController.countdownOffsetX * wysiwygOverlay.sf
+                    y: (previewLogo.visible ? previewLogo.height + 24 : 16) * wysiwygOverlay.sf + setupController.countdownOffsetY * wysiwygOverlay.sf
 
                     width: cdLbl.implicitWidth + 20 * wysiwygOverlay.sf
                     height: cdLbl.implicitHeight + 10 * wysiwygOverlay.sf
@@ -415,8 +424,8 @@ Item {
                 // ── Clock (top-right) ────────────────────────
                 Rectangle {
                     visible: mainWindow.overlaysActive
-                    anchors.top: parent.top; anchors.right: parent.right
-                    anchors.margins: 16 * wysiwygOverlay.sf
+                    x: parent.width - width - 16 * wysiwygOverlay.sf + setupController.clockOffsetX * wysiwygOverlay.sf
+                    y: 16 * wysiwygOverlay.sf + setupController.clockOffsetY * wysiwygOverlay.sf
 
                     width: clockLbl.implicitWidth + 14 * wysiwygOverlay.sf
                     height: clockLbl.implicitHeight + 8 * wysiwygOverlay.sf
@@ -436,11 +445,21 @@ Item {
                     visible: liveController.qrCodeVisible && liveController.qrCodeUrl !== "" && !liveController.isBypassed
 
                     property string pos: liveController.qrCodePosition || "bottom_right"
-                    anchors.bottom: (pos === "bottom_right" || pos === "bottom_left") ? wysiwygTickerBar.top : undefined
-                    anchors.top: (pos === "top_right" || pos === "top_left") ? parent.top : undefined
-                    anchors.right: (pos === "bottom_right" || pos === "top_right") ? parent.right : undefined
-                    anchors.left: (pos === "bottom_left" || pos === "top_left") ? parent.left : undefined
-                    anchors.margins: 16 * wysiwygOverlay.sf
+                    property real qrBaseMargin: 16 * wysiwygOverlay.sf
+                    x: {
+                        if (pos === "bottom_left" || pos === "top_left")
+                            return qrBaseMargin + setupController.qrCodeOffsetX * wysiwygOverlay.sf
+                        else
+                            return parent.width - width - qrBaseMargin + setupController.qrCodeOffsetX * wysiwygOverlay.sf
+                    }
+                    y: {
+                        if (pos === "top_right" || pos === "top_left")
+                            return qrBaseMargin + setupController.qrCodeOffsetY * wysiwygOverlay.sf
+                        else {
+                            var tickerH = wysiwygTickerBar.visible ? wysiwygTickerBar.height : 0
+                            return parent.height - height - qrBaseMargin - tickerH + setupController.qrCodeOffsetY * wysiwygOverlay.sf
+                        }
+                    }
 
                     width: 80 * wysiwygOverlay.sf; height: 80 * wysiwygOverlay.sf
                     radius: 6 * wysiwygOverlay.sf

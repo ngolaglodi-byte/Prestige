@@ -233,6 +233,45 @@ void SetupController::setShowTitleFontSize(int v) { if (m_showTitleFontSize == v
 void SetupController::setShowTitleEntryAnim(const QString& v) { if (m_showTitleEntryAnim == v) return; m_showTitleEntryAnim = v; emit showTitleChanged(); }
 void SetupController::setShowTitleLoopAnim(const QString& v) { if (m_showTitleLoopAnim == v) return; m_showTitleLoopAnim = v; emit showTitleChanged(); }
 
+// ── Show title offsets ───────────────────────────────────────
+
+void SetupController::setShowTitleOffsetX(int v) { if (m_showTitleOffsetX == v) return; m_showTitleOffsetX = v; emit showTitleChanged(); }
+void SetupController::setShowTitleOffsetY(int v) { if (m_showTitleOffsetY == v) return; m_showTitleOffsetY = v; emit showTitleChanged(); }
+
+// ── Ticker offset ───────────────────────────────────────────
+
+void SetupController::setTickerOffsetY(int v) { if (m_tickerOffsetY == v) return; m_tickerOffsetY = v; emit brandingChanged(); }
+
+// ── Subtitle offsets ────────────────────────────────────────
+
+void SetupController::setSubtitleOffsetX(int v) { if (m_subtitleOffsetX == v) return; m_subtitleOffsetX = v; emit brandingChanged(); }
+void SetupController::setSubtitleOffsetY(int v) { if (m_subtitleOffsetY == v) return; m_subtitleOffsetY = v; emit brandingChanged(); }
+
+// ── Countdown offsets ───────────────────────────────────────
+
+void SetupController::setCountdownOffsetX(int v) { if (m_countdownOffsetX == v) return; m_countdownOffsetX = v; emit brandingChanged(); }
+void SetupController::setCountdownOffsetY(int v) { if (m_countdownOffsetY == v) return; m_countdownOffsetY = v; emit brandingChanged(); }
+
+// ── Clock offsets ───────────────────────────────────────────
+
+void SetupController::setClockOffsetX(int v) { if (m_clockOffsetX == v) return; m_clockOffsetX = v; emit brandingChanged(); }
+void SetupController::setClockOffsetY(int v) { if (m_clockOffsetY == v) return; m_clockOffsetY = v; emit brandingChanged(); }
+
+// ── QR Code offsets ─────────────────────────────────────────
+
+void SetupController::setQrCodeOffsetX(int v) { if (m_qrCodeOffsetX == v) return; m_qrCodeOffsetX = v; emit brandingChanged(); }
+void SetupController::setQrCodeOffsetY(int v) { if (m_qrCodeOffsetY == v) return; m_qrCodeOffsetY = v; emit brandingChanged(); }
+
+// ── Scoreboard offsets ──────────────────────────────────────
+
+void SetupController::setScoreboardOffsetX(int v) { if (m_scoreboardOffsetX == v) return; m_scoreboardOffsetX = v; emit brandingChanged(); }
+void SetupController::setScoreboardOffsetY(int v) { if (m_scoreboardOffsetY == v) return; m_scoreboardOffsetY = v; emit brandingChanged(); }
+
+// ── Weather offsets ─────────────────────────────────────────
+
+void SetupController::setWeatherOffsetX(int v) { if (m_weatherOffsetX == v) return; m_weatherOffsetX = v; emit brandingChanged(); }
+void SetupController::setWeatherOffsetY(int v) { if (m_weatherOffsetY == v) return; m_weatherOffsetY = v; emit brandingChanged(); }
+
 // ── Talent display timing ───────────────────────────────────
 
 void SetupController::setTalentDisplayDurationSec(int v) { if (m_talentDisplayDurationSec == v) return; m_talentDisplayDurationSec = qBound(3, v, 30); emit timingChanged(); }
