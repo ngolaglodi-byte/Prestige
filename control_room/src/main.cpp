@@ -41,6 +41,9 @@ private:
 
 int main(int argc, char* argv[])
 {
+    // Force non-native Qt Quick menus (native macOS menus break with custom styling)
+    qputenv("QT_QUICK_CONTROLS_USE_NATIVE_MENUS", "0");
+
     QQuickStyle::setStyle("Basic");
 
     QApplication app(argc, argv);

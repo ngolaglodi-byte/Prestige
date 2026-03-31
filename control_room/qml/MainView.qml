@@ -204,43 +204,40 @@ ApplicationWindow {
             title: window.t("file")
             background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
 
-            Action {
+            MenuItem {
                 text: window.t("new_profile")
-                shortcut: "Ctrl+N"
                 onTriggered: newProfileDialog.open()
             }
-            Action {
+            MenuItem {
                 text: window.t("save_profile")
-                shortcut: "Ctrl+S"
                 onTriggered: { setupController.saveProfile(); savedNotif.show() }
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("export_profile")
                 onTriggered: exportProfileDialog.open()
             }
-            Action {
+            MenuItem {
                 text: window.t("import_profile")
                 onTriggered: importProfileDialog.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("scan_hw")
                 onTriggered: hardwareScanner.scan()
             }
-            Action {
+            MenuItem {
                 text: window.t("refresh_talents")
                 onTriggered: talentManager.refreshTalents()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("channel_name_menu")
                 onTriggered: channelNameDialog.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("quit")
-                shortcut: "Ctrl+Q"
                 onTriggered: Qt.quit()
             }
         }
@@ -250,35 +247,32 @@ ApplicationWindow {
             title: window.t("emission")
             background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
 
-            Action {
+            MenuItem {
                 text: mainWindow.overlaysActive ? window.t("deactivate_overlays") : window.t("activate_overlays")
-                shortcut: "F5"
                 onTriggered: {
                     if (mainWindow.overlaysActive) stopConfirmDialog.open()
                     else confirmLaunchDialog.open()
                 }
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("next_program")
-                shortcut: "Ctrl+Right"
                 onTriggered: {
                     var next = mainWindow.activeProgram + 1
                     if (next >= mainWindow.programList.length) next = 0
                     mainWindow.switchProgram(next)
                 }
             }
-            Action {
+            MenuItem {
                 text: window.t("passthrough")
-                shortcut: "Ctrl+0"
                 onTriggered: mainWindow.switchProgram(mainWindow.programList.length - 1)
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("source_config")
                 onTriggered: { configDrawer.open(); setupView.currentStep = 2 }
             }
-            Action {
+            MenuItem {
                 text: window.t("output_config")
                 onTriggered: { configDrawer.open(); setupView.currentStep = 3 }
             }
@@ -289,19 +283,19 @@ ApplicationWindow {
             title: window.t("style")
             background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
 
-            Action { text: "BFM TV"; checkable: true; checked: setupController.selectedStyle === "bfm"; onTriggered: setupController.selectedStyle = "bfm" }
-            Action { text: "LCI"; checkable: true; checked: setupController.selectedStyle === "lci"; onTriggered: setupController.selectedStyle = "lci" }
-            Action { text: "France 2"; checkable: true; checked: setupController.selectedStyle === "france2"; onTriggered: setupController.selectedStyle = "france2" }
-            Action { text: "CNN"; checkable: true; checked: setupController.selectedStyle === "cnn"; onTriggered: setupController.selectedStyle = "cnn" }
-            Action { text: "BBC News"; checkable: true; checked: setupController.selectedStyle === "bbc"; onTriggered: setupController.selectedStyle = "bbc" }
+            MenuItem { text: "BFM TV"; checkable: true; checked: setupController.selectedStyle === "bfm"; onTriggered: setupController.selectedStyle = "bfm" }
+            MenuItem { text: "LCI"; checkable: true; checked: setupController.selectedStyle === "lci"; onTriggered: setupController.selectedStyle = "lci" }
+            MenuItem { text: "France 2"; checkable: true; checked: setupController.selectedStyle === "france2"; onTriggered: setupController.selectedStyle = "france2" }
+            MenuItem { text: "CNN"; checkable: true; checked: setupController.selectedStyle === "cnn"; onTriggered: setupController.selectedStyle = "cnn" }
+            MenuItem { text: "BBC News"; checkable: true; checked: setupController.selectedStyle === "bbc"; onTriggered: setupController.selectedStyle = "bbc" }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action { text: "Cinema / Festival"; checkable: true; checked: setupController.selectedStyle === "cinema"; onTriggered: setupController.selectedStyle = "cinema" }
-            Action { text: "Luxury / Prestige"; checkable: true; checked: setupController.selectedStyle === "luxury"; onTriggered: setupController.selectedStyle = "luxury" }
-            Action { text: "Tech / Innovation"; checkable: true; checked: setupController.selectedStyle === "tech"; onTriggered: setupController.selectedStyle = "tech" }
-            Action { text: "Minimaliste"; checkable: true; checked: setupController.selectedStyle === "minimal"; onTriggered: setupController.selectedStyle = "minimal" }
+            MenuItem { text: "Cinema / Festival"; checkable: true; checked: setupController.selectedStyle === "cinema"; onTriggered: setupController.selectedStyle = "cinema" }
+            MenuItem { text: "Luxury / Prestige"; checkable: true; checked: setupController.selectedStyle === "luxury"; onTriggered: setupController.selectedStyle = "luxury" }
+            MenuItem { text: "Tech / Innovation"; checkable: true; checked: setupController.selectedStyle === "tech"; onTriggered: setupController.selectedStyle = "tech" }
+            MenuItem { text: "Minimaliste"; checkable: true; checked: setupController.selectedStyle === "minimal"; onTriggered: setupController.selectedStyle = "minimal" }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action { text: "Breaking News"; checkable: true; checked: setupController.selectedStyle === "breaking"; onTriggered: setupController.selectedStyle = "breaking" }
-            Action {
+            MenuItem { text: "Breaking News"; checkable: true; checked: setupController.selectedStyle === "breaking"; onTriggered: setupController.selectedStyle = "breaking" }
+            MenuItem {
                 text: window.t("all_styles")
                 onTriggered: { configDrawer.open(); setupView.currentStep = 0 }
             }
@@ -312,9 +306,8 @@ ApplicationWindow {
             title: window.t("display")
             background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
 
-            Action {
+            MenuItem {
                 text: window.t("fullscreen")
-                shortcut: "F11"
                 checkable: true
                 checked: window.visibility === Window.FullScreen
                 onTriggered: {
@@ -322,7 +315,7 @@ ApplicationWindow {
                     else window.showFullScreen()
                 }
             }
-            Action {
+            MenuItem {
                 text: window.t("theme")
                 checkable: true
                 checked: !window.darkMode
@@ -331,24 +324,22 @@ ApplicationWindow {
                 }
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("configure")
-                shortcut: "Ctrl+1"
                 onTriggered: configDrawer.open()
             }
-            Action {
+            MenuItem {
                 text: mainWindow.overlaysActive ? window.t("deactivate_overlays") : window.t("activate_overlays")
-                shortcut: "Ctrl+2"
                 onTriggered: mainWindow.toggleOverlays()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
             Menu {
                 title: window.t("language")
-                Action { text: "Fran\u00E7ais"; checkable: true; checked: window.lang === "fr"; onTriggered: mainWindow.language = "fr" }
-                Action { text: "English"; checkable: true; checked: window.lang === "en"; onTriggered: mainWindow.language = "en" }
-                Action { text: "Espa\u00F1ol"; checkable: true; checked: window.lang === "es"; onTriggered: mainWindow.language = "es" }
-                Action { text: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629"; checkable: true; checked: window.lang === "ar"; onTriggered: mainWindow.language = "ar" }
-                Action { text: "\u4E2D\u6587"; checkable: true; checked: window.lang === "zh"; onTriggered: mainWindow.language = "zh" }
+                MenuItem { text: "Fran\u00E7ais"; checkable: true; checked: window.lang === "fr"; onTriggered: mainWindow.language = "fr" }
+                MenuItem { text: "English"; checkable: true; checked: window.lang === "en"; onTriggered: mainWindow.language = "en" }
+                MenuItem { text: "Espa\u00F1ol"; checkable: true; checked: window.lang === "es"; onTriggered: mainWindow.language = "es" }
+                MenuItem { text: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629"; checkable: true; checked: window.lang === "ar"; onTriggered: mainWindow.language = "ar" }
+                MenuItem { text: "\u4E2D\u6587"; checkable: true; checked: window.lang === "zh"; onTriggered: mainWindow.language = "zh" }
             }
         }
 
@@ -357,44 +348,43 @@ ApplicationWindow {
             title: window.t("tools")
             background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
 
-            Action {
+            MenuItem {
                 text: window.t("talent_mgmt")
-                shortcut: "Ctrl+T"
                 onTriggered: { configDrawer.open(); setupView.currentStep = 1 }
             }
-            Action {
+            MenuItem {
                 text: window.t("scan_hw")
                 onTriggered: { hardwareScanner.scan(); hardwareScanNotif.show() }
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("sdk_status")
                 onTriggered: sdkStatusDialog.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("teleprompter")
                 onTriggered: teleprompterDialog.open()
             }
-            Action {
+            MenuItem {
                 text: window.t("macros")
                 onTriggered: macroDialog.open()
             }
-            Action {
+            MenuItem {
                 text: window.t("ticker")
                 onTriggered: tickerDialog.open()
             }
-            Action {
+            MenuItem {
                 text: window.t("stats")
                 onTriggered: statsDialog.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("branding")
                 onTriggered: brandingDialog.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("remote") + (webRemote.running ? " (:" + webRemote.port + ")" : "")
                 onTriggered: {
                     if (webRemote.running) webRemote.stop()
@@ -408,22 +398,34 @@ ApplicationWindow {
             title: window.t("help")
             background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
 
-            Action {
+            MenuItem {
                 text: window.t("shortcuts")
                 onTriggered: shortcutsDialog.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: window.t("about")
                 onTriggered: aboutDialog.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Action {
+            MenuItem {
                 text: "Licence..."
                 onTriggered: licenseInfoDialog.open()
             }
         }
     }
+
+    // ── Keyboard shortcuts (moved out of Action items) ──────────────
+    Shortcut { sequence: "Ctrl+N"; onActivated: newProfileDialog.open() }
+    Shortcut { sequence: "Ctrl+S"; onActivated: { setupController.saveProfile(); savedNotif.show() } }
+    Shortcut { sequence: "Ctrl+Q"; onActivated: Qt.quit() }
+    Shortcut { sequence: "F5"; onActivated: { if (mainWindow.overlaysActive) stopConfirmDialog.open(); else confirmLaunchDialog.open() } }
+    Shortcut { sequence: "Ctrl+Right"; onActivated: { var next = mainWindow.activeProgram + 1; if (next >= mainWindow.programList.length) next = 0; mainWindow.switchProgram(next) } }
+    Shortcut { sequence: "Ctrl+0"; onActivated: mainWindow.switchProgram(mainWindow.programList.length - 1) }
+    Shortcut { sequence: "F11"; onActivated: { if (window.visibility === Window.FullScreen) window.showNormal(); else window.showFullScreen() } }
+    Shortcut { sequence: "Ctrl+1"; onActivated: configDrawer.open() }
+    Shortcut { sequence: "Ctrl+2"; onActivated: mainWindow.toggleOverlays() }
+    Shortcut { sequence: "Ctrl+T"; onActivated: { configDrawer.open(); setupView.currentStep = 1 } }
 
     ColumnLayout {
         anchors.fill: parent; spacing: 0
