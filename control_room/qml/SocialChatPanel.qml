@@ -104,7 +104,7 @@ Item {
             // Empty state
             Label {
                 anchors.centerIn: parent
-                visible: socialChatController.recentMessages.length === 0
+                visible: !socialChatController.recentMessages || socialChatController.recentMessages.length === 0
                 text: "Aucun message"
                 font.pixelSize: 12; color: window.darkMode ? "#444" : "#AAA"
             }

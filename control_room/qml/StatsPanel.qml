@@ -33,7 +33,7 @@ Item {
 
         Rectangle { Layout.preferredWidth: 100; Layout.preferredHeight: 32; radius: 6; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06); Layout.alignment: Qt.AlignRight
             Label { anchors.centerIn: parent; text: "Exporter CSV"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { /* TODO: Export CSV */ console.log("[Stats] Export CSV clicked") } }
         }
     }
 }

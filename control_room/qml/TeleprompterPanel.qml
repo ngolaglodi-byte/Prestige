@@ -45,7 +45,7 @@ Item {
             Item { Layout.fillWidth: true }
             Rectangle { Layout.preferredWidth: 80; Layout.preferredHeight: 30; radius: 6; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06)
                 Label { anchors.centerIn: parent; text: "Importer..."; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
-                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { /* TODO: Open file dialog */ console.log("[Teleprompter] Import clicked") } }
             }
             Rectangle { Layout.preferredWidth: 80; Layout.preferredHeight: 30; radius: 6; color: tp.isScrolling ? "#CC0000" : "#1DB954"
                 Label { anchors.centerIn: parent; text: tp.isScrolling ? "STOP" : "DÉFILER"; color: "white"; font.pixelSize: 11; font.bold: true }

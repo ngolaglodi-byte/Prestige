@@ -769,8 +769,59 @@ ApplicationWindow {
                                 Label { text: setupController.subtitleOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
 
-                            // Countdown
-                            Label { text: "Countdown"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            // Compteur
+                            Label { text: "Compteur"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                            RowLayout { spacing: 6; Layout.leftMargin: 8
+                                TextField {
+                                    id: cdMinField; Layout.preferredWidth: 50
+                                    placeholderText: "min"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    validator: IntValidator { bottom: 0; top: 999 }
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                                Label { text: ":"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 14 }
+                                TextField {
+                                    id: cdSecField; Layout.preferredWidth: 50
+                                    placeholderText: "sec"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    validator: IntValidator { bottom: 0; top: 59 }
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                                Rectangle {
+                                    Layout.preferredWidth: 50; Layout.preferredHeight: 28; radius: 6
+                                    color: liveController.countdownActive ? "#CC0000" : "#1DB954"
+                                    Label { anchors.centerIn: parent; text: liveController.countdownActive ? "STOP" : "GO"; color: "white"; font.pixelSize: 10; font.bold: true }
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (liveController.countdownActive) { liveController.stopCountdown() }
+                                            else {
+                                                var mins = parseInt(cdMinField.text) || 0
+                                                var secs = parseInt(cdSecField.text) || 0
+                                                var total = mins * 60 + secs
+                                                if (total > 0) liveController.startCountdown(total, cdLabelField.text || "")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // Presets
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Repeater {
+                                    model: [{"label": "30s", "secs": 30}, {"label": "1m", "secs": 60}, {"label": "2m", "secs": 120}, {"label": "5m", "secs": 300}]
+                                    Rectangle {
+                                        Layout.preferredWidth: 36; Layout.preferredHeight: 24; radius: 4
+                                        color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
+                                        Label { anchors.centerIn: parent; text: modelData.label; font.pixelSize: 9; color: window.darkMode ? "#888" : "#666" }
+                                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: liveController.startCountdown(modelData.secs, "") }
+                                    }
+                                }
+                            }
+                            TextField {
+                                id: cdLabelField; Layout.fillWidth: true; Layout.leftMargin: 8; Layout.rightMargin: 8
+                                placeholderText: "Label (ex: LIVE IN, RETOUR...)"; font.pixelSize: 10; color: window.darkMode ? "white" : "#1A1A1A"
+                                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                            }
+                            // Offset sliders
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.countdownOffsetX; Layout.fillWidth: true; onMoved: setupController.countdownOffsetX = value }
@@ -796,7 +847,26 @@ ApplicationWindow {
                             }
 
                             // QR Code
-                            Label { text: "QR Code"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            Label { text: "QR Code"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                            Switch { text: "Afficher QR Code"; checked: liveController.qrCodeVisible; onToggled: liveController.setQrCode(liveController.qrCodeUrl, checked, liveController.qrCodePosition); leftPadding: 8 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8; Layout.rightMargin: 8
+                                Label { text: "URL:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                TextField {
+                                    Layout.fillWidth: true; text: liveController.qrCodeUrl
+                                    onTextChanged: liveController.setQrCode(text, liveController.qrCodeVisible, liveController.qrCodePosition)
+                                    placeholderText: "https://example.com"; font.pixelSize: 10; color: window.darkMode ? "white" : "#1A1A1A"
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Position:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                ComboBox {
+                                    model: ["Bas droite", "Bas gauche", "Haut droite", "Haut gauche"]; Layout.fillWidth: true
+                                    onActivated: { var pos = ["bottom_right","bottom_left","top_right","top_left"]; liveController.setQrCode(liveController.qrCodeUrl, liveController.qrCodeVisible, pos[currentIndex]) }
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
+                            // Offset sliders
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.qrCodeOffsetX; Layout.fillWidth: true; onMoved: setupController.qrCodeOffsetX = value }
@@ -821,8 +891,8 @@ ApplicationWindow {
                                 Label { text: setupController.scoreboardOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
 
-                            // Meteo
-                            Label { text: "Meteo"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            // Météo
+                            Label { text: "Météo"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.weatherOffsetX; Layout.fillWidth: true; onMoved: setupController.weatherOffsetX = value }
