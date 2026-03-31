@@ -1012,6 +1012,11 @@ ApplicationWindow {
                             // Météo
                             Label { text: "Météo"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Slider { from: 0.5; to: 2.0; stepSize: 0.1; value: setupController.weatherScale; Layout.fillWidth: true; onMoved: setupController.weatherScale = value }
+                                Label { text: Math.round(setupController.weatherScale * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11; Layout.preferredWidth: 40 }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.weatherOffsetX; Layout.fillWidth: true; onMoved: setupController.weatherOffsetX = value }
                                 Label { text: setupController.weatherOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
