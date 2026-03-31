@@ -155,34 +155,34 @@ Item {
                 anchors.fill: parent
                 visible: true  // Always visible to show branding even without Vision Engine
 
-                // Scale factor — ensures overlays are readable at any preview size
-                // At 1920x1080 sf=1.0, at smaller preview sizes sf scales proportionally
-                // Minimum 0.55 so text/logo never become too small to read
-                property real sf: Math.max(0.55, Math.min(parent.width / 1920.0, parent.height / 1080.0))
+                // Standard broadcast proportions (based on 1920x1080 reference)
+                property real pw: parent.width   // Preview width
+                property real ph: parent.height  // Preview height
 
                 // ── Layer 1: Channel Logo ────────────────────
                 Image {
                     id: previewLogo
-                    visible: setupController.channelLogoPath !== "" && !liveController.isBypassed
+                    visible: setupController.channelLogoPath !== "" && !(liveController.isBypassed && !setupController.keepLogoDuringAds)
                     source: setupController.channelLogoPath ? ("file:///" + setupController.channelLogoPath) : ""
 
-                    height: setupController.channelLogoSize * wysiwygOverlay.sf
+                    width: wysiwygOverlay.pw * 0.042
+                    height: wysiwygOverlay.pw * 0.042
                     fillMode: Image.PreserveAspectFit
 
                     // Base position + offset
                     property string pos: setupController.channelLogoPosition
-                    property real baseMargin: 16 * wysiwygOverlay.sf
+                    property real baseMargin: wysiwygOverlay.pw * 0.008
                     x: {
                         if (pos === "top_left" || pos === "bottom_left")
-                            return baseMargin + setupController.channelLogoOffsetX * wysiwygOverlay.sf
+                            return baseMargin + setupController.channelLogoOffsetX * (wysiwygOverlay.pw / 1920.0)
                         else
-                            return parent.width - width - baseMargin + setupController.channelLogoOffsetX * wysiwygOverlay.sf
+                            return parent.width - width - baseMargin + setupController.channelLogoOffsetX * (wysiwygOverlay.pw / 1920.0)
                     }
                     y: {
                         if (pos === "top_left" || pos === "top_right")
-                            return baseMargin + setupController.channelLogoOffsetY * wysiwygOverlay.sf
+                            return baseMargin + setupController.channelLogoOffsetY * (wysiwygOverlay.ph / 1080.0)
                         else
-                            return parent.height - height - baseMargin + setupController.channelLogoOffsetY * wysiwygOverlay.sf
+                            return parent.height - height - baseMargin + setupController.channelLogoOffsetY * (wysiwygOverlay.ph / 1080.0)
                     }
 
                     // Loop animation
@@ -200,30 +200,30 @@ Item {
                 // ── Layer 1b: Channel Name ───────────────────
                 Rectangle {
                     id: previewChannelName
-                    visible: setupController.showChannelNameText && configManager.channelName !== "" && !liveController.isBypassed
+                    visible: setupController.showChannelNameText && configManager.channelName !== "" && !(liveController.isBypassed && !setupController.keepLogoDuringAds)
 
-                    width: nameLbl.implicitWidth + 16 * wysiwygOverlay.sf
-                    height: nameLbl.implicitHeight + 8 * wysiwygOverlay.sf
+                    width: nameLbl.implicitWidth + wysiwygOverlay.pw * 0.008
+                    height: wysiwygOverlay.ph * 0.033
 
                     property string pos: setupController.channelLogoPosition
-                    property real baseMargin: 10 * wysiwygOverlay.sf
+                    property real baseMargin: wysiwygOverlay.pw * 0.005
                     x: {
                         if (pos === "top_left" || pos === "bottom_left")
-                            return baseMargin + setupController.channelNameOffsetX * wysiwygOverlay.sf
+                            return baseMargin + setupController.channelNameOffsetX * (wysiwygOverlay.pw / 1920.0)
                         else
-                            return parent.width - width - baseMargin + setupController.channelNameOffsetX * wysiwygOverlay.sf
+                            return parent.width - width - baseMargin + setupController.channelNameOffsetX * (wysiwygOverlay.pw / 1920.0)
                     }
                     y: {
-                        var logoBottom = previewLogo.visible ? (previewLogo.y + previewLogo.height + 4 * wysiwygOverlay.sf) : 0
+                        var logoBottom = previewLogo.visible ? (previewLogo.y + previewLogo.height + wysiwygOverlay.ph * 0.004) : 0
                         if (pos === "top_left" || pos === "top_right")
-                            return (previewLogo.visible ? logoBottom : baseMargin) + setupController.channelNameOffsetY * wysiwygOverlay.sf
+                            return (previewLogo.visible ? logoBottom : baseMargin) + setupController.channelNameOffsetY * (wysiwygOverlay.ph / 1080.0)
                         else
-                            return parent.height - height - baseMargin + setupController.channelNameOffsetY * wysiwygOverlay.sf
+                            return parent.height - height - baseMargin + setupController.channelNameOffsetY * (wysiwygOverlay.ph / 1080.0)
                     }
                     radius: {
                         var shape = setupController.channelNameShape
                         if (shape === "pill") return height / 2
-                        if (shape === "square" || shape === "rectangle") return 3 * wysiwygOverlay.sf
+                        if (shape === "square" || shape === "rectangle") return wysiwygOverlay.ph * 0.003
                         return 0
                     }
                     color: setupController.channelNameShape === "frameless" ? "transparent" : setupController.channelNameBgColor
@@ -239,7 +239,7 @@ Item {
                     Label {
                         id: nameLbl; anchors.centerIn: parent
                         text: configManager.channelName
-                        font.pixelSize: setupController.channelNameFontSize * wysiwygOverlay.sf
+                        font.pixelSize: wysiwygOverlay.ph * 0.013
                         font.weight: Font.Bold
                         color: setupController.channelNameTextColor
                     }
@@ -258,28 +258,28 @@ Item {
                     visible: setupController.showTitleEnabled && setupController.showTitle !== "" && liveController.showTitleVisible && !liveController.isBypassed
 
                     property string pos: setupController.showTitlePosition
-                    property real baseMargin: 16 * wysiwygOverlay.sf
+                    property real baseMargin: wysiwygOverlay.pw * 0.008
                     x: {
                         if (pos === "bottom_left" || pos === "top_left")
-                            return baseMargin + setupController.showTitleOffsetX * wysiwygOverlay.sf
+                            return baseMargin + setupController.showTitleOffsetX * (wysiwygOverlay.pw / 1920.0)
                         else
-                            return parent.width - width - baseMargin + setupController.showTitleOffsetX * wysiwygOverlay.sf
+                            return parent.width - width - baseMargin + setupController.showTitleOffsetX * (wysiwygOverlay.pw / 1920.0)
                     }
                     y: {
                         if (pos === "top_left" || pos === "top_right")
-                            return baseMargin + setupController.showTitleOffsetY * wysiwygOverlay.sf
+                            return baseMargin + setupController.showTitleOffsetY * (wysiwygOverlay.ph / 1080.0)
                         else {
-                            var tickerH = wysiwygTickerBar.visible ? wysiwygTickerBar.height + 8 * wysiwygOverlay.sf : 0
-                            return parent.height - height - baseMargin - tickerH + setupController.showTitleOffsetY * wysiwygOverlay.sf
+                            var tickerH = wysiwygTickerBar.visible ? wysiwygTickerBar.height + wysiwygOverlay.ph * 0.007 : 0
+                            return parent.height - height - baseMargin - tickerH + setupController.showTitleOffsetY * (wysiwygOverlay.ph / 1080.0)
                         }
                     }
 
-                    width: titleCol.implicitWidth + 24 * wysiwygOverlay.sf
-                    height: titleCol.implicitHeight + 12 * wysiwygOverlay.sf
+                    width: Math.max(wysiwygOverlay.pw * 0.21, titleCol.implicitWidth + wysiwygOverlay.pw * 0.013)
+                    height: wysiwygOverlay.ph * 0.046
                     radius: {
                         var shape = setupController.showTitleShape
                         if (shape === "pill") return height / 2
-                        if (shape === "rectangle" || shape === "square") return 4 * wysiwygOverlay.sf
+                        if (shape === "rectangle" || shape === "square") return wysiwygOverlay.ph * 0.004
                         return 0
                     }
                     color: setupController.showTitleShape === "frameless" ? "transparent" : setupController.showTitleBgColor
@@ -290,7 +290,7 @@ Item {
 
                     // Accent bar on left
                     Rectangle {
-                        width: 3 * wysiwygOverlay.sf; height: parent.height
+                        width: wysiwygOverlay.pw * 0.002; height: parent.height
                         color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#5B4FDB"
                         visible: setupController.showTitleShape !== "frameless"
                     }
@@ -299,13 +299,13 @@ Item {
                         id: titleCol; anchors.centerIn: parent; spacing: 2
                         Label {
                             text: setupController.showTitle
-                            font.pixelSize: setupController.showTitleFontSize * wysiwygOverlay.sf
+                            font.pixelSize: wysiwygOverlay.ph * 0.015
                             font.weight: Font.Bold; color: setupController.showTitleTextColor
                         }
                         Label {
                             visible: setupController.showSubtitle !== ""
                             text: setupController.showSubtitle
-                            font.pixelSize: (setupController.showTitleFontSize - 3) * wysiwygOverlay.sf
+                            font.pixelSize: wysiwygOverlay.ph * 0.012
                             color: Qt.rgba(1,1,1,0.7)
                         }
                     }
@@ -317,16 +317,16 @@ Item {
                     visible: liveController.talentNameplateVisible && liveController.talentDetected && !liveController.isBypassed
 
                     anchors.bottom: wysiwygTickerBar.top; anchors.left: parent.left
-                    anchors.margins: 16 * wysiwygOverlay.sf
+                    anchors.margins: wysiwygOverlay.pw * 0.008
 
-                    width: talentCol.implicitWidth + 32 * wysiwygOverlay.sf
-                    height: talentCol.implicitHeight + 16 * wysiwygOverlay.sf
-                    radius: 4 * wysiwygOverlay.sf
+                    width: Math.max(wysiwygOverlay.pw * 0.198, talentCol.implicitWidth + wysiwygOverlay.pw * 0.017)
+                    height: wysiwygOverlay.ph * 0.041
+                    radius: wysiwygOverlay.ph * 0.004
                     color: Qt.rgba(0, 0, 0, setupController.backgroundOpacity > 0 ? setupController.backgroundOpacity : 0.82)
 
                     // Accent bar left
                     Rectangle {
-                        width: 4 * wysiwygOverlay.sf; height: parent.height; radius: 2
+                        width: wysiwygOverlay.pw * 0.002; height: parent.height; radius: 2
                         color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#E30613"
                     }
 
@@ -334,12 +334,12 @@ Item {
                         id: talentCol; anchors.centerIn: parent; spacing: 1
                         Label {
                             text: liveController.detectedName || ""
-                            font.pixelSize: 16 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white"
+                            font.pixelSize: wysiwygOverlay.ph * 0.015; font.weight: Font.Bold; color: "white"
                         }
                         Label {
                             visible: liveController.detectedRole !== ""
                             text: liveController.detectedRole || ""
-                            font.pixelSize: 12 * wysiwygOverlay.sf; color: Qt.rgba(1,1,1,0.7)
+                            font.pixelSize: wysiwygOverlay.ph * 0.011; color: Qt.rgba(1,1,1,0.7)
                         }
                     }
 
@@ -351,17 +351,17 @@ Item {
                 Rectangle {
                     id: wysiwygTickerBar
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: (wysiwygSubtitleBar.visible ? (wysiwygSubtitleBar.height + 8 * wysiwygOverlay.sf) : 0) - setupController.tickerOffsetY * wysiwygOverlay.sf
+                    anchors.bottomMargin: (wysiwygSubtitleBar.visible ? (wysiwygSubtitleBar.height + wysiwygOverlay.ph * 0.007) : 0) - setupController.tickerOffsetY * (wysiwygOverlay.ph / 1080.0)
                     anchors.left: parent.left; anchors.right: parent.right
-                    height: visible ? 28 * wysiwygOverlay.sf : 0
-                    visible: rssFetcher.headlines !== "" && mainWindow.overlaysActive && !liveController.isBypassed
+                    height: visible ? wysiwygOverlay.ph * 0.033 : 0
+                    visible: rssFetcher.headlines !== "" && !liveController.isBypassed
                     color: "#CC0000"
                     clip: true
 
                     Label {
                         id: tickerText
                         text: rssFetcher.headlines || ""
-                        font.pixelSize: 12 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white"
+                        font.pixelSize: wysiwygOverlay.ph * 0.012; font.weight: Font.Bold; color: "white"
                         y: (parent.height - height) / 2
                         NumberAnimation on x {
                             from: wysiwygTickerBar.width
@@ -375,19 +375,19 @@ Item {
                 // ── Subtitles ────────────────────────────────
                 Rectangle {
                     id: wysiwygSubtitleBar
-                    x: (parent.width - width) / 2 + setupController.subtitleOffsetX * wysiwygOverlay.sf
-                    y: parent.height - height - 4 * wysiwygOverlay.sf + setupController.subtitleOffsetY * wysiwygOverlay.sf
+                    x: (parent.width - width) / 2 + setupController.subtitleOffsetX * (wysiwygOverlay.pw / 1920.0)
+                    y: parent.height - height - wysiwygOverlay.ph * 0.008 + setupController.subtitleOffsetY * (wysiwygOverlay.ph / 1080.0)
                     visible: subtitleController.enabled && subtitleController.currentText !== "" && !liveController.isBypassed
 
-                    width: subLbl.implicitWidth + 24 * wysiwygOverlay.sf
-                    height: subLbl.implicitHeight + 12 * wysiwygOverlay.sf
-                    radius: 6 * wysiwygOverlay.sf
+                    width: Math.max(wysiwygOverlay.pw * 0.313, subLbl.implicitWidth + wysiwygOverlay.pw * 0.013)
+                    height: Math.max(wysiwygOverlay.ph * 0.037, subLbl.implicitHeight + wysiwygOverlay.ph * 0.011)
+                    radius: wysiwygOverlay.ph * 0.006
                     color: Qt.rgba(0, 0, 0, subtitleController.bgOpacity)
 
                     Label {
                         id: subLbl; anchors.centerIn: parent
                         text: subtitleController.currentText
-                        font.pixelSize: subtitleController.fontSize * wysiwygOverlay.sf
+                        font.pixelSize: subtitleController.fontSize * (wysiwygOverlay.ph / 1080.0)
                         color: subtitleController.textColor
                     }
                 }
@@ -395,11 +395,11 @@ Item {
                 // ── Countdown (top-left area) ────────────────
                 Rectangle {
                     visible: liveController.countdownActive && !liveController.isBypassed
-                    x: 16 * wysiwygOverlay.sf + setupController.countdownOffsetX * wysiwygOverlay.sf
-                    y: (previewLogo.visible ? previewLogo.height + 24 : 16) * wysiwygOverlay.sf + setupController.countdownOffsetY * wysiwygOverlay.sf
+                    x: wysiwygOverlay.pw * 0.008 + setupController.countdownOffsetX * (wysiwygOverlay.pw / 1920.0)
+                    y: (previewLogo.visible ? previewLogo.height + wysiwygOverlay.ph * 0.022 : wysiwygOverlay.ph * 0.015) + setupController.countdownOffsetY * (wysiwygOverlay.ph / 1080.0)
 
-                    width: cdLbl.implicitWidth + 20 * wysiwygOverlay.sf
-                    height: cdLbl.implicitHeight + 10 * wysiwygOverlay.sf
+                    width: Math.max(wysiwygOverlay.pw * 0.073, cdLbl.implicitWidth + wysiwygOverlay.pw * 0.011)
+                    height: wysiwygOverlay.ph * 0.033
                     radius: height / 2
                     color: Qt.rgba(204/255, 0, 0, 0.85)
 
@@ -413,25 +413,25 @@ Item {
                             var time = (mm < 10 ? "0" : "") + mm + ":" + (ss < 10 ? "0" : "") + ss
                             return label ? label + " " + time : time
                         }
-                        font.pixelSize: 14 * wysiwygOverlay.sf; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
+                        font.pixelSize: wysiwygOverlay.ph * 0.013; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
                     }
                 }
 
                 // ── Clock (top-right) ────────────────────────
                 Rectangle {
-                    visible: mainWindow.overlaysActive
-                    x: parent.width - width - 16 * wysiwygOverlay.sf + setupController.clockOffsetX * wysiwygOverlay.sf
-                    y: 16 * wysiwygOverlay.sf + setupController.clockOffsetY * wysiwygOverlay.sf
+                    visible: true
+                    x: parent.width - width - wysiwygOverlay.pw * 0.008 + setupController.clockOffsetX * (wysiwygOverlay.pw / 1920.0)
+                    y: wysiwygOverlay.ph * 0.015 + setupController.clockOffsetY * (wysiwygOverlay.ph / 1080.0)
 
-                    width: clockLbl.implicitWidth + 14 * wysiwygOverlay.sf
-                    height: clockLbl.implicitHeight + 8 * wysiwygOverlay.sf
-                    radius: 4 * wysiwygOverlay.sf
+                    width: wysiwygOverlay.pw * 0.063
+                    height: wysiwygOverlay.ph * 0.030
+                    radius: wysiwygOverlay.ph * 0.004
                     color: Qt.rgba(0, 0, 0, 0.6)
 
                     Label {
                         id: clockLbl; anchors.centerIn: parent
                         text: Qt.formatTime(new Date(), "HH:mm:ss")
-                        font.pixelSize: 12 * wysiwygOverlay.sf; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
+                        font.pixelSize: wysiwygOverlay.ph * 0.013; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
                     }
                     Timer { interval: 1000; running: true; repeat: true; onTriggered: clockLbl.text = Qt.formatTime(new Date(), "HH:mm:ss") }
                 }
@@ -441,33 +441,33 @@ Item {
                     visible: liveController.qrCodeVisible && liveController.qrCodeUrl !== "" && !liveController.isBypassed
 
                     property string pos: liveController.qrCodePosition || "bottom_right"
-                    property real qrBaseMargin: 16 * wysiwygOverlay.sf
+                    property real qrBaseMargin: wysiwygOverlay.pw * 0.008
                     x: {
                         if (pos === "bottom_left" || pos === "top_left")
-                            return qrBaseMargin + setupController.qrCodeOffsetX * wysiwygOverlay.sf
+                            return qrBaseMargin + setupController.qrCodeOffsetX * (wysiwygOverlay.pw / 1920.0)
                         else
-                            return parent.width - width - qrBaseMargin + setupController.qrCodeOffsetX * wysiwygOverlay.sf
+                            return parent.width - width - qrBaseMargin + setupController.qrCodeOffsetX * (wysiwygOverlay.pw / 1920.0)
                     }
                     y: {
                         if (pos === "top_right" || pos === "top_left")
-                            return qrBaseMargin + setupController.qrCodeOffsetY * wysiwygOverlay.sf
+                            return qrBaseMargin + setupController.qrCodeOffsetY * (wysiwygOverlay.ph / 1080.0)
                         else {
                             var tickerH = wysiwygTickerBar.visible ? wysiwygTickerBar.height : 0
-                            return parent.height - height - qrBaseMargin - tickerH + setupController.qrCodeOffsetY * wysiwygOverlay.sf
+                            return parent.height - height - qrBaseMargin - tickerH + setupController.qrCodeOffsetY * (wysiwygOverlay.ph / 1080.0)
                         }
                     }
 
-                    width: 80 * wysiwygOverlay.sf; height: 80 * wysiwygOverlay.sf
-                    radius: 6 * wysiwygOverlay.sf
+                    width: wysiwygOverlay.pw * 0.052; height: wysiwygOverlay.pw * 0.052
+                    radius: wysiwygOverlay.ph * 0.006
                     color: "white"
 
                     // QR pattern placeholder
                     Grid {
-                        anchors.centerIn: parent; columns: 5; spacing: 2 * wysiwygOverlay.sf
+                        anchors.centerIn: parent; columns: 5; spacing: wysiwygOverlay.pw * 0.001
                         Repeater {
                             model: 25
                             Rectangle {
-                                width: 10 * wysiwygOverlay.sf; height: 10 * wysiwygOverlay.sf
+                                width: wysiwygOverlay.pw * 0.005; height: wysiwygOverlay.pw * 0.005
                                 color: (index % 3 === 0 || index % 7 === 0) ? "#000" : "white"
                             }
                         }
@@ -475,8 +475,8 @@ Item {
 
                     Label {
                         anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottomMargin: 2 * wysiwygOverlay.sf
-                        text: "SCAN"; font.pixelSize: 6 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "#5B4FDB"
+                        anchors.bottomMargin: wysiwygOverlay.ph * 0.002
+                        text: "SCAN"; font.pixelSize: wysiwygOverlay.ph * 0.007; font.weight: Font.Bold; color: "#5B4FDB"
                     }
                 }
 
@@ -485,26 +485,26 @@ Item {
                     id: wysiwygScoreboard
                     visible: mainWindow.overlaysActive && !liveController.isBypassed
 
-                    x: (16 + setupController.scoreboardOffsetX) * wysiwygOverlay.sf
-                    y: (60 + setupController.scoreboardOffsetY) * wysiwygOverlay.sf
+                    x: (wysiwygOverlay.pw * 0.008) + setupController.scoreboardOffsetX * (wysiwygOverlay.pw / 1920.0)
+                    y: (wysiwygOverlay.ph * 0.056) + setupController.scoreboardOffsetY * (wysiwygOverlay.ph / 1080.0)
 
-                    width: 200 * wysiwygOverlay.sf; height: 60 * wysiwygOverlay.sf
-                    radius: 6 * wysiwygOverlay.sf
+                    width: wysiwygOverlay.pw * 0.167; height: wysiwygOverlay.ph * 0.074
+                    radius: wysiwygOverlay.ph * 0.006
                     color: Qt.rgba(0, 0, 0, 0.75)
                     border.color: Qt.rgba(1,1,1,0.1)
 
                     RowLayout {
-                        anchors.centerIn: parent; spacing: 10 * wysiwygOverlay.sf
+                        anchors.centerIn: parent; spacing: wysiwygOverlay.pw * 0.005
                         ColumnLayout {
                             spacing: 1
-                            Label { text: "TEAM A"; font.pixelSize: 8 * wysiwygOverlay.sf; color: "#CC0000"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                            Label { text: "0"; font.pixelSize: 20 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: "TEAM A"; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#CC0000"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: "0"; font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
-                        Label { text: "-"; font.pixelSize: 16 * wysiwygOverlay.sf; color: "#555" }
+                        Label { text: "-"; font.pixelSize: wysiwygOverlay.ph * 0.015; color: "#555" }
                         ColumnLayout {
                             spacing: 1
-                            Label { text: "TEAM B"; font.pixelSize: 8 * wysiwygOverlay.sf; color: "#0066CC"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                            Label { text: "0"; font.pixelSize: 20 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: "TEAM B"; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#0066CC"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: "0"; font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
                     }
                 }
@@ -514,20 +514,20 @@ Item {
                     id: wysiwygWeather
                     visible: weatherFetcher.city !== "" && !liveController.isBypassed
 
-                    x: parent.width - width - (16 - setupController.weatherOffsetX) * wysiwygOverlay.sf
-                    y: parent.height - height - (80 + setupController.weatherOffsetY) * wysiwygOverlay.sf
+                    x: parent.width - width - wysiwygOverlay.pw * 0.008 + setupController.weatherOffsetX * (wysiwygOverlay.pw / 1920.0)
+                    y: parent.height - height - wysiwygOverlay.ph * 0.074 + setupController.weatherOffsetY * (wysiwygOverlay.ph / 1080.0)
 
-                    width: 160 * wysiwygOverlay.sf; height: 50 * wysiwygOverlay.sf
-                    radius: 6 * wysiwygOverlay.sf
+                    width: wysiwygOverlay.pw * 0.104; height: wysiwygOverlay.ph * 0.065
+                    radius: wysiwygOverlay.ph * 0.006
                     color: Qt.rgba(0, 0, 0, 0.7)
 
                     RowLayout {
-                        anchors.centerIn: parent; spacing: 8 * wysiwygOverlay.sf
-                        Label { text: weatherFetcher.conditionIcon; font.pixelSize: 22 * wysiwygOverlay.sf }
+                        anchors.centerIn: parent; spacing: wysiwygOverlay.pw * 0.004
+                        Label { text: weatherFetcher.conditionIcon; font.pixelSize: wysiwygOverlay.ph * 0.020 }
                         ColumnLayout {
                             spacing: 0
-                            Label { text: weatherFetcher.city; font.pixelSize: 10 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white" }
-                            Label { text: Math.round(weatherFetcher.temperature) + weatherFetcher.unit; font.pixelSize: 9 * wysiwygOverlay.sf; color: "#CCC" }
+                            Label { text: weatherFetcher.city; font.pixelSize: wysiwygOverlay.ph * 0.011; font.weight: Font.Bold; color: "white" }
+                            Label { text: Math.round(weatherFetcher.temperature) + weatherFetcher.unit; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#CCC" }
                         }
                     }
                 }
