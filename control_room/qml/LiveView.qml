@@ -170,8 +170,7 @@ Item {
                     visible: setupController.channelLogoPath !== "" && !(liveController.isBypassed && !setupController.keepLogoDuringAds)
                     source: setupController.channelLogoPath ? ("file:///" + setupController.channelLogoPath) : ""
 
-                    width: wysiwygOverlay.pw * 0.042
-                    height: wysiwygOverlay.pw * 0.042
+                    height: setupController.channelLogoSize * (wysiwygOverlay.ph / 1080.0)
                     fillMode: Image.PreserveAspectFit
 
                     // Base position + offset
@@ -190,16 +189,37 @@ Item {
                             return parent.height - height - baseMargin + setupController.channelLogoOffsetY * (wysiwygOverlay.ph / 1080.0)
                     }
 
-                    // Loop animation
+                    // Loop animations
                     property string loopAnim: setupController.logoLoopAnim
+                    // Pulse (+ rotate maps to pulse)
                     SequentialAnimation on scale {
-                        loops: Animation.Infinite; running: previewLogo.loopAnim === "pulse"
+                        loops: Animation.Infinite; running: previewLogo.loopAnim === "pulse" || previewLogo.loopAnim === "rotate"
                         NumberAnimation { to: 1.03; duration: 1200; easing.type: Easing.InOutSine }
                         NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
                     }
-                    opacity: 1.0
-                    // Entry animation
-                    NumberAnimation on opacity { from: 0; to: 1; duration: 800; running: true }
+                    // Glow (+ shimmer maps to glow): opacity pulse
+                    SequentialAnimation {
+                        loops: Animation.Infinite; running: previewLogo.loopAnim === "glow" || previewLogo.loopAnim === "shimmer"
+                        NumberAnimation { target: previewLogo; property: "opacity"; to: 0.7; duration: 1000; easing.type: Easing.InOutSine }
+                        NumberAnimation { target: previewLogo; property: "opacity"; to: 1.0; duration: 1000; easing.type: Easing.InOutSine }
+                    }
+                    // Bounce: y offset animation
+                    property real bounceBaseY: y
+                    SequentialAnimation {
+                        loops: Animation.Infinite; running: previewLogo.loopAnim === "bounce"
+                        NumberAnimation { target: previewLogo; property: "y"; to: previewLogo.bounceBaseY - 3; duration: 600; easing.type: Easing.InOutSine }
+                        NumberAnimation { target: previewLogo; property: "y"; to: previewLogo.bounceBaseY; duration: 600; easing.type: Easing.InOutSine }
+                    }
+                    opacity: 0
+                    Component.onCompleted: {
+                        logoEntryTimer.start()
+                    }
+                    Timer {
+                        id: logoEntryTimer; interval: 300; onTriggered: previewLogo.opacity = 1
+                    }
+                    Behavior on opacity {
+                        NumberAnimation { duration: setupController.logoEntryAnim === "none" ? 0 : 800; easing.type: Easing.OutCubic }
+                    }
                 }
 
                 // ── Layer 1b: Channel Name ───────────────────
@@ -244,7 +264,7 @@ Item {
                     Label {
                         id: nameLbl; anchors.centerIn: parent
                         text: configManager.channelName
-                        font.pixelSize: wysiwygOverlay.ph * 0.013
+                        font.pixelSize: setupController.channelNameFontSize * (wysiwygOverlay.ph / 1080.0)
                         font.weight: Font.Bold
                         color: setupController.channelNameTextColor
                     }
@@ -254,6 +274,19 @@ Item {
                         loops: Animation.Infinite; running: setupController.nameLoopAnim === "pulse"
                         NumberAnimation { to: 1.03; duration: 1200; easing.type: Easing.InOutSine }
                         NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
+                    }
+                    // Glow: opacity pulse
+                    SequentialAnimation {
+                        loops: Animation.Infinite; running: setupController.nameLoopAnim === "glow"
+                        NumberAnimation { target: previewChannelName; property: "opacity"; to: 0.7; duration: 1000; easing.type: Easing.InOutSine }
+                        NumberAnimation { target: previewChannelName; property: "opacity"; to: 1.0; duration: 1000; easing.type: Easing.InOutSine }
+                    }
+                    // Bounce: y offset
+                    property real bounceBaseY: y
+                    SequentialAnimation {
+                        loops: Animation.Infinite; running: setupController.nameLoopAnim === "bounce"
+                        NumberAnimation { target: previewChannelName; property: "y"; to: previewChannelName.bounceBaseY - 3; duration: 600; easing.type: Easing.InOutSine }
+                        NumberAnimation { target: previewChannelName; property: "y"; to: previewChannelName.bounceBaseY; duration: 600; easing.type: Easing.InOutSine }
                     }
                 }
 
@@ -304,13 +337,13 @@ Item {
                         id: titleCol; anchors.centerIn: parent; spacing: 2
                         Label {
                             text: setupController.showTitle
-                            font.pixelSize: wysiwygOverlay.ph * 0.015
+                            font.pixelSize: setupController.showTitleFontSize * (wysiwygOverlay.ph / 1080.0)
                             font.weight: Font.Bold; color: setupController.showTitleTextColor
                         }
                         Label {
                             visible: setupController.showSubtitle !== ""
                             text: setupController.showSubtitle
-                            font.pixelSize: wysiwygOverlay.ph * 0.012
+                            font.pixelSize: (setupController.showTitleFontSize - 3) * (wysiwygOverlay.ph / 1080.0)
                             color: Qt.rgba(1,1,1,0.7)
                         }
                     }

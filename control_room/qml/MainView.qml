@@ -708,6 +708,26 @@ ApplicationWindow {
                                 Label { text: Math.round(nameFontSlider.value) + "pt"; color: window.darkMode ? "#999" : "#666" }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Animation entree:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                ComboBox {
+                                    model: ["Aucune", "Glisser gauche", "Glisser droite", "Glisser haut", "Glisser bas", "Fondu", "Zoom", "Balayage"]
+                                    currentIndex: ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"].indexOf(setupController.nameEntryAnim)
+                                    onActivated: { var a = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; setupController.nameEntryAnim = a[currentIndex] }
+                                    Layout.fillWidth: true
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Animation boucle:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                ComboBox {
+                                    model: ["Aucune", "Pulsation", "Brillance", "Rebond"]
+                                    currentIndex: ["none","pulse","glow","bounce"].indexOf(setupController.nameLoopAnim)
+                                    onActivated: { var a = ["none","pulse","glow","bounce"]; setupController.nameLoopAnim = a[currentIndex] }
+                                    Layout.fillWidth: true
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetX; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetX = value }
                                 Label { text: setupController.channelNameOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
@@ -741,6 +761,66 @@ ApplicationWindow {
                                     onCurrentIndexChanged: { var pos = ["bottom_left","bottom_right","top_left","top_right"]; setupController.showTitlePosition = pos[currentIndex] }
                                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                                     contentItem: Label { text: titlePosCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
+                                }
+                            }
+                            // Shape
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Forme:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                ComboBox {
+                                    model: ["Rectangle", "Carre", "Pilule", "Oblique", "Sans cadre"]
+                                    currentIndex: ["rectangle","square","pill","angled","frameless"].indexOf(setupController.showTitleShape)
+                                    onActivated: { var s = ["rectangle","square","pill","angled","frameless"]; setupController.showTitleShape = s[currentIndex] }
+                                    Layout.fillWidth: true
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
+                            // Background color
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Fond:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Repeater { model: ["#1A1A2E","#CC0000","#0066CC","#000000","#1DB954","#5B4FDB"]
+                                    Rectangle { width: 20; height: 20; radius: 4; color: modelData; border.color: modelData === setupController.showTitleBgColor ? "white" : "transparent"; border.width: 2
+                                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleBgColor = modelData } } }
+                            }
+                            // Text color
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Texte:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Repeater { model: ["#FFFFFF","#FFFF00","#00FF00","#00CCFF"]
+                                    Rectangle { width: 20; height: 20; radius: 4; color: modelData; border.color: modelData === setupController.showTitleTextColor ? "white" : "transparent"; border.width: 2
+                                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleTextColor = modelData } } }
+                            }
+                            // Border color
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Bordure:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Repeater { model: ["#5B4FDB","#FFFFFF","#CC0000","#FFD700","transparent"]
+                                    Rectangle { width: 20; height: 20; radius: 4; color: modelData === "transparent" ? "#333" : modelData; border.color: modelData === setupController.showTitleBorderColor ? "white" : "transparent"; border.width: 2
+                                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleBorderColor = modelData } } }
+                            }
+                            // Font size
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Taille police:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Slider { from: 10; to: 28; stepSize: 1; value: setupController.showTitleFontSize; Layout.fillWidth: true; onMoved: setupController.showTitleFontSize = value }
+                                Label { text: setupController.showTitleFontSize + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
+                            }
+                            // Entry animation
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Animation entree:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                ComboBox {
+                                    model: ["Aucune", "Glisser gauche", "Glisser droite", "Glisser haut", "Fondu", "Zoom"]
+                                    currentIndex: ["none","slide_left","slide_right","slide_up","fade","scale"].indexOf(setupController.showTitleEntryAnim)
+                                    onActivated: { var a = ["none","slide_left","slide_right","slide_up","fade","scale"]; setupController.showTitleEntryAnim = a[currentIndex] }
+                                    Layout.fillWidth: true
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
+                            // Loop animation
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Animation boucle:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                ComboBox {
+                                    model: ["Aucune", "Pulsation", "Brillance", "Rebond"]
+                                    currentIndex: ["none","pulse","glow","bounce"].indexOf(setupController.showTitleLoopAnim)
+                                    onActivated: { var a = ["none","pulse","glow","bounce"]; setupController.showTitleLoopAnim = a[currentIndex] }
+                                    Layout.fillWidth: true
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                                 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
