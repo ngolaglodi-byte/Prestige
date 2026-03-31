@@ -146,6 +146,17 @@ class SetupController : public QObject {
     Q_PROPERTY(int scoreboardScoreA READ scoreboardScoreA WRITE setScoreboardScoreA NOTIFY brandingChanged)
     Q_PROPERTY(int scoreboardScoreB READ scoreboardScoreB WRITE setScoreboardScoreB NOTIFY brandingChanged)
 
+    // Ticker appearance
+    Q_PROPERTY(QString tickerBgColor READ tickerBgColor WRITE setTickerBgColor NOTIFY brandingChanged)
+    Q_PROPERTY(QString tickerTextColor READ tickerTextColor WRITE setTickerTextColor NOTIFY brandingChanged)
+    Q_PROPERTY(int tickerFontSize READ tickerFontSize WRITE setTickerFontSize NOTIFY brandingChanged)
+    Q_PROPERTY(int tickerSpeed READ tickerSpeed WRITE setTickerSpeed NOTIFY brandingChanged)
+
+    // Scoreboard colors
+    Q_PROPERTY(QString scoreboardColorA READ scoreboardColorA WRITE setScoreboardColorA NOTIFY brandingChanged)
+    Q_PROPERTY(QString scoreboardColorB READ scoreboardColorB WRITE setScoreboardColorB NOTIFY brandingChanged)
+    Q_PROPERTY(QString scoreboardPosition READ scoreboardPosition WRITE setScoreboardPosition NOTIFY brandingChanged)
+
 public:
     explicit SetupController(ProfileManager* profiles, QObject* parent = nullptr);
 
@@ -356,6 +367,24 @@ public:
     int scoreboardScoreB() const { return m_scoreboardScoreB; }
     void setScoreboardScoreB(int v);
 
+    // Ticker appearance
+    QString tickerBgColor() const { return m_tickerBgColor; }
+    void setTickerBgColor(const QString& v);
+    QString tickerTextColor() const { return m_tickerTextColor; }
+    void setTickerTextColor(const QString& v);
+    int tickerFontSize() const { return m_tickerFontSize; }
+    void setTickerFontSize(int v);
+    int tickerSpeed() const { return m_tickerSpeed; }
+    void setTickerSpeed(int v);
+
+    // Scoreboard colors & position
+    QString scoreboardColorA() const { return m_scoreboardColorA; }
+    void setScoreboardColorA(const QString& v);
+    QString scoreboardColorB() const { return m_scoreboardColorB; }
+    void setScoreboardColorB(const QString& v);
+    QString scoreboardPosition() const { return m_scoreboardPosition; }
+    void setScoreboardPosition(const QString& v);
+
     Q_INVOKABLE void loadAnimatedLogo(const QString& path);
     Q_INVOKABLE bool isReadyToGo() const;
     Q_INVOKABLE void saveProfile();
@@ -469,6 +498,17 @@ private:
     QString m_scoreboardTeamB = "TEAM B";
     int     m_scoreboardScoreA = 0;
     int     m_scoreboardScoreB = 0;
+
+    // Ticker appearance
+    QString m_tickerBgColor = "#CC0000";
+    QString m_tickerTextColor = "#FFFFFF";
+    int     m_tickerFontSize = 14;
+    int     m_tickerSpeed = 2;
+
+    // Scoreboard colors & position
+    QString m_scoreboardColorA = "#CC0000";
+    QString m_scoreboardColorB = "#0066CC";
+    QString m_scoreboardPosition = "top_left";
 };
 
 } // namespace prestige

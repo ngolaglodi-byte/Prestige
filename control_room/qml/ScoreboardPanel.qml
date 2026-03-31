@@ -9,8 +9,8 @@ Item {
     property string teamB: setupController.scoreboardTeamB
     property int scoreA: setupController.scoreboardScoreA
     property int scoreB: setupController.scoreboardScoreB
-    property string colorA: "#CC0000"
-    property string colorB: "#0066CC"
+    property string colorA: setupController.scoreboardColorA
+    property string colorB: setupController.scoreboardColorB
     property int period: 1
     property int yellowA: 0; property int redA: 0
     property int yellowB: 0; property int redB: 0
@@ -34,7 +34,7 @@ Item {
             ComboBox { model: ["Football","Basketball","Tennis","Rugby","Handball"]; Layout.fillWidth: true; background: Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"} }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Rectangle { Layout.preferredWidth:18;Layout.preferredHeight:18;radius:4;color:sb.colorA; MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{sb.colorA=sb.colorA==="#CC0000"?"#FF6B00":"#CC0000"}} }
+            Rectangle { Layout.preferredWidth:18;Layout.preferredHeight:18;radius:4;color:sb.colorA; MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{var c=sb.colorA==="#CC0000"?"#FF6B00":"#CC0000";sb.colorA=c;setupController.scoreboardColorA=c}} }
             TextField {
                 Layout.fillWidth:true;text:sb.teamA
                 onTextChanged: { sb.teamA=text; setupController.scoreboardTeamA=text }
@@ -48,7 +48,7 @@ Item {
                 font.pixelSize:10;color:window.darkMode?"#FFF":"#1A1A1A"
                 background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}
             }
-            Rectangle { Layout.preferredWidth:18;Layout.preferredHeight:18;radius:4;color:sb.colorB; MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{sb.colorB=sb.colorB==="#0066CC"?"#1DB954":"#0066CC"}} }
+            Rectangle { Layout.preferredWidth:18;Layout.preferredHeight:18;radius:4;color:sb.colorB; MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{var c=sb.colorB==="#0066CC"?"#1DB954":"#0066CC";sb.colorB=c;setupController.scoreboardColorB=c}} }
         }
         RowLayout { spacing: 6; Layout.alignment: Qt.AlignHCenter
             Rectangle{Layout.preferredWidth:26;Layout.preferredHeight:26;radius:6;color:"#CC0000";Label{anchors.centerIn:parent;text:"-";color:"white";font.pixelSize:14;font.bold:true}
@@ -93,7 +93,9 @@ Item {
         Rectangle{Layout.fillWidth:true;Layout.preferredHeight:1;color:window.darkMode?"#222":"#CCC";Layout.leftMargin:8;Layout.rightMargin:8}
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label{text:"Position:";color:window.darkMode?"#999":"#666";font.pixelSize:10}
-            ComboBox{model:["Haut gauche","Haut droite","Bas gauche","Bas droite"];currentIndex:1;Layout.fillWidth:true;background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}}
+            ComboBox{id:sbPosCb;model:["Haut gauche","Haut droite","Bas gauche","Bas droite"];currentIndex:0;Layout.fillWidth:true
+                background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}
+                onCurrentIndexChanged:{var pos=["top_left","top_right","bottom_left","bottom_right"];setupController.scoreboardPosition=pos[currentIndex]}}
         }
         Switch{text:"Afficher";checked:setupController.scoreboardVisible;onToggled:setupController.scoreboardVisible=checked;leftPadding:8}
         Item{implicitHeight:10}

@@ -6,10 +6,10 @@ Item {
     id: tk
     property bool showOnOutput: false
     property string manualText: ""
-    property int scrollSpeed: 2
-    property string bgColor: "#CC0000"
-    property string textColor: "#FFFFFF"
-    property int fontSize: 14
+    property int scrollSpeed: setupController.tickerSpeed
+    property string bgColor: setupController.tickerBgColor
+    property string textColor: setupController.tickerTextColor
+    property int fontSize: setupController.tickerFontSize
 
     Flickable {
         anchors.fill: parent; contentHeight: tkCol.implicitHeight; clip: true
@@ -109,18 +109,18 @@ Item {
                 Rectangle {
                     width: 18; height: 18; radius: 4; color: modelData
                     border.color: modelData === tk.bgColor ? "white" : "transparent"; border.width: 2
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: tk.bgColor = modelData }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { tk.bgColor = modelData; setupController.tickerBgColor = modelData } }
                 }
             }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Vitesse:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-            Slider { from: 1; to: 5; stepSize: 1; value: tk.scrollSpeed; Layout.fillWidth: true; onMoved: tk.scrollSpeed = value }
+            Slider { from: 1; to: 5; stepSize: 1; value: setupController.tickerSpeed; Layout.fillWidth: true; onMoved: { tk.scrollSpeed = value; setupController.tickerSpeed = value } }
             Label { text: tk.scrollSpeed + "x"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10 }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-            Slider { from: 10; to: 24; stepSize: 1; value: tk.fontSize; Layout.fillWidth: true; onMoved: tk.fontSize = value }
+            Slider { from: 10; to: 24; stepSize: 1; value: setupController.tickerFontSize; Layout.fillWidth: true; onMoved: { tk.fontSize = value; setupController.tickerFontSize = value } }
             Label { text: tk.fontSize + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10 }
         }
 

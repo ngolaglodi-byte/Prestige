@@ -355,18 +355,18 @@ Item {
                     anchors.left: parent.left; anchors.right: parent.right
                     height: visible ? wysiwygOverlay.ph * 0.033 : 0
                     visible: setupController.tickerVisible && rssFetcher.headlines !== "" && !liveController.isBypassed
-                    color: "#CC0000"
+                    color: setupController.tickerBgColor
                     clip: true
 
                     Label {
                         id: tickerText
                         text: rssFetcher.headlines || ""
-                        font.pixelSize: wysiwygOverlay.ph * 0.012; font.weight: Font.Bold; color: "white"
+                        font.pixelSize: setupController.tickerFontSize * (wysiwygOverlay.ph / 1080.0); font.weight: Font.Bold; color: setupController.tickerTextColor
                         y: (parent.height - height) / 2
                         NumberAnimation on x {
                             from: wysiwygTickerBar.width
                             to: -tickerText.implicitWidth
-                            duration: Math.max(8000, tickerText.implicitWidth * 30)
+                            duration: Math.max(4000, tickerText.implicitWidth * (60 / Math.max(1, setupController.tickerSpeed)))
                             loops: Animation.Infinite; running: wysiwygTickerBar.visible
                         }
                     }
@@ -485,8 +485,19 @@ Item {
                     id: wysiwygScoreboard
                     visible: setupController.scoreboardVisible && !liveController.isBypassed
 
-                    x: (wysiwygOverlay.pw * 0.008) + setupController.scoreboardOffsetX * (wysiwygOverlay.pw / 1920.0)
-                    y: (wysiwygOverlay.ph * 0.056) + setupController.scoreboardOffsetY * (wysiwygOverlay.ph / 1080.0)
+                    property string sbPos: setupController.scoreboardPosition || "top_left"
+                    x: {
+                        if (sbPos === "top_left" || sbPos === "bottom_left")
+                            return wysiwygOverlay.pw * 0.008 + setupController.scoreboardOffsetX * (wysiwygOverlay.pw / 1920.0)
+                        else
+                            return parent.width - width - wysiwygOverlay.pw * 0.008 + setupController.scoreboardOffsetX * (wysiwygOverlay.pw / 1920.0)
+                    }
+                    y: {
+                        if (sbPos === "top_left" || sbPos === "top_right")
+                            return wysiwygOverlay.ph * 0.056 + setupController.scoreboardOffsetY * (wysiwygOverlay.ph / 1080.0)
+                        else
+                            return parent.height - height - wysiwygOverlay.ph * 0.056 + setupController.scoreboardOffsetY * (wysiwygOverlay.ph / 1080.0)
+                    }
 
                     width: wysiwygOverlay.pw * 0.167; height: wysiwygOverlay.ph * 0.074
                     radius: wysiwygOverlay.ph * 0.006
@@ -497,13 +508,13 @@ Item {
                         anchors.centerIn: parent; spacing: wysiwygOverlay.pw * 0.005
                         ColumnLayout {
                             spacing: 1
-                            Label { text: setupController.scoreboardTeamA; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#CC0000"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardTeamA; font.pixelSize: wysiwygOverlay.ph * 0.009; color: setupController.scoreboardColorA; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
                             Label { text: setupController.scoreboardScoreA.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
                         Label { text: "-"; font.pixelSize: wysiwygOverlay.ph * 0.015; color: "#555" }
                         ColumnLayout {
                             spacing: 1
-                            Label { text: setupController.scoreboardTeamB; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#0066CC"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardTeamB; font.pixelSize: wysiwygOverlay.ph * 0.009; color: setupController.scoreboardColorB; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
                             Label { text: setupController.scoreboardScoreB.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
                     }

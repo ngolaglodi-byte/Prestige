@@ -292,6 +292,19 @@ void SetupController::setScoreboardTeamB(const QString& v) { if (m_scoreboardTea
 void SetupController::setScoreboardScoreA(int v) { if (m_scoreboardScoreA == v) return; m_scoreboardScoreA = v; emit brandingChanged(); }
 void SetupController::setScoreboardScoreB(int v) { if (m_scoreboardScoreB == v) return; m_scoreboardScoreB = v; emit brandingChanged(); }
 
+// ── Ticker appearance ────────────────────────────────────────
+
+void SetupController::setTickerBgColor(const QString& v) { if (m_tickerBgColor == v) return; m_tickerBgColor = v; emit brandingChanged(); }
+void SetupController::setTickerTextColor(const QString& v) { if (m_tickerTextColor == v) return; m_tickerTextColor = v; emit brandingChanged(); }
+void SetupController::setTickerFontSize(int v) { if (m_tickerFontSize == v) return; m_tickerFontSize = qBound(10, v, 24); emit brandingChanged(); }
+void SetupController::setTickerSpeed(int v) { if (m_tickerSpeed == v) return; m_tickerSpeed = qBound(1, v, 5); emit brandingChanged(); }
+
+// ── Scoreboard colors & position ────────────────────────────
+
+void SetupController::setScoreboardColorA(const QString& v) { if (m_scoreboardColorA == v) return; m_scoreboardColorA = v; emit brandingChanged(); }
+void SetupController::setScoreboardColorB(const QString& v) { if (m_scoreboardColorB == v) return; m_scoreboardColorB = v; emit brandingChanged(); }
+void SetupController::setScoreboardPosition(const QString& v) { if (m_scoreboardPosition == v) return; m_scoreboardPosition = v; emit brandingChanged(); }
+
 void SetupController::loadAnimatedLogo(const QString& path)
 {
     QString localPath = path;
