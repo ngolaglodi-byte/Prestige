@@ -1299,7 +1299,7 @@ ApplicationWindow {
         standardButtons: Dialog.NoButton
 
         background: Rectangle {
-            color: "#12121A"
+            color: window.darkMode ? "#12121A" : "#FFFFFF"
             radius: 16
             border.color: Qt.rgba(1, 1, 1, 0.06)
             layer.enabled: true
@@ -1380,7 +1380,7 @@ ApplicationWindow {
         standardButtons: Dialog.NoButton
 
         background: Rectangle {
-            color: "#12121A"; radius: 16
+            color: window.darkMode ? "#12121A" : "#FFFFFF"; radius: 16
             border.color: Qt.rgba(1,1,1,0.06)
             layer.enabled: true
             layer.effect: MultiEffect { shadowEnabled: true; shadowColor: Qt.rgba(0,0,0,0.5); shadowBlur: 1.0; shadowVerticalOffset: 8 }
@@ -1861,7 +1861,7 @@ ApplicationWindow {
             }
         }
 
-        background: Rectangle { color: "#12121A"; radius: 16; border.color: Qt.rgba(1,1,1,0.06) }
+        background: Rectangle { color: window.darkMode ? "#12121A" : "#FFFFFF"; radius: 16; border.color: Qt.rgba(1,1,1,0.06) }
         Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.8) }
 
         contentItem: ColumnLayout {
