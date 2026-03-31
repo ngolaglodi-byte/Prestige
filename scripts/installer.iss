@@ -46,11 +46,11 @@ Source: "..\dist\PrestigeAI\*"; DestDir: "{app}"; Flags: ignoreversion recursesu
 Source: "..\resources\prestige.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\PrestigeAI.bat"; IconFilename: "{app}\prestige.ico"; Comment: "Prestige AI — Broadcast Overlay System"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\PrestigeAI.bat"; IconFilename: "{app}\prestige.ico"; Tasks: desktopicon; Comment: "Prestige AI — Broadcast Overlay System"
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\PrestigeAI.vbs"; IconFilename: "{app}\prestige.ico"; Comment: "Prestige AI — Broadcast Overlay System"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\PrestigeAI.vbs"; IconFilename: "{app}\prestige.ico"; Tasks: desktopicon; Comment: "Prestige AI — Broadcast Overlay System"
 
 [Run]
-Filename: "{app}\PrestigeAI.bat"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent shellexec
+Filename: "{app}\PrestigeAI.vbs"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent shellexec
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"

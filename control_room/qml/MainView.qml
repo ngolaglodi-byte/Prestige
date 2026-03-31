@@ -425,130 +425,104 @@ ApplicationWindow {
         }
     }
 
-    // ── Animated background gradient ───────────────────────
-    Rectangle {
-        anchors.fill: parent
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: window.darkMode ? "#07070A" : "#F0F0F4" }
-            GradientStop { position: 0.5; color: window.darkMode ? "#0A0A12" : "#E8E8EE" }
-            GradientStop { position: 1.0; color: window.darkMode ? "#07070A" : "#F0F0F4" }
-        }
-        Behavior on color { ColorAnimation { duration: 300 } }
-        // Subtle animated accent glow top-left
-        Rectangle {
-            width: 400; height: 400; radius: 200
-            x: -100; y: -100
-            opacity: 0.03
-            color: "#5B4FDB"
-            Behavior on opacity { NumberAnimation { duration: 2000 } }
-        }
-    }
-
-    RowLayout {
+    ColumnLayout {
         anchors.fill: parent; spacing: 0
 
-        // -- Left: Program Sidebar --
+        // ── Animated background gradient (content area only) ──
         Rectangle {
-            Layout.preferredWidth: 260; Layout.fillHeight: true
-            color: window.darkMode ? "#0A0A0E" : "#E8E8EE"
+            Layout.fillWidth: true; Layout.fillHeight: true
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: window.darkMode ? "#07070A" : "#F0F0F4" }
+                GradientStop { position: 0.5; color: window.darkMode ? "#0A0A12" : "#E8E8EE" }
+                GradientStop { position: 1.0; color: window.darkMode ? "#07070A" : "#F0F0F4" }
+            }
+            Behavior on color { ColorAnimation { duration: 300 } }
+            // Subtle animated accent glow top-left
+            Rectangle {
+                width: 400; height: 400; radius: 200
+                x: -100; y: -100
+                opacity: 0.03
+                color: "#5B4FDB"
+                Behavior on opacity { NumberAnimation { duration: 2000 } }
+            }
 
             ColumnLayout {
-                anchors.fill: parent; anchors.margins: 12; spacing: 8
+                anchors.fill: parent; spacing: 0
 
-                // Channel branding always visible
-                ColumnLayout {
-                    spacing: 4
-                    Label { text: configManager.channelName || "PRESTIGE AI"; font.pixelSize: 16; font.weight: Font.Bold; color: window.darkMode ? "white" : "#1A1A1A" }
-                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 2; radius: 1; color: "#5B4FDB" }
-                }
-
-                // Overlay master toggle
+                // ── Slim program bar (top, 42px) ──────────────────
                 Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 8
-                    color: mainWindow.overlaysActive
-                        ? Qt.rgba(29/255,185/255,84/255, 0.15)
-                        : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04))
-                    border.color: mainWindow.overlaysActive ? "#1DB954" : "transparent"
+                    Layout.fillWidth: true; Layout.preferredHeight: 42
+                    color: window.darkMode ? "#0D0D10" : "#E0E0E6"
+
                     RowLayout {
-                        anchors.centerIn: parent; spacing: 8
-                        Rectangle { Layout.preferredWidth: 10; Layout.preferredHeight: 10; radius: 5; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#555" : "#999") }
+                        anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
+
+                        // Channel name
                         Label {
-                            text: mainWindow.overlaysActive ? window.t("overlays_active") : window.t("passthrough")
-                            font.pixelSize: 12; font.weight: Font.Bold
-                            color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#888" : "#666")
+                            text: configManager.channelName || "PRESTIGE AI"
+                            font.pixelSize: 13; font.weight: Font.Bold
+                            color: window.darkMode ? "white" : "#1A1A1A"
+                        }
+
+                        Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
+
+                        // Overlay status indicator
+                        Rectangle {
+                            Layout.preferredWidth: statusRow.implicitWidth + 16; Layout.preferredHeight: 26; radius: 13
+                            color: mainWindow.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.15) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04))
+                            border.color: mainWindow.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.3) : "transparent"
+                            RowLayout {
+                                id: statusRow; anchors.centerIn: parent; spacing: 6
+                                Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#555" : "#999") }
+                                Label { text: mainWindow.overlaysActive ? window.t("overlays_active") : window.t("passthrough"); font.pixelSize: 10; font.weight: Font.DemiBold; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#888" : "#666") }
+                            }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.toggleOverlays() }
+                        }
+
+                        Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
+
+                        // Program selector (compact ComboBox-like)
+                        Label { text: window.t("programs") + ":"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+
+                        // Program buttons (horizontal, compact)
+                        Flickable {
+                            Layout.fillWidth: true; Layout.preferredHeight: 28
+                            contentWidth: progRow.implicitWidth; clip: true
+                            flickableDirection: Flickable.HorizontalFlick
+
+                            Row {
+                                id: progRow; spacing: 4
+                                Repeater {
+                                    model: mainWindow.programList
+                                    Rectangle {
+                                        width: progLabel.implicitWidth + 16; height: 26; radius: 13
+                                        color: mainWindow.activeProgram === index ? "#5B4FDB" : (progMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : (window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.03)))
+                                        Label { id: progLabel; anchors.centerIn: parent; text: modelData; font.pixelSize: 10; color: mainWindow.activeProgram === index ? "white" : (window.darkMode ? "#CCC" : "#333") }
+                                        MouseArea { id: progMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.switchProgram(index) }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
+
+                        // Configure button
+                        Rectangle {
+                            Layout.preferredWidth: configLbl.implicitWidth + 16; Layout.preferredHeight: 26; radius: 6
+                            color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
+                            Label { id: configLbl; anchors.centerIn: parent; text: window.t("configure"); font.pixelSize: 10; color: "#5B4FDB" }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: configDrawer.open() }
                         }
                     }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.toggleOverlays() }
+
+                    // Bottom border
+                    Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
                 }
 
-                // Section: Programs
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
-                Label { text: window.t("programs"); font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 2; color: window.darkMode ? "#666" : "#999" }
-
-                // Program list
-                ListView {
-                    Layout.fillWidth: true; Layout.fillHeight: true; clip: true; spacing: 4
-                    model: mainWindow.programList
-
-                    delegate: Rectangle {
-                        width: ListView.view.width; height: 48; radius: 8
-                        color: mainWindow.activeProgram === index
-                            ? Qt.rgba(91/255,79/255,219/255, 0.15)
-                            : (progMouse.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)) : "transparent")
-                        border.color: mainWindow.activeProgram === index ? "#5B4FDB" : "transparent"
-                        border.width: mainWindow.activeProgram === index ? 1.5 : 0
-
-                        RowLayout {
-                            anchors.fill: parent; anchors.margins: 10; spacing: 8
-                            Rectangle {
-                                Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3
-                                color: mainWindow.activeProgram === index ? "#5B4FDB" : (window.darkMode ? "#333" : "#CCC")
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: modelData
-                                font.pixelSize: 12
-                                font.weight: mainWindow.activeProgram === index ? Font.DemiBold : Font.Normal
-                                color: mainWindow.activeProgram === index ? "#5B4FDB" : (window.darkMode ? "#CCC" : "#333")
-                                elide: Text.ElideRight
-                            }
-                            Label {
-                                visible: mainWindow.activeProgram === index
-                                text: window.t("current_program")
-                                font.pixelSize: 8; font.weight: Font.Bold
-                                color: "#5B4FDB"
-                            }
-                        }
-                        MouseArea { id: progMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: mainWindow.switchProgram(index)
-                        }
-                    }
-                }
-
-                // Add program button
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 36; radius: 6
-                    color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                    Label { anchors.centerIn: parent; text: "+ " + window.t("new_program"); font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: newProfileDialog.open() }
-                }
-
-                // Configure current program
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 36; radius: 6
-                    color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                    visible: mainWindow.activeProgram >= 0
-                    Label { anchors.centerIn: parent; text: window.t("configure"); font.pixelSize: 11; color: "#5B4FDB" }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: configDrawer.open() }
-                }
+                // ── Main content: LiveView always visible ─────────
+                LiveView { id: liveView; Layout.fillWidth: true; Layout.fillHeight: true }
             }
         }
-
-        // Separator
-        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
-
-        // -- Right: Live View (always visible) --
-        LiveView { id: liveView; Layout.fillWidth: true; Layout.fillHeight: true }
     }
 
     // -- Drawer for program configuration --

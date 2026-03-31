@@ -74,7 +74,7 @@ jobs:
         & windeployqt dist\PrestigeAI\prestige_vision.exe
         Copy-Item -Recurse ai_engine dist\PrestigeAI\ai_engine -Force
         Copy-Item resources\prestige.ico dist\PrestigeAI\
-        Set-Content -Path dist\PrestigeAI\PrestigeAI.bat -Value "@echo off`ntitle Prestige AI`nstart /B prestige_vision.exe`ntimeout /t 2 /nobreak >nul`nstart /B ai_engine\venv\Scripts\python.exe ai_engine\main.py`ntimeout /t 2 /nobreak >nul`nprestige_control.exe`ntaskkill /f /im prestige_vision.exe >nul 2>&1"
+        Copy-Item scripts\PrestigeAI.vbs dist\PrestigeAI\
 
     - name: Create Inno Setup installer
       shell: pwsh
