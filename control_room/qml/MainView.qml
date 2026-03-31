@@ -1349,34 +1349,57 @@ ApplicationWindow {
         background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; radius: 12; border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.1) }
         Overlay.modal: Rectangle { color: Qt.rgba(0,0,0,0.6) }
 
-        contentItem: ColumnLayout {
-            spacing: 12
+        contentItem: Flickable {
+            contentHeight: aboutCol.implicitHeight; clip: true
+            flickableDirection: Flickable.VerticalFlick
+            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+            ColumnLayout {
+                id: aboutCol; width: parent.width; spacing: 10
                 Item { Layout.preferredHeight: 8 }
                 Label { text: "PRESTIGE AI"; font.pixelSize: 24; font.weight: Font.Bold; font.letterSpacing: 3; color: "#5B4FDB"; Layout.alignment: Qt.AlignHCenter }
                 Label { text: "v1.0.0"; font.pixelSize: 14; color: window.darkMode ? "#888" : "#666"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "Professional Broadcast Overlay System"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; Layout.alignment: Qt.AlignHCenter }
                 Item { Layout.preferredHeight: 4 }
-                Label { text: "Logiciel broadcast professionnel\navec reconnaissance faciale IA"; font.pixelSize: 13; color: window.darkMode ? "#AAA" : "#555"; horizontalAlignment: Text.AlignHCenter; Layout.alignment: Qt.AlignHCenter; wrapMode: Text.WordWrap }
-                Item { Layout.preferredHeight: 4 }
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Qt.rgba(1,1,1,0.06) }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
                 Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 12; font.weight: Font.DemiBold; color: window.darkMode ? "#CCC" : "#333"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Tous droits reserves"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Qt.rgba(1,1,1,0.06) }
-                Item { Layout.preferredHeight: 2 }
-                Label { text: "20 styles d'overlay \u2022 8 animations"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "InsightFace \u2022 FFmpeg \u2022 ZeroMQ \u2022 Qt 6"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "DeckLink \u2022 AJA \u2022 NDI \u2022 Magewell (runtime)"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Item { Layout.preferredHeight: 4 }
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Qt.rgba(1,1,1,0.06) }
+                Label { text: "Tous droits r\u00E9serv\u00E9s"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+
+                // Features
+                Label { text: "Fonctionnalit\u00E9s"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#AAA" : "#444"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "20 styles \u2022 8 animations \u2022 5 langues \u2022 4K"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "IA: InsightFace + Whisper (100% offline)"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "Sorties: RTMP \u2022 SRT \u2022 NDI \u2022 SDI \u2022 Fichier"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "SDKs: DeckLink \u2022 AJA \u2022 NDI \u2022 Magewell"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "API REST: 20+ endpoints \u2022 Web Remote"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+
+                // System requirements
+                Label { text: "Configuration requise"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#AAA" : "#444"; Layout.alignment: Qt.AlignHCenter }
+                GridLayout {
+                    columns: 2; columnSpacing: 8; rowSpacing: 3; Layout.alignment: Qt.AlignHCenter
+                    Label { text: "Minimum:"; font.pixelSize: 9; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
+                    Label { text: "i5-8400 (3.0 GHz) \u2022 8 GB \u2022 10 GB SSD"; font.pixelSize: 9; color: window.darkMode ? "#666" : "#999" }
+                    Label { text: "Recommand\u00E9:"; font.pixelSize: 9; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
+                    Label { text: "i7-10700 (3.8 GHz) \u2022 16 GB \u2022 GTX 1650"; font.pixelSize: 9; color: window.darkMode ? "#666" : "#999" }
+                    Label { text: "Optimal:"; font.pixelSize: 9; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
+                    Label { text: "i9-12900K (3.9 GHz) \u2022 32 GB \u2022 RTX 3060"; font.pixelSize: 9; color: window.darkMode ? "#666" : "#999" }
+                }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+
+                // License
                 Label { text: "Licence: " + licenseManager.licenseType; font.pixelSize: 11; color: "#1DB954"; Layout.alignment: Qt.AlignHCenter }
                 Label { text: "Expire: " + licenseManager.expirationDate; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
                 Item { Layout.preferredHeight: 4 }
                 Rectangle {
-                    Layout.preferredWidth: 80; Layout.preferredHeight: 32; radius: 6; color: Qt.rgba(1,1,1,0.04)
+                    Layout.preferredWidth: 80; Layout.preferredHeight: 32; radius: 6; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
                     Layout.alignment: Qt.AlignHCenter
                     Label { anchors.centerIn: parent; text: window.t("close"); color: window.darkMode ? "#888" : "#666"; font.pixelSize: 12 }
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: aboutDialog.close() }
                 }
+                Item { Layout.preferredHeight: 8 }
             }
+        }
     }
 
     // ── Toast notifications ────────────────────────────────
