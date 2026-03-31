@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Effects
+import QtQuick.Window 2.15
 
 ApplicationWindow {
     id: window
@@ -1038,6 +1039,11 @@ ApplicationWindow {
                                 leftPadding: 12
                             }
 
+                            // Multi-ecran
+                            Label { text: "Multi-ecran"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            Label { text: Qt.application.screens.length + " ecran(s) detecte(s)"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
+                            Switch { text: "Ouvrir sortie sur 2e ecran"; checked: outputWindow.visible; onToggled: outputWindow.visible = checked; leftPadding: 12 }
+
                             // SDKs
                             Label { text: "SDKs broadcast"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
                             Repeater {
@@ -1762,6 +1768,48 @@ ApplicationWindow {
                 }
             }
             Item { Layout.preferredHeight: 8 }
+        }
+    }
+
+    // ── Output Window (2nd Monitor) ─────────────────────────
+    Window {
+        id: outputWindow
+        visible: false
+        flags: Qt.Window | Qt.FramelessWindowHint
+        color: "black"
+        title: "Prestige AI - Output"
+
+        Component.onCompleted: {
+            var screens = Qt.application.screens
+            if (screens.length > 1) {
+                var s = screens[1]
+                outputWindow.x = s.virtualX
+                outputWindow.y = s.virtualY
+                outputWindow.width = s.width
+                outputWindow.height = s.height
+            } else {
+                outputWindow.width = 1280
+                outputWindow.height = 720
+            }
+        }
+
+        Item {
+            anchors.fill: parent
+
+            Image {
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectFit
+                cache: false
+                source: previewMonitor.active ? "image://preview/frame?" + outputFrameCounter : ""
+                property int outputFrameCounter: 0
+                Connections {
+                    target: previewMonitor
+                    function onFrameUpdated() { outputFrameCounter++ }
+                }
+            }
+
+            // Escape key to close
+            Keys.onEscapePressed: outputWindow.visible = false
         }
     }
 }

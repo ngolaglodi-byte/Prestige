@@ -3,6 +3,7 @@
 // ============================================================
 // Prestige AI -- Web Remote Control Server
 // Simple HTTP server for remote control via browser.
+// Extended with full REST API.
 // ============================================================
 
 #include <QObject>
@@ -15,6 +16,10 @@ namespace prestige {
 class LiveController;
 class OverlayController;
 class MacroEngine;
+class SetupController;
+class AnalyticsEngine;
+class SubtitleController;
+class RssFetcher;
 
 class WebRemoteServer : public QObject {
     Q_OBJECT
@@ -24,7 +29,9 @@ class WebRemoteServer : public QObject {
 
 public:
     explicit WebRemoteServer(LiveController* live, OverlayController* overlay,
-                             MacroEngine* macros, QObject* parent = nullptr);
+                             MacroEngine* macros, SetupController* setup,
+                             AnalyticsEngine* analytics, SubtitleController* subtitles,
+                             RssFetcher* rss, QObject* parent = nullptr);
 
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
@@ -43,13 +50,22 @@ private:
     void handleRequest(QTcpSocket* socket, const QByteArray& request);
     QByteArray serveHtml();
     QByteArray serveApiStatus();
-    QByteArray handlePost(const QString& path);
+    QByteArray serveApiDocs();
+    QByteArray serveApiAnalytics();
+    QByteArray serveApiConfig();
+    QByteArray serveApiPrograms();
+    QByteArray serveApiTalents();
+    QByteArray handlePost(const QString& path, const QByteArray& body);
 
-    QTcpServer*      m_server  = nullptr;
-    LiveController*  m_live    = nullptr;
-    OverlayController* m_overlay = nullptr;
-    MacroEngine*     m_macros  = nullptr;
-    int              m_port    = 8080;
+    QTcpServer*        m_server     = nullptr;
+    LiveController*    m_live       = nullptr;
+    OverlayController* m_overlay    = nullptr;
+    MacroEngine*       m_macros     = nullptr;
+    SetupController*   m_setup      = nullptr;
+    AnalyticsEngine*   m_analytics  = nullptr;
+    SubtitleController* m_subtitles = nullptr;
+    RssFetcher*        m_rss        = nullptr;
+    int                m_port       = 8080;
 };
 
 } // namespace prestige

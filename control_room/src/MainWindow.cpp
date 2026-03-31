@@ -22,6 +22,7 @@
 #include "SocialChatController.h"
 #include "WebRemoteServer.h"
 #include "LicenseManager.h"
+#include "AnalyticsEngine.h"
 
 #include <QQmlContext>
 #include <QDebug>
@@ -46,8 +47,26 @@ MainWindow::MainWindow(QObject* parent)
     m_subtitleCtrl = new SubtitleController(this);
     m_weatherFetcher = new WeatherFetcher(this);
     m_socialChatCtrl = new SocialChatController(this);
-    m_webRemote = new WebRemoteServer(m_liveController, m_overlay, m_macroEngine, this);
+    m_analytics = new AnalyticsEngine(this);
+    m_webRemote = new WebRemoteServer(m_liveController, m_overlay, m_macroEngine,
+                                      m_setupController, m_analytics, m_subtitleCtrl,
+                                      m_rssFetcher, this);
     m_license = new LicenseManager(this);
+
+    // Connect LiveController signals to AnalyticsEngine
+    connect(m_liveController, &LiveController::detectionChanged, this, [this]() {
+        if (m_liveController->talentDetected()) {
+            m_analytics->recordDetection(
+                m_liveController->detectedName(),
+                m_liveController->detectedRole(),
+                m_liveController->confidence()
+            );
+        }
+    });
+    connect(m_liveController, &LiveController::statsChanged, this, [this]() {
+        m_analytics->recordFps(m_liveController->fps());
+        m_analytics->recordLatency(m_liveController->latencyMs());
+    });
 
     // Connect PreviewMonitor FPS → LiveController real stats
     connect(m_preview, &PreviewMonitor::fpsChanged, this, [this]() {
@@ -138,6 +157,7 @@ bool MainWindow::initialize(QQmlApplicationEngine* engine)
     ctx->setContextProperty("socialChatController", m_socialChatCtrl);
     ctx->setContextProperty("webRemote", m_webRemote);
     ctx->setContextProperty("licenseManager", m_license);
+    ctx->setContextProperty("analyticsEngine", m_analytics);
 
     // Validate stored license on startup
     m_license->validateStoredKey();
@@ -194,6 +214,8 @@ void MainWindow::activateOverlays()
     publishConfig();
     m_emissionStarting = false;
 
+    m_analytics->start();
+
     emit overlaysActiveChanged();
     emit emissionLaunched();
     qInfo() << "[ControlRoom] === OVERLAYS ACTIVATED ===";
@@ -207,6 +229,7 @@ void MainWindow::deactivateOverlays()
     m_overlaysActive = false;
     m_liveController->setOverlaysActive(false);
     m_liveController->setBypassed(false);
+    m_analytics->stop();
 
     publishConfig();
 

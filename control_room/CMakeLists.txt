@@ -19,6 +19,7 @@ set(CONTROL_SOURCES
     src/SocialChatController.cpp
     src/WebRemoteServer.cpp
     src/LicenseManager.cpp
+    src/AnalyticsEngine.cpp
 )
 
 set(CONTROL_HEADERS
@@ -39,6 +40,7 @@ set(CONTROL_HEADERS
     src/SocialChatController.h
     src/WebRemoteServer.h
     src/LicenseManager.h
+    src/AnalyticsEngine.h
 )
 
 qt_add_executable(prestige_control ${CONTROL_SOURCES} ${CONTROL_HEADERS}

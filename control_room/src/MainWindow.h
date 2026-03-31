@@ -29,6 +29,7 @@ class AudioMeter;
 class SocialChatController;
 class WebRemoteServer;
 class LicenseManager;
+class AnalyticsEngine;
 
 class MainWindow : public QObject {
     Q_OBJECT
@@ -111,6 +112,9 @@ private:
 
     // License
     LicenseManager*    m_license        = nullptr;
+
+    // Analytics
+    AnalyticsEngine*   m_analytics      = nullptr;
 
     // i18n
     QString            m_language        = "fr";
