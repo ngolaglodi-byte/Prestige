@@ -12,6 +12,24 @@ Item {
     property int fontSize: 24
     property string fontColor: "#FFFFFF"
 
+    FileDialog {
+        id: importFileDialog
+        title: "Importer un script"
+        nameFilters: ["Fichiers texte (*.txt)", "Tous les fichiers (*)"]
+        onAccepted: {
+            var path = selectedFile.toString().replace("file://", "")
+            // Read file via XMLHttpRequest (local file)
+            var xhr = new XMLHttpRequest()
+            xhr.open("GET", selectedFile)
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    tp.scriptText = xhr.responseText
+                }
+            }
+            xhr.send()
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent; anchors.margins: 12; spacing: 8
         Label { text: "Téléprompter"; font.pixelSize: 15; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A" }
@@ -45,7 +63,7 @@ Item {
             Item { Layout.fillWidth: true }
             Rectangle { Layout.preferredWidth: 80; Layout.preferredHeight: 30; radius: 6; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06)
                 Label { anchors.centerIn: parent; text: "Importer..."; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
-                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { /* TODO: Open file dialog */ console.log("[Teleprompter] Import clicked") } }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: importFileDialog.open() }
             }
             Rectangle { Layout.preferredWidth: 80; Layout.preferredHeight: 30; radius: 6; color: tp.isScrolling ? "#CC0000" : "#1DB954"
                 Label { anchors.centerIn: parent; text: tp.isScrolling ? "STOP" : "DÉFILER"; color: "white"; font.pixelSize: 11; font.bold: true }
