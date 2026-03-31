@@ -483,6 +483,58 @@ Item {
                         text: "SCAN"; font.pixelSize: 6 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "#5B4FDB"
                     }
                 }
+
+                // ── Scoreboard overlay ──────────────────────
+                Rectangle {
+                    id: wysiwygScoreboard
+                    visible: mainWindow.overlaysActive && !liveController.isBypassed
+
+                    x: (16 + setupController.scoreboardOffsetX) * wysiwygOverlay.sf
+                    y: (60 + setupController.scoreboardOffsetY) * wysiwygOverlay.sf
+
+                    width: 200 * wysiwygOverlay.sf; height: 60 * wysiwygOverlay.sf
+                    radius: 6 * wysiwygOverlay.sf
+                    color: Qt.rgba(0, 0, 0, 0.75)
+                    border.color: Qt.rgba(1,1,1,0.1)
+
+                    RowLayout {
+                        anchors.centerIn: parent; spacing: 10 * wysiwygOverlay.sf
+                        ColumnLayout {
+                            spacing: 1
+                            Label { text: "TEAM A"; font.pixelSize: 8 * wysiwygOverlay.sf; color: "#CC0000"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: "0"; font.pixelSize: 20 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
+                        }
+                        Label { text: "-"; font.pixelSize: 16 * wysiwygOverlay.sf; color: "#555" }
+                        ColumnLayout {
+                            spacing: 1
+                            Label { text: "TEAM B"; font.pixelSize: 8 * wysiwygOverlay.sf; color: "#0066CC"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: "0"; font.pixelSize: 20 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
+                        }
+                    }
+                }
+
+                // ── Weather overlay ──────────────────────────
+                Rectangle {
+                    id: wysiwygWeather
+                    visible: weatherFetcher.city !== "" && !liveController.isBypassed
+
+                    x: parent.width - width - (16 - setupController.weatherOffsetX) * wysiwygOverlay.sf
+                    y: parent.height - height - (80 + setupController.weatherOffsetY) * wysiwygOverlay.sf
+
+                    width: 160 * wysiwygOverlay.sf; height: 50 * wysiwygOverlay.sf
+                    radius: 6 * wysiwygOverlay.sf
+                    color: Qt.rgba(0, 0, 0, 0.7)
+
+                    RowLayout {
+                        anchors.centerIn: parent; spacing: 8 * wysiwygOverlay.sf
+                        Label { text: weatherFetcher.conditionIcon; font.pixelSize: 22 * wysiwygOverlay.sf }
+                        ColumnLayout {
+                            spacing: 0
+                            Label { text: weatherFetcher.city; font.pixelSize: 10 * wysiwygOverlay.sf; font.weight: Font.Bold; color: "white" }
+                            Label { text: Math.round(weatherFetcher.temperature) + weatherFetcher.unit; font.pixelSize: 9 * wysiwygOverlay.sf; color: "#CCC" }
+                        }
+                    }
+                }
             }
 
             // Resolution + FPS badge (on top of everything)

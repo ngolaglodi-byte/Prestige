@@ -381,7 +381,7 @@ ApplicationWindow {
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
             MenuItem {
                 text: window.t("branding")
-                onTriggered: brandingDialog.open()
+                onTriggered: brandingDrawer.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
             MenuItem {
@@ -1207,23 +1207,32 @@ ApplicationWindow {
         }
     }
 
-    // ── Branding Dialog (Habillage chaine) ────────────────
-    Dialog {
-        id: brandingDialog
-        anchors.centerIn: parent; width: 560; height: 920; modal: true
-        standardButtons: Dialog.NoButton
-        background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; radius: 12; border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.1) }
-        Overlay.modal: Rectangle { color: Qt.rgba(0,0,0,0.6) }
+    // ── Branding Drawer (Habillage chaine) ────────────────
+    Drawer {
+        id: brandingDrawer
+        width: 380; height: window.height
+        edge: Qt.RightEdge
+        modal: false
+        background: Rectangle { color: window.darkMode ? "#0D0D10" : "#F5F5FA"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
 
-        header: Item { height: 56; Label { anchors.centerIn: parent; text: window.t("branding_title"); font.pixelSize: 18; font.weight: Font.DemiBold; color: window.darkMode ? "white" : "#1A1A1A" } }
+        Flickable {
+            anchors.fill: parent
+            contentHeight: brandCol.implicitHeight; clip: true; flickableDirection: Flickable.VerticalFlick
+            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+            ColumnLayout {
+                id: brandCol; width: parent.width; spacing: 8
 
-        contentItem: Item {
-            Flickable {
-                anchors.fill: parent
-                contentHeight: brandCol.implicitHeight; clip: true; flickableDirection: Flickable.VerticalFlick
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                ColumnLayout {
-                    id: brandCol; width: parent.width; spacing: 8
+                // Header with close button
+                RowLayout {
+                    Layout.fillWidth: true; Layout.margins: 12
+                    Label { text: "Habillage & Positions"; font.pixelSize: 15; font.weight: Font.Bold; color: window.darkMode ? "white" : "#1A1A1A"; Layout.fillWidth: true }
+                    Rectangle {
+                        Layout.preferredWidth: 28; Layout.preferredHeight: 28; radius: 14
+                        color: closeMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.1)) : "transparent"
+                        Label { anchors.centerIn: parent; text: "\u2715"; font.pixelSize: 14; color: window.darkMode ? "#888" : "#666" }
+                        MouseArea { id: closeMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: brandingDrawer.close() }
+                    }
+                }
 
                 // ── LOGO SECTION ──────────────────────────────
                 Label { text: window.t("channel_logo"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A" }
@@ -1608,9 +1617,8 @@ ApplicationWindow {
                     Layout.preferredWidth: 80; Layout.preferredHeight: 32; radius: 6; color: Qt.rgba(1,1,1,0.04)
                     Layout.alignment: Qt.AlignRight
                     Label { anchors.centerIn: parent; text: window.t("close"); color: window.darkMode ? "#888" : "#666"; font.pixelSize: 12 }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: brandingDialog.close() }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: brandingDrawer.close() }
                 }
-            }
             }
         }
     }
