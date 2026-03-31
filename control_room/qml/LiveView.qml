@@ -159,10 +159,10 @@ Item {
                 anchors.fill: parent
                 visible: true  // Always visible to show branding even without Vision Engine
 
-                // Scale factor for overlay positioning (preview is smaller than actual output)
-                property real sx: parent.width / 1920.0
-                property real sy: parent.height / 1080.0
-                property real sf: Math.min(sx, sy)  // Uniform scale factor
+                // Scale factor — ensures overlays are readable at any preview size
+                // At 1920x1080 sf=1.0, at smaller preview sizes sf scales proportionally
+                // Minimum 0.55 so text/logo never become too small to read
+                property real sf: Math.max(0.55, Math.min(parent.width / 1920.0, parent.height / 1080.0))
 
                 // ── Layer 1: Channel Logo ────────────────────
                 Image {
