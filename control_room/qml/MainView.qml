@@ -223,15 +223,6 @@ ApplicationWindow {
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
             MenuItem {
-                text: window.t("scan_hw")
-                onTriggered: hardwareScanner.scan()
-            }
-            MenuItem {
-                text: window.t("refresh_talents")
-                onTriggered: talentManager.refreshTalents()
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
                 text: window.t("channel_name_menu")
                 onTriggered: channelNameDialog.open()
             }
@@ -239,42 +230,6 @@ ApplicationWindow {
             MenuItem {
                 text: window.t("quit")
                 onTriggered: Qt.quit()
-            }
-        }
-
-        // ── Émission ──────────────────────────────────────
-        Menu {
-            title: window.t("emission")
-            background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
-
-            MenuItem {
-                text: mainWindow.overlaysActive ? window.t("deactivate_overlays") : window.t("activate_overlays")
-                onTriggered: {
-                    if (mainWindow.overlaysActive) stopConfirmDialog.open()
-                    else confirmLaunchDialog.open()
-                }
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("next_program")
-                onTriggered: {
-                    var next = mainWindow.activeProgram + 1
-                    if (next >= mainWindow.programList.length) next = 0
-                    mainWindow.switchProgram(next)
-                }
-            }
-            MenuItem {
-                text: window.t("passthrough")
-                onTriggered: mainWindow.switchProgram(mainWindow.programList.length - 1)
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("source_config")
-                onTriggered: { configDrawer.open(); setupView.currentStep = 2 }
-            }
-            MenuItem {
-                text: window.t("output_config")
-                onTriggered: { configDrawer.open(); setupView.currentStep = 3 }
             }
         }
 
@@ -297,7 +252,7 @@ ApplicationWindow {
             MenuItem { text: "Breaking News"; checkable: true; checked: setupController.selectedStyle === "breaking"; onTriggered: setupController.selectedStyle = "breaking" }
             MenuItem {
                 text: window.t("all_styles")
-                onTriggered: { configDrawer.open(); setupView.currentStep = 0 }
+                onTriggered: { navPanelDrawer.activePanel = 3; navPanelDrawer.open() }
             }
         }
 
@@ -324,15 +279,6 @@ ApplicationWindow {
                 }
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("configure")
-                onTriggered: configDrawer.open()
-            }
-            MenuItem {
-                text: mainWindow.overlaysActive ? window.t("deactivate_overlays") : window.t("activate_overlays")
-                onTriggered: mainWindow.toggleOverlays()
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
             Menu {
                 title: window.t("language")
                 MenuItem { text: "Fran\u00E7ais"; checkable: true; checked: window.lang === "fr"; onTriggered: mainWindow.language = "fr" }
@@ -349,39 +295,30 @@ ApplicationWindow {
             background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
 
             MenuItem {
+                text: window.t("source_config")
+                onTriggered: { navPanelDrawer.activePanel = 0; navPanelDrawer.open() }
+            }
+            MenuItem {
+                text: window.t("output_config")
+                onTriggered: { navPanelDrawer.activePanel = 1; navPanelDrawer.open() }
+            }
+            MenuItem {
                 text: window.t("talent_mgmt")
-                onTriggered: { configDrawer.open(); setupView.currentStep = 1 }
-            }
-            MenuItem {
-                text: window.t("scan_hw")
-                onTriggered: { hardwareScanner.scan(); hardwareScanNotif.show() }
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("sdk_status")
-                onTriggered: sdkStatusDialog.open()
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("teleprompter")
-                onTriggered: teleprompterDialog.open()
-            }
-            MenuItem {
-                text: window.t("macros")
-                onTriggered: macroDialog.open()
-            }
-            MenuItem {
-                text: window.t("ticker")
-                onTriggered: tickerDialog.open()
-            }
-            MenuItem {
-                text: window.t("stats")
-                onTriggered: statsDialog.open()
+                onTriggered: { navPanelDrawer.activePanel = 2; navPanelDrawer.open() }
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
             MenuItem {
                 text: window.t("branding")
-                onTriggered: brandingDrawer.open()
+                onTriggered: { navPanelDrawer.activePanel = 3; navPanelDrawer.open() }
+            }
+            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
+            MenuItem {
+                text: window.t("scan_hw")
+                onTriggered: { hardwareScanner.scan(); hardwareScanNotif.show() }
+            }
+            MenuItem {
+                text: window.t("sdk_status")
+                onTriggered: sdkStatusDialog.open()
             }
             MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
             MenuItem {
@@ -415,7 +352,7 @@ ApplicationWindow {
         }
     }
 
-    // ── Keyboard shortcuts (moved out of Action items) ──────────────
+    // ── Keyboard shortcuts ──────────────────────────────────
     Shortcut { sequence: "Ctrl+N"; onActivated: newProfileDialog.open() }
     Shortcut { sequence: "Ctrl+S"; onActivated: { setupController.saveProfile(); savedNotif.show() } }
     Shortcut { sequence: "Ctrl+Q"; onActivated: Qt.quit() }
@@ -423,99 +360,537 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+Right"; onActivated: { var next = mainWindow.activeProgram + 1; if (next >= mainWindow.programList.length) next = 0; mainWindow.switchProgram(next) } }
     Shortcut { sequence: "Ctrl+0"; onActivated: mainWindow.switchProgram(mainWindow.programList.length - 1) }
     Shortcut { sequence: "F11"; onActivated: { if (window.visibility === Window.FullScreen) window.showNormal(); else window.showFullScreen() } }
-    Shortcut { sequence: "Ctrl+1"; onActivated: configDrawer.open() }
+    Shortcut { sequence: "Ctrl+1"; onActivated: { navPanelDrawer.activePanel = 0; navPanelDrawer.open() } }
     Shortcut { sequence: "Ctrl+2"; onActivated: mainWindow.toggleOverlays() }
-    Shortcut { sequence: "Ctrl+T"; onActivated: { configDrawer.open(); setupView.currentStep = 1 } }
+    Shortcut { sequence: "Ctrl+T"; onActivated: { navPanelDrawer.activePanel = 2; navPanelDrawer.open() } }
 
-    ColumnLayout {
+    // ── MAIN LAYOUT: Nav bar (left) + Content (right) ─────
+    RowLayout {
         anchors.fill: parent; spacing: 0
 
-                // ── Slim program bar (top, 42px) ──────────────────
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 42
-                    color: window.darkMode ? "#0D0D10" : "#E0E0E6"
+        // ── LEFT NAVIGATION BAR (60px, always visible) ──
+        Rectangle {
+            Layout.preferredWidth: 60; Layout.fillHeight: true
+            color: window.darkMode ? "#08080C" : "#E0E0E6"
 
-                    RowLayout {
-                        anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
+            ColumnLayout {
+                anchors.fill: parent; anchors.topMargin: 8; anchors.bottomMargin: 8; spacing: 4
 
-                        // Channel name
+                // Nav buttons - each opens a drawer
+                Repeater {
+                    model: ListModel {
+                        ListElement { icon: "\uD83D\uDCFA"; tooltip: "Entrees"; panel: 0 }
+                        ListElement { icon: "\uD83D\uDCE1"; tooltip: "Sorties"; panel: 1 }
+                        ListElement { icon: "\uD83D\uDC64"; tooltip: "Talents"; panel: 2 }
+                        ListElement { icon: "\uD83C\uDFA8"; tooltip: "Style"; panel: 3 }
+                        ListElement { icon: "\uD83D\uDD27"; tooltip: "Outils"; panel: 4 }
+                        ListElement { icon: "\u2699"; tooltip: "Parametres"; panel: 5 }
+                    }
+
+                    Rectangle {
+                        Layout.preferredWidth: 48; Layout.preferredHeight: 48; Layout.alignment: Qt.AlignHCenter
+                        radius: 10
+                        color: navPanelDrawer.visible && navPanelDrawer.activePanel === model.panel
+                            ? (window.darkMode ? Qt.rgba(91/255,79/255,219/255,0.2) : Qt.rgba(91/255,79/255,219/255,0.15))
+                            : (navBtnMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : "transparent")
+                        border.color: navPanelDrawer.visible && navPanelDrawer.activePanel === model.panel ? "#5B4FDB" : "transparent"
+
                         Label {
-                            text: configManager.channelName || "PRESTIGE AI"
-                            font.pixelSize: 13; font.weight: Font.Bold
-                            color: window.darkMode ? "white" : "#1A1A1A"
+                            anchors.centerIn: parent
+                            text: model.icon
+                            font.pixelSize: 20
                         }
 
-                        Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
-
-                        // Overlay status indicator
-                        Rectangle {
-                            Layout.preferredWidth: statusRow.implicitWidth + 16; Layout.preferredHeight: 26; radius: 13
-                            color: mainWindow.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.15) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04))
-                            border.color: mainWindow.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.3) : "transparent"
-                            RowLayout {
-                                id: statusRow; anchors.centerIn: parent; spacing: 6
-                                Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#555" : "#999") }
-                                Label { text: mainWindow.overlaysActive ? window.t("overlays_active") : window.t("passthrough"); font.pixelSize: 10; font.weight: Font.DemiBold; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#888" : "#666") }
-                            }
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.toggleOverlays() }
+                        ToolTip {
+                            visible: navBtnMa.containsMouse && !navPanelDrawer.visible
+                            text: model.tooltip
+                            delay: 500
                         }
 
-                        Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
-
-                        // Program selector (compact ComboBox-like)
-                        Label { text: window.t("programs") + ":"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
-
-                        // Program buttons (horizontal, compact)
-                        Flickable {
-                            Layout.fillWidth: true; Layout.preferredHeight: 28
-                            contentWidth: progRow.implicitWidth; clip: true
-                            flickableDirection: Flickable.HorizontalFlick
-
-                            Row {
-                                id: progRow; spacing: 4
-                                Repeater {
-                                    model: mainWindow.programList
-                                    Rectangle {
-                                        width: progLabel.implicitWidth + 16; height: 26; radius: 13
-                                        color: mainWindow.activeProgram === index ? "#5B4FDB" : (progMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : (window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.03)))
-                                        Label { id: progLabel; anchors.centerIn: parent; text: modelData; font.pixelSize: 10; color: mainWindow.activeProgram === index ? "white" : (window.darkMode ? "#CCC" : "#333") }
-                                        MouseArea { id: progMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.switchProgram(index) }
-                                    }
+                        MouseArea {
+                            id: navBtnMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (navPanelDrawer.visible && navPanelDrawer.activePanel === model.panel) {
+                                    navPanelDrawer.close()
+                                } else {
+                                    navPanelDrawer.activePanel = model.panel
+                                    navPanelDrawer.open()
                                 }
                             }
                         }
-
-                        Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
-
-                        // Configure button
-                        Rectangle {
-                            Layout.preferredWidth: configLbl.implicitWidth + 16; Layout.preferredHeight: 26; radius: 6
-                            color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                            Label { id: configLbl; anchors.centerIn: parent; text: window.t("configure"); font.pixelSize: 10; color: "#5B4FDB" }
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: configDrawer.open() }
-                        }
                     }
-
-                    // Bottom border
-                    Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
                 }
 
-        // ── Main content: LiveView always visible ─────────
-        LiveView { id: liveView; Layout.fillWidth: true; Layout.fillHeight: true }
+                Item { Layout.fillHeight: true }  // Spacer
+
+                // Channel logo/initial at bottom of nav
+                Rectangle {
+                    Layout.preferredWidth: 40; Layout.preferredHeight: 40; Layout.alignment: Qt.AlignHCenter
+                    radius: 8
+                    color: "#5B4FDB"
+                    Label {
+                        anchors.centerIn: parent
+                        text: (configManager.channelName || "P").charAt(0).toUpperCase()
+                        font.pixelSize: 18; font.weight: Font.Bold; color: "white"
+                    }
+                }
+            }
+        }
+
+        // Nav bar separator
+        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+
+        // ── MAIN CONTENT (program bar + preview) ──
+        ColumnLayout {
+            Layout.fillWidth: true; Layout.fillHeight: true; spacing: 0
+
+            // ── Slim program bar (top, 42px) ──────────────────
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 42
+                color: window.darkMode ? "#0D0D10" : "#E0E0E6"
+
+                RowLayout {
+                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
+
+                    // Channel name
+                    Label {
+                        text: configManager.channelName || "PRESTIGE AI"
+                        font.pixelSize: 13; font.weight: Font.Bold
+                        color: window.darkMode ? "white" : "#1A1A1A"
+                    }
+
+                    Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
+
+                    // Overlay status indicator
+                    Rectangle {
+                        Layout.preferredWidth: statusRow.implicitWidth + 16; Layout.preferredHeight: 26; radius: 13
+                        color: mainWindow.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.15) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04))
+                        border.color: mainWindow.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.3) : "transparent"
+                        RowLayout {
+                            id: statusRow; anchors.centerIn: parent; spacing: 6
+                            Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#555" : "#999") }
+                            Label { text: mainWindow.overlaysActive ? window.t("overlays_active") : window.t("passthrough"); font.pixelSize: 10; font.weight: Font.DemiBold; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#888" : "#666") }
+                        }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.toggleOverlays() }
+                    }
+
+                    Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
+
+                    // Program selector (compact ComboBox-like)
+                    Label { text: window.t("programs") + ":"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+
+                    // Program buttons (horizontal, compact)
+                    Flickable {
+                        Layout.fillWidth: true; Layout.preferredHeight: 28
+                        contentWidth: progRow.implicitWidth; clip: true
+                        flickableDirection: Flickable.HorizontalFlick
+
+                        Row {
+                            id: progRow; spacing: 4
+                            Repeater {
+                                model: mainWindow.programList
+                                Rectangle {
+                                    width: progLabel.implicitWidth + 16; height: 26; radius: 13
+                                    color: mainWindow.activeProgram === index ? "#5B4FDB" : (progMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : (window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.03)))
+                                    Label { id: progLabel; anchors.centerIn: parent; text: modelData; font.pixelSize: 10; color: mainWindow.activeProgram === index ? "white" : (window.darkMode ? "#CCC" : "#333") }
+                                    MouseArea { id: progMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.switchProgram(index) }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Bottom border
+                Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+            }
+
+            // ── Main content: LiveView always visible ─────────
+            LiveView { id: liveView; Layout.fillWidth: true; Layout.fillHeight: true }
+        }
     }
 
-    // -- Drawer for program configuration --
+    // ── Navigation Panel Drawer ──────────────────────────
     Drawer {
-        id: configDrawer
-        width: 500; height: window.height
+        id: navPanelDrawer
+        width: 420; height: window.height
         edge: Qt.LeftEdge
-        modal: true
-        background: Rectangle { color: window.darkMode ? "#0D0D10" : "#F0F0F4" }
+        modal: false
 
-        SetupView { id: setupView; anchors.fill: parent }
+        property int activePanel: 0
+
+        background: Rectangle {
+            color: window.darkMode ? "#0D0D12" : "#F5F5FA"
+            border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08)
+        }
+
+        ColumnLayout {
+            anchors.fill: parent; spacing: 0
+
+            // Header with title + close
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 50
+                color: window.darkMode ? "#0A0A0F" : "#EAEAEF"
+                RowLayout {
+                    anchors.fill: parent; anchors.margins: 12
+                    Label {
+                        text: ["Entrees", "Sorties", "Talents", "Style & Habillage", "Outils", "Parametres"][navPanelDrawer.activePanel]
+                        font.pixelSize: 15; font.weight: Font.Bold
+                        color: window.darkMode ? "white" : "#1A1A1A"
+                        Layout.fillWidth: true
+                    }
+                    Rectangle {
+                        Layout.preferredWidth: 28; Layout.preferredHeight: 28; radius: 14
+                        color: closePanelMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.1)) : "transparent"
+                        Label { anchors.centerIn: parent; text: "\u2715"; font.pixelSize: 14; color: window.darkMode ? "#888" : "#666" }
+                        MouseArea { id: closePanelMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: navPanelDrawer.close() }
+                    }
+                }
+                Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+            }
+
+            // Panel content (switches based on activePanel)
+            StackLayout {
+                Layout.fillWidth: true; Layout.fillHeight: true
+                currentIndex: navPanelDrawer.activePanel
+
+                // Panel 0: Entrees
+                SourceStep { }
+
+                // Panel 1: Sorties
+                OutputStep { }
+
+                // Panel 2: Talents
+                TalentStep { }
+
+                // Panel 3: Style & Habillage
+                Item {
+                    Flickable {
+                        anchors.fill: parent; contentHeight: styleHabCol.implicitHeight; clip: true
+                        flickableDirection: Flickable.VerticalFlick
+                        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                        ColumnLayout {
+                            id: styleHabCol; width: parent.width; spacing: 8
+
+                            // Embed StyleStep content
+                            StyleStep { Layout.fillWidth: true; Layout.preferredHeight: 500 }
+
+                            // Branding controls (from old brandingDrawer)
+                            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+
+                            // ── LOGO SECTION ──────────────────────────────
+                            Label { text: window.t("channel_logo"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8; Layout.rightMargin: 8
+                                TextField { id: logoPathField; Layout.fillWidth: true; text: setupController.channelLogoPath; onTextChanged: setupController.channelLogoPath = text; placeholderText: "logo.png ou logo.gif"; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" } }
+                                Rectangle {
+                                    Layout.preferredWidth: 90; Layout.preferredHeight: 30; radius: 4; color: "#5B4FDB"
+                                    Label { anchors.centerIn: parent; text: window.t("browse"); color: "white"; font.pixelSize: 11 }
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: logoFileDialogLoader.active = true }
+                                }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Position:"; color: window.darkMode ? "#999" : "#666" }
+                                ComboBox {
+                                    id: logoPosCb
+                                    model: ["Haut droite", "Haut gauche", "Bas droite", "Bas gauche"]
+                                    onCurrentIndexChanged: { var pos = ["top_right","top_left","bottom_right","bottom_left"]; setupController.channelLogoPosition = pos[currentIndex] }
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                    contentItem: Label { text: logoPosCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
+                                }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelLogoOffsetX; Layout.fillWidth: true; onMoved: setupController.channelLogoOffsetX = value }
+                                Label { text: setupController.channelLogoOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelLogoOffsetY; Layout.fillWidth: true; onMoved: setupController.channelLogoOffsetY = value }
+                                Label { text: setupController.channelLogoOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666" }
+                                Slider { id: logoSizeSlider; from: 30; to: 120; value: setupController.channelLogoSize; onMoved: setupController.channelLogoSize = value }
+                                Label { text: Math.round(logoSizeSlider.value) + "px"; color: window.darkMode ? "#999" : "#666" }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Animation entree:"; color: window.darkMode ? "#999" : "#666" }
+                                ComboBox {
+                                    id: logoEntryCb
+                                    model: ["Aucune", "Glisser gauche", "Glisser droite", "Glisser haut", "Glisser bas", "Fondu", "Zoom", "Balayage"]
+                                    currentIndex: { var m = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; return Math.max(0, m.indexOf(setupController.logoEntryAnim)); }
+                                    onCurrentIndexChanged: { var m = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; setupController.logoEntryAnim = m[currentIndex] }
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                    contentItem: Label { text: logoEntryCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
+                                }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Animation boucle:"; color: window.darkMode ? "#999" : "#666" }
+                                ComboBox {
+                                    id: logoLoopCb
+                                    model: ["Aucune", "Pulsation", "Brillance", "Scintillement", "Rebond", "Rotation"]
+                                    currentIndex: { var m = ["none","pulse","glow","shimmer","bounce","rotate"]; return Math.max(0, m.indexOf(setupController.logoLoopAnim)); }
+                                    onCurrentIndexChanged: { var m = ["none","pulse","glow","shimmer","bounce","rotate"]; setupController.logoLoopAnim = m[currentIndex] }
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                    contentItem: Label { text: logoLoopCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
+                                }
+                            }
+                            Switch { text: window.t("keep_logo_ads"); checked: setupController.keepLogoDuringAds; onToggled: setupController.keepLogoDuringAds = checked; leftPadding: 8 }
+
+                            // ── CHANNEL NAME SECTION ──────────────────────
+                            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+                            Label { text: window.t("channel_name_section"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
+                            Switch { text: window.t("show_name_text"); checked: setupController.showChannelNameText; onToggled: setupController.showChannelNameText = checked; leftPadding: 8 }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Forme:"; color: window.darkMode ? "#999" : "#666" }
+                                ComboBox {
+                                    id: nameShapeCb
+                                    model: ["Rectangle", "Carre", "Pilule", "Oblique", "Sans cadre"]
+                                    currentIndex: { var m = ["rectangle","square","pill","angled","frameless"]; return Math.max(0, m.indexOf(setupController.channelNameShape)); }
+                                    onCurrentIndexChanged: { var m = ["rectangle","square","pill","angled","frameless"]; setupController.channelNameShape = m[currentIndex] }
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                    contentItem: Label { text: nameShapeCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
+                                }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Fond:"; color: window.darkMode ? "#999" : "#666" }
+                                Repeater {
+                                    model: ["#CC0000", "#0055AA", "#222222", "#006633", "#8B00FF", "#FF6600", "#333333"]
+                                    Rectangle {
+                                        width: 24; height: 24; radius: 12; color: modelData; border.color: setupController.channelNameBgColor === modelData ? "white" : "transparent"; border.width: 2
+                                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameBgColor = modelData }
+                                    }
+                                }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Texte:"; color: window.darkMode ? "#999" : "#666" }
+                                Repeater {
+                                    model: ["#FFFFFF", "#000000", "#FFDD00", "#00FFCC", "#FF4444"]
+                                    Rectangle {
+                                        width: 24; height: 24; radius: 12; color: modelData; border.color: setupController.channelNameTextColor === modelData ? "#5B4FDB" : (window.darkMode ? "#444" : "#BBB"); border.width: 2
+                                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameTextColor = modelData }
+                                    }
+                                }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Bordure:"; color: window.darkMode ? "#999" : "#666" }
+                                Repeater {
+                                    model: ["#FFFFFF", "#000000", "#CC0000", "#FFDD00", "#0055AA", "transparent"]
+                                    Rectangle {
+                                        width: 24; height: 24; radius: 12; color: modelData === "transparent" ? "gray" : modelData; border.color: setupController.channelNameBorderColor === modelData ? "#5B4FDB" : (window.darkMode ? "#444" : "#BBB"); border.width: 2
+                                        Label { anchors.centerIn: parent; text: modelData === "transparent" ? "X" : ""; font.pixelSize: 10; color: "white" }
+                                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameBorderColor = modelData }
+                                    }
+                                }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Taille police:"; color: window.darkMode ? "#999" : "#666" }
+                                Slider { id: nameFontSlider; from: 8; to: 36; stepSize: 1; value: setupController.channelNameFontSize; onMoved: setupController.channelNameFontSize = value }
+                                Label { text: Math.round(nameFontSlider.value) + "pt"; color: window.darkMode ? "#999" : "#666" }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetX; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetX = value }
+                                Label { text: setupController.channelNameOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetY; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetY = value }
+                                Label { text: setupController.channelNameOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                            }
+
+                            // ── SHOW TITLE SECTION ────────────────────────
+                            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+                            Label { text: window.t("show_title_section"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
+                            Switch { text: window.t("enable_title"); checked: setupController.showTitleEnabled; onToggled: setupController.showTitleEnabled = checked; leftPadding: 8 }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8; Layout.rightMargin: 8
+                                Label { text: "Titre:"; color: window.darkMode ? "#999" : "#666" }
+                                TextField { Layout.fillWidth: true; text: setupController.showTitle; onTextChanged: setupController.showTitle = text; placeholderText: "JOURNAL DE 20H"; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" } }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8; Layout.rightMargin: 8
+                                Label { text: "Sous-titre:"; color: window.darkMode ? "#999" : "#666" }
+                                TextField { Layout.fillWidth: true; text: setupController.showSubtitle; onTextChanged: setupController.showSubtitle = text; placeholderText: "Edition speciale"; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" } }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Position:"; color: window.darkMode ? "#999" : "#666" }
+                                ComboBox {
+                                    id: titlePosCb
+                                    model: ["Bas gauche", "Bas droite", "Haut gauche", "Haut droite"]
+                                    onCurrentIndexChanged: { var pos = ["bottom_left","bottom_right","top_left","top_right"]; setupController.showTitlePosition = pos[currentIndex] }
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                    contentItem: Label { text: titlePosCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
+                                }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Slider { from: -200; to: 200; stepSize: 1; value: setupController.showTitleOffsetX; Layout.fillWidth: true; onMoved: setupController.showTitleOffsetX = value }
+                                Label { text: setupController.showTitleOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                            }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Slider { from: -200; to: 200; stepSize: 1; value: setupController.showTitleOffsetY; Layout.fillWidth: true; onMoved: setupController.showTitleOffsetY = value }
+                                Label { text: setupController.showTitleOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
+                            }
+
+                            // ── TIMING SECTION ────────────────────────────
+                            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+                            Label { text: window.t("cycle_talent_title"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Duree affichage talent:"; color: window.darkMode ? "#999" : "#666" }
+                                Slider { id: talentDurSlider; from: 3; to: 30; stepSize: 1; value: setupController.talentDisplayDurationSec; onMoved: setupController.talentDisplayDurationSec = value }
+                                Label { text: Math.round(talentDurSlider.value) + "s"; color: window.darkMode ? "#999" : "#666" }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Delai retour titre:"; color: window.darkMode ? "#999" : "#666" }
+                                Slider { id: titleDelaySlider; from: 1; to: 10; stepSize: 1; value: setupController.titleReappearDelaySec; onMoved: setupController.titleReappearDelaySec = value }
+                                Label { text: Math.round(titleDelaySlider.value) + "s"; color: window.darkMode ? "#999" : "#666" }
+                            }
+
+                            Item { Layout.preferredHeight: 16 }
+                        }
+                    }
+                }
+
+                // Panel 4: Outils
+                Item {
+                    ColumnLayout {
+                        anchors.fill: parent; spacing: 0
+
+                        // Tool tabs
+                        RowLayout {
+                            Layout.fillWidth: true; Layout.preferredHeight: 36; spacing: 0
+                            Repeater {
+                                model: ["\u26BD Score", "\u2601 Meteo", "\uD83D\uDCAC Ticker", "\uD83C\uDF99 ST", "\uD83D\uDCF1 Chat", "\uD83D\uDCDD Prompt"]
+                                Rectangle {
+                                    Layout.fillWidth: true; Layout.preferredHeight: 36
+                                    color: toolsStack.currentIndex === index ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : "transparent"
+                                    Label { anchors.centerIn: parent; text: modelData; font.pixelSize: 9; color: toolsStack.currentIndex === index ? (window.darkMode ? "white" : "#1A1A1A") : (window.darkMode ? "#666" : "#999") }
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: toolsStack.currentIndex = index }
+                                }
+                            }
+                        }
+                        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
+
+                        StackLayout {
+                            id: toolsStack; Layout.fillWidth: true; Layout.fillHeight: true
+                            ScoreboardPanel {}
+                            WeatherPanel {}
+                            TickerPanel {}
+                            SubtitlePanel {}
+                            SocialChatPanel {}
+                            TeleprompterPanel {}
+                        }
+                    }
+                }
+
+                // Panel 5: Parametres
+                Item {
+                    Flickable {
+                        anchors.fill: parent; contentHeight: settingsCol.implicitHeight; clip: true
+                        flickableDirection: Flickable.VerticalFlick
+                        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                        ColumnLayout {
+                            id: settingsCol; width: parent.width; spacing: 10
+                            Item { implicitHeight: 8 }
+
+                            // Licence
+                            Label { text: "Licence"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            Rectangle {
+                                width: parent.width - 24; height: 50; x: 12; radius: 8
+                                color: window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.03)
+                                RowLayout {
+                                    anchors.fill: parent; anchors.margins: 12; spacing: 8
+                                    Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: licenseManager.isActivated ? "#1DB954" : "#CC3333" }
+                                    Label { text: licenseManager.licenseType + " -- " + licenseManager.expirationDate; font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333"; Layout.fillWidth: true }
+                                }
+                            }
+
+                            // Langue
+                            Label { text: "Langue"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 12
+                                Repeater {
+                                    model: ["FR", "EN", "ES", "AR", "ZH"]
+                                    Rectangle {
+                                        Layout.preferredWidth: 40; Layout.preferredHeight: 28; radius: 6
+                                        color: window.lang === modelData.toLowerCase() ? "#5B4FDB" : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04))
+                                        Label { anchors.centerIn: parent; text: modelData; font.pixelSize: 10; font.weight: Font.Bold; color: window.lang === modelData.toLowerCase() ? "white" : (window.darkMode ? "#888" : "#666") }
+                                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.language = modelData.toLowerCase() }
+                                    }
+                                }
+                            }
+
+                            // Theme
+                            Label { text: "Theme"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            Switch { text: "Mode sombre"; checked: window.darkMode; onToggled: window.darkMode = checked; leftPadding: 12 }
+
+                            // Nom chaine
+                            Label { text: "Chaine"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 12; Layout.rightMargin: 12
+                                TextField { Layout.fillWidth: true; text: configManager.channelName; onTextChanged: configManager.channelName = text; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 6; border.color: window.darkMode ? "#333" : "#CCC" } }
+                            }
+
+                            // Web Remote
+                            Label { text: "Controle distant"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            Switch {
+                                text: webRemote.running ? ("Actif (:" + webRemote.port + ")") : "Desactive"
+                                checked: webRemote.running
+                                onToggled: { if (checked) webRemote.start(); else webRemote.stop() }
+                                leftPadding: 12
+                            }
+
+                            // SDKs
+                            Label { text: "SDKs broadcast"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            Repeater {
+                                model: hardwareScanner.sdkStatus()
+                                RowLayout { spacing: 6; Layout.leftMargin: 12
+                                    Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: modelData.installed ? "#1DB954" : "#CC3333" }
+                                    Label { text: modelData.name; font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333" }
+                                }
+                            }
+
+                            // Export/Import
+                            Rectangle { width: parent.width - 24; height: 1; x: 12; color: window.darkMode ? "#222" : "#CCC" }
+                            RowLayout { spacing: 8; Layout.leftMargin: 12
+                                Rectangle {
+                                    Layout.preferredWidth: 120; Layout.preferredHeight: 32; radius: 6
+                                    color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
+                                    Label { anchors.centerIn: parent; text: "Exporter profil"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: exportProfileDialog.open() }
+                                }
+                                Rectangle {
+                                    Layout.preferredWidth: 120; Layout.preferredHeight: 32; radius: 6
+                                    color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
+                                    Label { anchors.centerIn: parent; text: "Importer profil"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: importProfileDialog.open() }
+                                }
+                            }
+
+                            // Copyright
+                            Item { implicitHeight: 16 }
+                            Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 9; color: window.darkMode ? "#444" : "#AAA"; leftPadding: 12 }
+                            Item { implicitHeight: 12 }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    // ── Launch confirmation dialog ─────────────────────────
+    // ── Activate overlays confirmation dialog ─────────────────────────
     Dialog {
         id: confirmLaunchDialog
         anchors.centerIn: parent
@@ -526,7 +901,6 @@ ApplicationWindow {
             color: "#12121A"
             radius: 16
             border.color: Qt.rgba(1, 1, 1, 0.06)
-            // Soft shadow
             layer.enabled: true
             layer.effect: MultiEffect {
                 shadowEnabled: true
@@ -598,7 +972,7 @@ ApplicationWindow {
             }
     }
 
-    // ── Stop confirmation dialog ───────────────────────────
+    // ── Deactivate overlays confirmation dialog ───────────────────────────
     Dialog {
         id: stopConfirmDialog
         anchors.centerIn: parent; width: 440; modal: true
@@ -659,7 +1033,7 @@ ApplicationWindow {
                 Label { text: window.t("emission_name"); font.pixelSize: 12; color: window.darkMode ? "#999" : "#666" }
                 TextField {
                     id: newProfileName; Layout.fillWidth: true
-                    placeholderText: "Ex: JT 20h — Lundi"; font.pixelSize: 14; color: window.darkMode ? "white" : "#1A1A1A"
+                    placeholderText: "Ex: JT 20h -- Lundi"; font.pixelSize: 14; color: window.darkMode ? "white" : "#1A1A1A"
                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 6; border.color: window.darkMode ? "#333" : "#CCC" }
                 }
                 RowLayout {
@@ -745,16 +1119,15 @@ ApplicationWindow {
                     model: [
                         { key: "Ctrl+N", action: "Nouveau profil" },
                         { key: "Ctrl+S", action: "Sauvegarder le profil" },
-                        { key: "F5",     action: "Lancer / Arrêter l'émission" },
+                        { key: "F5",     action: "Activer / Desactiver overlays" },
                         { key: "Ctrl+T", action: "Gestion des talents" },
-                        { key: "Ctrl+1", action: "Mode Setup" },
-                        { key: "Ctrl+2", action: "Mode Live" },
-                        { key: "F11",    action: "Plein écran" },
+                        { key: "Ctrl+1", action: "Ouvrir panneau" },
+                        { key: "Ctrl+2", action: "Toggle overlays" },
+                        { key: "F11",    action: "Plein ecran" },
                         { key: "Ctrl+Q", action: "Quitter" },
                         { key: "Space",  action: "Toggle overlays (live)" },
                         { key: "R",      action: "Toggle enregistrement (live)" },
-                        { key: "B",      action: "Toggle bypass (live)" },
-                        { key: "1-5",    action: "Onglet outils (live)" }
+                        { key: "B",      action: "Toggle bypass (live)" }
                     ]
                     delegate: RowLayout {
                         width: shortcutsCol.width; spacing: 12
@@ -794,7 +1167,7 @@ ApplicationWindow {
                 Item { Layout.preferredHeight: 4 }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Qt.rgba(1,1,1,0.06) }
                 Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 12; font.weight: Font.DemiBold; color: window.darkMode ? "#CCC" : "#333"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Tous droits r\u00E9serv\u00E9s"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "Tous droits reserves"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Qt.rgba(1,1,1,0.06) }
                 Item { Layout.preferredHeight: 2 }
                 Label { text: "20 styles d'overlay \u2022 8 animations"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
@@ -856,7 +1229,6 @@ ApplicationWindow {
         Overlay.modal: Rectangle { color: Qt.rgba(0,0,0,0.6) }
         contentItem: MacroPanel {}
     }
-    // Intercom supprimé — hors périmètre (la régie gère la communication)
     Dialog {
         id: statsDialog; anchors.centerIn: parent; width: 420; height: 400; modal: true
         standardButtons: Dialog.NoButton
@@ -1041,7 +1413,7 @@ ApplicationWindow {
         }
     }
 
-    // ── Welcome Dialog (first launch — channel name) ──────
+    // ── Welcome Dialog (first launch -- channel name) ──────
     Dialog {
         id: welcomeDialog
         anchors.centerIn: parent; width: 520; modal: true
@@ -1204,422 +1576,6 @@ ApplicationWindow {
                 }
             }
             Item { Layout.preferredHeight: 8 }
-        }
-    }
-
-    // ── Branding Drawer (Habillage chaine) ────────────────
-    Drawer {
-        id: brandingDrawer
-        width: 380; height: window.height
-        edge: Qt.RightEdge
-        modal: false
-        background: Rectangle { color: window.darkMode ? "#0D0D10" : "#F5F5FA"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
-
-        Flickable {
-            anchors.fill: parent
-            contentHeight: brandCol.implicitHeight; clip: true; flickableDirection: Flickable.VerticalFlick
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-            ColumnLayout {
-                id: brandCol; width: parent.width; spacing: 8
-
-                // Header with close button
-                RowLayout {
-                    Layout.fillWidth: true; Layout.margins: 12
-                    Label { text: "Habillage & Positions"; font.pixelSize: 15; font.weight: Font.Bold; color: window.darkMode ? "white" : "#1A1A1A"; Layout.fillWidth: true }
-                    Rectangle {
-                        Layout.preferredWidth: 28; Layout.preferredHeight: 28; radius: 14
-                        color: closeMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.1)) : "transparent"
-                        Label { anchors.centerIn: parent; text: "\u2715"; font.pixelSize: 14; color: window.darkMode ? "#888" : "#666" }
-                        MouseArea { id: closeMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: brandingDrawer.close() }
-                    }
-                }
-
-                // ── LOGO SECTION ──────────────────────────────
-                Label { text: window.t("channel_logo"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A" }
-                RowLayout {
-                    spacing: 8
-                    TextField { id: logoPathField; Layout.fillWidth: true; text: setupController.channelLogoPath; onTextChanged: setupController.channelLogoPath = text; placeholderText: "logo.png ou logo.gif"; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" } }
-                    Rectangle {
-                        Layout.preferredWidth: 90; Layout.preferredHeight: 30; radius: 4; color: "#5B4FDB"
-                        Label { anchors.centerIn: parent; text: window.t("browse"); color: "white"; font.pixelSize: 11 }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: logoFileDialogLoader.active = true }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Position:"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: logoPosCb
-                        model: ["Haut droite", "Haut gauche", "Bas droite", "Bas gauche"]
-                        onCurrentIndexChanged: { var pos = ["top_right","top_left","bottom_right","bottom_left"]; setupController.channelLogoPosition = pos[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: logoPosCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelLogoOffsetX; Layout.fillWidth: true; onMoved: setupController.channelLogoOffsetX = value }
-                    Label { text: setupController.channelLogoOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelLogoOffsetY; Layout.fillWidth: true; onMoved: setupController.channelLogoOffsetY = value }
-                    Label { text: setupController.channelLogoOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666" }
-                    Slider { id: logoSizeSlider; from: 30; to: 120; value: setupController.channelLogoSize; onMoved: setupController.channelLogoSize = value }
-                    Label { text: Math.round(logoSizeSlider.value) + "px"; color: window.darkMode ? "#999" : "#666" }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Animation entree:"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: logoEntryCb
-                        model: ["Aucune", "Glisser gauche", "Glisser droite", "Glisser haut", "Glisser bas", "Fondu", "Zoom", "Balayage"]
-                        currentIndex: { var m = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; return Math.max(0, m.indexOf(setupController.logoEntryAnim)); }
-                        onCurrentIndexChanged: { var m = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; setupController.logoEntryAnim = m[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: logoEntryCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Animation boucle:"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: logoLoopCb
-                        model: ["Aucune", "Pulsation", "Brillance", "Scintillement", "Rebond", "Rotation"]
-                        currentIndex: { var m = ["none","pulse","glow","shimmer","bounce","rotate"]; return Math.max(0, m.indexOf(setupController.logoLoopAnim)); }
-                        onCurrentIndexChanged: { var m = ["none","pulse","glow","shimmer","bounce","rotate"]; setupController.logoLoopAnim = m[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: logoLoopCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-                Switch { text: window.t("keep_logo_ads"); checked: setupController.keepLogoDuringAds; onToggled: setupController.keepLogoDuringAds = checked }
-
-                // ── CHANNEL NAME SECTION ──────────────────────
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD" }
-                Label { text: window.t("channel_name_section"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A" }
-                Switch { text: window.t("show_name_text"); checked: setupController.showChannelNameText; onToggled: setupController.showChannelNameText = checked }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Forme:"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: nameShapeCb
-                        model: ["Rectangle", "Carre", "Pilule", "Oblique", "Sans cadre"]
-                        currentIndex: { var m = ["rectangle","square","pill","angled","frameless"]; return Math.max(0, m.indexOf(setupController.channelNameShape)); }
-                        onCurrentIndexChanged: { var m = ["rectangle","square","pill","angled","frameless"]; setupController.channelNameShape = m[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: nameShapeCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Fond:"; color: window.darkMode ? "#999" : "#666" }
-                    Repeater {
-                        model: ["#CC0000", "#0055AA", "#222222", "#006633", "#8B00FF", "#FF6600", "#333333"]
-                        Rectangle {
-                            width: 24; height: 24; radius: 12; color: modelData; border.color: setupController.channelNameBgColor === modelData ? "white" : "transparent"; border.width: 2
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameBgColor = modelData }
-                        }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Texte:"; color: window.darkMode ? "#999" : "#666" }
-                    Repeater {
-                        model: ["#FFFFFF", "#000000", "#FFDD00", "#00FFCC", "#FF4444"]
-                        Rectangle {
-                            width: 24; height: 24; radius: 12; color: modelData; border.color: setupController.channelNameTextColor === modelData ? "#5B4FDB" : (window.darkMode ? "#444" : "#BBB"); border.width: 2
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameTextColor = modelData }
-                        }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Bordure:"; color: window.darkMode ? "#999" : "#666" }
-                    Repeater {
-                        model: ["#FFFFFF", "#000000", "#CC0000", "#FFDD00", "#0055AA", "transparent"]
-                        Rectangle {
-                            width: 24; height: 24; radius: 12; color: modelData === "transparent" ? "gray" : modelData; border.color: setupController.channelNameBorderColor === modelData ? "#5B4FDB" : (window.darkMode ? "#444" : "#BBB"); border.width: 2
-                            Label { anchors.centerIn: parent; text: modelData === "transparent" ? "X" : ""; font.pixelSize: 10; color: "white" }
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameBorderColor = modelData }
-                        }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Taille police:"; color: window.darkMode ? "#999" : "#666" }
-                    Slider { id: nameFontSlider; from: 8; to: 36; stepSize: 1; value: setupController.channelNameFontSize; onMoved: setupController.channelNameFontSize = value }
-                    Label { text: Math.round(nameFontSlider.value) + "pt"; color: window.darkMode ? "#999" : "#666" }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetX; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetX = value }
-                    Label { text: setupController.channelNameOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetY; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetY = value }
-                    Label { text: setupController.channelNameOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Animation entree:"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: nameEntryCb
-                        model: ["Aucune", "Glisser gauche", "Glisser droite", "Glisser haut", "Glisser bas", "Fondu", "Zoom", "Balayage"]
-                        currentIndex: { var m = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; return Math.max(0, m.indexOf(setupController.nameEntryAnim)); }
-                        onCurrentIndexChanged: { var m = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; setupController.nameEntryAnim = m[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: nameEntryCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Animation boucle:"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: nameLoopCb
-                        model: ["Aucune", "Pulsation", "Brillance", "Scintillement", "Rebond", "Rotation"]
-                        currentIndex: { var m = ["none","pulse","glow","shimmer","bounce","rotate"]; return Math.max(0, m.indexOf(setupController.nameLoopAnim)); }
-                        onCurrentIndexChanged: { var m = ["none","pulse","glow","shimmer","bounce","rotate"]; setupController.nameLoopAnim = m[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: nameLoopCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-
-                // ── SHOW TITLE SECTION ────────────────────────
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD" }
-                Label { text: window.t("show_title_section"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A" }
-                Switch { text: window.t("enable_title"); checked: setupController.showTitleEnabled; onToggled: setupController.showTitleEnabled = checked }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Titre:"; color: window.darkMode ? "#999" : "#666" }
-                    TextField { Layout.fillWidth: true; text: setupController.showTitle; onTextChanged: setupController.showTitle = text; placeholderText: "JOURNAL DE 20H"; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" } }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Sous-titre:"; color: window.darkMode ? "#999" : "#666" }
-                    TextField { Layout.fillWidth: true; text: setupController.showSubtitle; onTextChanged: setupController.showSubtitle = text; placeholderText: "Edition speciale"; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" } }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Position:"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: titlePosCb
-                        model: ["Bas gauche", "Bas droite", "Haut gauche", "Haut droite"]
-                        onCurrentIndexChanged: { var pos = ["bottom_left","bottom_right","top_left","top_right"]; setupController.showTitlePosition = pos[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: titlePosCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.showTitleOffsetX; Layout.fillWidth: true; onMoved: setupController.showTitleOffsetX = value }
-                    Label { text: setupController.showTitleOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.showTitleOffsetY; Layout.fillWidth: true; onMoved: setupController.showTitleOffsetY = value }
-                    Label { text: setupController.showTitleOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-
-                // Show title design
-                RowLayout {
-                    spacing: 8
-                    Label { text: window.t("show_title_shape") + ":"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: stShapeCb
-                        model: ["Rectangle", "Carre", "Pilule", "Oblique", "Sans cadre"]
-                        currentIndex: { var m = ["rectangle","square","pill","angled","frameless"]; return Math.max(0, m.indexOf(setupController.showTitleShape)); }
-                        onCurrentIndexChanged: { var m = ["rectangle","square","pill","angled","frameless"]; setupController.showTitleShape = m[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: stShapeCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: window.t("show_title_bg") + ":"; color: window.darkMode ? "#999" : "#666" }
-                    Repeater {
-                        model: ["#1A1A2E", "#0055AA", "#CC0000", "#222222", "#006633", "#8B00FF", "#333333"]
-                        Rectangle {
-                            width: 24; height: 24; radius: 12; color: modelData; border.color: setupController.showTitleBgColor === modelData ? "white" : "transparent"; border.width: 2
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleBgColor = modelData }
-                        }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: window.t("show_title_text") + ":"; color: window.darkMode ? "#999" : "#666" }
-                    Repeater {
-                        model: ["#FFFFFF", "#000000", "#FFDD00", "#00FFCC", "#FF4444"]
-                        Rectangle {
-                            width: 24; height: 24; radius: 12; color: modelData; border.color: setupController.showTitleTextColor === modelData ? "#5B4FDB" : (window.darkMode ? "#444" : "#BBB"); border.width: 2
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleTextColor = modelData }
-                        }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: window.t("show_title_border") + ":"; color: window.darkMode ? "#999" : "#666" }
-                    Repeater {
-                        model: ["#5B4FDB", "#FFFFFF", "#000000", "#CC0000", "#FFDD00", "transparent"]
-                        Rectangle {
-                            width: 24; height: 24; radius: 12; color: modelData === "transparent" ? "gray" : modelData; border.color: setupController.showTitleBorderColor === modelData ? "#5B4FDB" : (window.darkMode ? "#444" : "#BBB"); border.width: 2
-                            Label { anchors.centerIn: parent; text: modelData === "transparent" ? "X" : ""; font.pixelSize: 10; color: "white" }
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleBorderColor = modelData }
-                        }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: window.t("font_size") + ":"; color: window.darkMode ? "#999" : "#666" }
-                    Slider { id: stFontSlider; from: 10; to: 28; stepSize: 1; value: setupController.showTitleFontSize; onMoved: setupController.showTitleFontSize = value }
-                    Label { text: Math.round(stFontSlider.value) + "px"; color: window.darkMode ? "#999" : "#666" }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: window.t("entry_anim") + ":"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: stEntryCb
-                        model: ["Aucune", "Glisser gauche", "Glisser droite", "Glisser haut", "Glisser bas", "Fondu", "Zoom", "Balayage"]
-                        currentIndex: { var m = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; return Math.max(0, m.indexOf(setupController.showTitleEntryAnim)); }
-                        onCurrentIndexChanged: { var m = ["none","slide_left","slide_right","slide_up","slide_down","fade","scale","wipe"]; setupController.showTitleEntryAnim = m[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: stEntryCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: window.t("loop_anim") + ":"; color: window.darkMode ? "#999" : "#666" }
-                    ComboBox {
-                        id: stLoopCb
-                        model: ["Aucune", "Pulsation", "Brillance", "Scintillement", "Rebond", "Rotation"]
-                        currentIndex: { var m = ["none","pulse","glow","shimmer","bounce","rotate"]; return Math.max(0, m.indexOf(setupController.showTitleLoopAnim)); }
-                        onCurrentIndexChanged: { var m = ["none","pulse","glow","shimmer","bounce","rotate"]; setupController.showTitleLoopAnim = m[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        contentItem: Label { text: stLoopCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                    }
-                }
-
-                // ── OVERLAY POSITIONS SECTION ─────────────────
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
-                Label { text: "Positions des overlays"; font.pixelSize: 12; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
-                Label { text: "Ajustez la position de chaque element sur l'ecran"; font.pixelSize: 9; color: window.darkMode ? "#666" : "#999"; leftPadding: 8 }
-
-                // Ticker
-                Label { text: "Ticker"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -100; to: 100; stepSize: 1; value: setupController.tickerOffsetY; Layout.fillWidth: true; onMoved: setupController.tickerOffsetY = value }
-                    Label { text: setupController.tickerOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-
-                // Sous-titres
-                Label { text: "Sous-titres"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -300; to: 300; stepSize: 1; value: setupController.subtitleOffsetX; Layout.fillWidth: true; onMoved: setupController.subtitleOffsetX = value }
-                    Label { text: setupController.subtitleOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.subtitleOffsetY; Layout.fillWidth: true; onMoved: setupController.subtitleOffsetY = value }
-                    Label { text: setupController.subtitleOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-
-                // Countdown
-                Label { text: "Countdown"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.countdownOffsetX; Layout.fillWidth: true; onMoved: setupController.countdownOffsetX = value }
-                    Label { text: setupController.countdownOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.countdownOffsetY; Layout.fillWidth: true; onMoved: setupController.countdownOffsetY = value }
-                    Label { text: setupController.countdownOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-
-                // Horloge
-                Label { text: "Horloge"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.clockOffsetX; Layout.fillWidth: true; onMoved: setupController.clockOffsetX = value }
-                    Label { text: setupController.clockOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.clockOffsetY; Layout.fillWidth: true; onMoved: setupController.clockOffsetY = value }
-                    Label { text: setupController.clockOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-
-                // QR Code
-                Label { text: "QR Code"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.qrCodeOffsetX; Layout.fillWidth: true; onMoved: setupController.qrCodeOffsetX = value }
-                    Label { text: setupController.qrCodeOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.qrCodeOffsetY; Layout.fillWidth: true; onMoved: setupController.qrCodeOffsetY = value }
-                    Label { text: setupController.qrCodeOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-
-                // Scoreboard
-                Label { text: "Scoreboard"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.scoreboardOffsetX; Layout.fillWidth: true; onMoved: setupController.scoreboardOffsetX = value }
-                    Label { text: setupController.scoreboardOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.scoreboardOffsetY; Layout.fillWidth: true; onMoved: setupController.scoreboardOffsetY = value }
-                    Label { text: setupController.scoreboardOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-
-                // Meteo
-                Label { text: "Meteo"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.weatherOffsetX; Layout.fillWidth: true; onMoved: setupController.weatherOffsetX = value }
-                    Label { text: setupController.weatherOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-                RowLayout { spacing: 4; Layout.leftMargin: 8
-                    Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
-                    Slider { from: -200; to: 200; stepSize: 1; value: setupController.weatherOffsetY; Layout.fillWidth: true; onMoved: setupController.weatherOffsetY = value }
-                    Label { text: setupController.weatherOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
-                }
-
-                // ── TIMING SECTION ────────────────────────────
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD" }
-                Label { text: window.t("cycle_talent_title"); font.bold: true; color: window.darkMode ? "white" : "#1A1A1A" }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Duree affichage talent:"; color: window.darkMode ? "#999" : "#666" }
-                    Slider { id: talentDurSlider; from: 3; to: 30; stepSize: 1; value: setupController.talentDisplayDurationSec; onMoved: setupController.talentDisplayDurationSec = value }
-                    Label { text: Math.round(talentDurSlider.value) + "s"; color: window.darkMode ? "#999" : "#666" }
-                }
-                RowLayout {
-                    spacing: 8
-                    Label { text: "Delai retour titre:"; color: window.darkMode ? "#999" : "#666" }
-                    Slider { id: titleDelaySlider; from: 1; to: 10; stepSize: 1; value: setupController.titleReappearDelaySec; onMoved: setupController.titleReappearDelaySec = value }
-                    Label { text: Math.round(titleDelaySlider.value) + "s"; color: window.darkMode ? "#999" : "#666" }
-                }
-
-                Label { text: "Cycle: Titre visible > IA detecte talent > Titre disparait > Nameplate talent > Titre reapparait"; font.pixelSize: 9; color: window.darkMode ? "#555" : "#999"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-
-                Item { Layout.preferredHeight: 8 }
-                Rectangle {
-                    Layout.preferredWidth: 80; Layout.preferredHeight: 32; radius: 6; color: Qt.rgba(1,1,1,0.04)
-                    Layout.alignment: Qt.AlignRight
-                    Label { anchors.centerIn: parent; text: window.t("close"); color: window.darkMode ? "#888" : "#666"; font.pixelSize: 12 }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: brandingDrawer.close() }
-                }
-            }
         }
     }
 }

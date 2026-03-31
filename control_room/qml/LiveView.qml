@@ -36,37 +36,37 @@ Item {
     Shortcut {
         sequence: "T"
         enabled: mainWindow.isLiveMode
-        onActivated: toolStack.currentIndex = 3
+        onActivated: { /* tools now in nav drawer */ }
     }
     Shortcut {
         sequence: "1"
         enabled: mainWindow.isLiveMode
-        onActivated: toolStack.currentIndex = 0
+        onActivated: { /* tools now in nav drawer */ }
     }
     Shortcut {
         sequence: "2"
         enabled: mainWindow.isLiveMode
-        onActivated: toolStack.currentIndex = 1
+        onActivated: { /* tools now in nav drawer */ }
     }
     Shortcut {
         sequence: "3"
         enabled: mainWindow.isLiveMode
-        onActivated: toolStack.currentIndex = 2
+        onActivated: { /* tools now in nav drawer */ }
     }
     Shortcut {
         sequence: "4"
         enabled: mainWindow.isLiveMode
-        onActivated: toolStack.currentIndex = 3
+        onActivated: { /* tools now in nav drawer */ }
     }
     Shortcut {
         sequence: "5"
         enabled: mainWindow.isLiveMode
-        onActivated: toolStack.currentIndex = 4
+        onActivated: { /* tools now in nav drawer */ }
     }
     Shortcut {
         sequence: "6"
         enabled: mainWindow.isLiveMode
-        onActivated: toolStack.currentIndex = 5
+        onActivated: { /* tools now in nav drawer */ }
     }
 
     ColumnLayout {
@@ -127,11 +127,7 @@ Item {
             }
         }
 
-        // ── Video + Tools side by side ────────────────────
-        RowLayout {
-            Layout.fillWidth: true; Layout.fillHeight: true; spacing: 0
-
-        // Video output
+        // ── Video output (full width — no side panel) ────────────────
         Rectangle {
             Layout.fillWidth: true; Layout.fillHeight: true
             color: "#000000"
@@ -566,176 +562,6 @@ Item {
                 Label { anchors.horizontalCenter: parent.horizontalCenter; text: window.t("launch_vision"); color: window.darkMode ? "#444" : "#AAA"; font.pixelSize: 12 }
             }
         }
-
-        // ── Tools panel (right side) ──────────────────────
-        Rectangle {
-            Layout.preferredWidth: 280; Layout.fillHeight: true
-            color: window.darkMode ? Qt.rgba(1,1,1,0.02) : Qt.rgba(0,0,0,0.02)
-            Rectangle { anchors.left: parent.left; width: 1; height: parent.height; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
-
-            ColumnLayout {
-                anchors.fill: parent; spacing: 0
-
-                // Tool tabs
-                RowLayout {
-                    Layout.fillWidth: true; Layout.preferredHeight: 32; spacing: 0
-                    Repeater {
-                        model: ["\u26BD", "\u2601", "\u{1F4AC}", "\u{1F4F0}", "\u{1F4CA}", "\u{1F4E8}"]
-                        Rectangle {
-                            Layout.fillWidth: true; Layout.preferredHeight: 32
-                            color: toolStack.currentIndex === index ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08)) : "transparent"
-                            Label { anchors.centerIn: parent; text: modelData; font.pixelSize: 14; color: toolStack.currentIndex === index ? (window.darkMode ? "white" : "#1A1A1A") : (window.darkMode ? "#555" : "#999") }
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: toolStack.currentIndex = index }
-                        }
-                    }
-                }
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
-
-                StackLayout {
-                    id: toolStack; Layout.fillWidth: true; Layout.fillHeight: true
-                    ScoreboardPanel {}
-                    WeatherPanel {}
-                    SubtitlePanel {}
-                    TickerPanel {}
-                    StatsPanel {}
-                    SocialChatPanel {}
-                }
-
-                // ── QR Code quick-action (Feature 7) ──────
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 44
-                    color: window.darkMode ? Qt.rgba(1,1,1,0.02) : Qt.rgba(0,0,0,0.02)
-                    Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
-
-                    RowLayout {
-                        anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 6
-
-                        Label { text: "QR"; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "#666" : "#999" }
-
-                        TextField {
-                            id: qrUrlInput
-                            Layout.fillWidth: true; Layout.preferredHeight: 28
-                            placeholderText: "URL..."
-                            font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
-                            background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        }
-
-                        ComboBox {
-                            id: qrPosCombo
-                            Layout.preferredWidth: 60; Layout.preferredHeight: 28
-                            model: ["BR", "BL", "TR", "TL"]
-                            font.pixelSize: 10
-                            property var posMap: ({"BR": "bottom_right", "BL": "bottom_left", "TR": "top_right", "TL": "top_left"})
-                            background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                            contentItem: Label { text: qrPosCombo.currentText; font.pixelSize: 10; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 44; Layout.preferredHeight: 28; radius: 6
-                            color: liveController.qrCodeVisible
-                                   ? (msQr.containsMouse ? "#DD0000" : "#CC0000")
-                                   : (msQr.containsMouse ? Qt.rgba(91/255,79/255,219/255,0.25) : Qt.rgba(91/255,79/255,219/255,0.12))
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            Label {
-                                anchors.centerIn: parent
-                                text: liveController.qrCodeVisible ? "OFF" : "ON"
-                                color: liveController.qrCodeVisible ? "white" : "#8B80E0"
-                                font.pixelSize: 11; font.weight: Font.Bold
-                            }
-                            MouseArea {
-                                id: msQr; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (liveController.qrCodeVisible) {
-                                        liveController.setQrCode("", false, "bottom_right")
-                                    } else {
-                                        var url = qrUrlInput.text || ""
-                                        var pos = qrPosCombo.posMap[qrPosCombo.currentText] || "bottom_right"
-                                        if (url.length > 0) liveController.setQrCode(url, true, pos)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // ── Countdown quick-action (Feature 8) ──────
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 44
-                    color: window.darkMode ? Qt.rgba(1,1,1,0.02) : Qt.rgba(0,0,0,0.02)
-                    Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
-
-                    RowLayout {
-                        anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 6
-
-                        Label { text: "\u23F1"; font.pixelSize: 14; color: window.darkMode ? "#666" : "#999" }
-
-                        TextField {
-                            id: countdownMinInput
-                            Layout.preferredWidth: 50; Layout.preferredHeight: 28
-                            placeholderText: "min"
-                            font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"
-                            horizontalAlignment: Text.AlignHCenter
-                            validator: IntValidator { bottom: 0; top: 999 }
-                            background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        }
-
-                        Label { text: ":"; font.pixelSize: 14; color: window.darkMode ? "#555" : "#999" }
-
-                        TextField {
-                            id: countdownSecInput
-                            Layout.preferredWidth: 50; Layout.preferredHeight: 28
-                            placeholderText: "sec"
-                            font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"
-                            horizontalAlignment: Text.AlignHCenter
-                            validator: IntValidator { bottom: 0; top: 59 }
-                            background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 44; Layout.preferredHeight: 28; radius: 6
-                            color: liveController.countdownActive
-                                   ? (msCountdown.containsMouse ? "#DD0000" : "#CC0000")
-                                   : (msCountdown.containsMouse ? Qt.rgba(29/255,185/255,84/255,0.2) : Qt.rgba(29/255,185/255,84/255,0.12))
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            Label {
-                                anchors.centerIn: parent
-                                text: liveController.countdownActive ? "STOP" : "GO"
-                                color: liveController.countdownActive ? "white" : "#1DB954"
-                                font.pixelSize: 11; font.weight: Font.Bold
-                            }
-                            MouseArea {
-                                id: msCountdown; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (liveController.countdownActive) {
-                                        liveController.stopCountdown()
-                                    } else {
-                                        var mins = parseInt(countdownMinInput.text) || 0
-                                        var secs = parseInt(countdownSecInput.text) || 0
-                                        var total = mins * 60 + secs
-                                        if (total > 0) liveController.startCountdown(total, "")
-                                    }
-                                }
-                            }
-                        }
-
-                        // Countdown display
-                        Label {
-                            visible: liveController.countdownActive
-                            text: {
-                                var s = liveController.countdownSeconds
-                                var mm = Math.floor(s / 60)
-                                var ss = s % 60
-                                return (mm < 10 ? "0" : "") + mm + ":" + (ss < 10 ? "0" : "") + ss
-                            }
-                            font.pixelSize: 13; font.family: "Menlo"; font.weight: Font.Bold
-                            color: liveController.countdownSeconds <= 10 ? "#FF3333" : "#1DB954"
-                        }
-                    }
-                }
-            }
-        }
-
-        } // end RowLayout video+tools
 
         // ── Detection panel ────────────────────────────────
         Rectangle {
