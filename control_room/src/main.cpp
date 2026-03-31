@@ -41,12 +41,15 @@ private:
 
 int main(int argc, char* argv[])
 {
-    // Force non-native Qt Quick menus (native macOS menus break with custom styling)
+    // Force non-native menus on ALL platforms (native menus break with custom styling)
     qputenv("QT_QUICK_CONTROLS_USE_NATIVE_MENUS", "0");
+    qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
 
     QQuickStyle::setStyle("Basic");
 
     QApplication app(argc, argv);
+    // Disable native menu bar on macOS (forces Qt Quick Controls menus)
+    app.setAttribute(Qt::AA_DontUseNativeMenuBar, true);
     app.setOrganizationName("Prestige Technologie Company");
     app.setOrganizationDomain("prestigetech.com");
     app.setApplicationName("Prestige AI");
