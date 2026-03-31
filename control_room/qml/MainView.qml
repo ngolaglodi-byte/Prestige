@@ -838,6 +838,14 @@ ApplicationWindow {
                             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
                             Label { text: "Positions des overlays"; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
 
+                            // Nameplate
+                            Label { text: "Nameplate"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Slider { from: 0.5; to: 2.0; stepSize: 0.1; value: setupController.nameplateScale; Layout.fillWidth: true; onMoved: setupController.nameplateScale = value }
+                                Label { text: Math.round(setupController.nameplateScale * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11; Layout.preferredWidth: 40 }
+                            }
+
                             // Ticker Y offset
                             Label { text: "Ticker"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
@@ -911,7 +919,12 @@ ApplicationWindow {
                                 placeholderText: "Label (ex: LIVE IN, RETOUR...)"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
                                 background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                             }
-                            // Offset sliders
+                            // Scale + Offset sliders
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Slider { from: 0.5; to: 2.0; stepSize: 0.1; value: setupController.countdownScale; Layout.fillWidth: true; onMoved: setupController.countdownScale = value }
+                                Label { text: Math.round(setupController.countdownScale * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11; Layout.preferredWidth: 40 }
+                            }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.countdownOffsetX; Layout.fillWidth: true; onMoved: setupController.countdownOffsetX = value }
@@ -925,6 +938,11 @@ ApplicationWindow {
 
                             // Horloge
                             Label { text: "Horloge"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Slider { from: 0.5; to: 2.0; stepSize: 0.1; value: setupController.clockScale; Layout.fillWidth: true; onMoved: setupController.clockScale = value }
+                                Label { text: Math.round(setupController.clockScale * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11; Layout.preferredWidth: 40 }
+                            }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.clockOffsetX; Layout.fillWidth: true; onMoved: setupController.clockOffsetX = value }
@@ -956,7 +974,12 @@ ApplicationWindow {
                                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                                 }
                             }
-                            // Offset sliders
+                            // Scale + Offset sliders
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Slider { from: 0.5; to: 2.0; stepSize: 0.1; value: setupController.qrCodeScale; Layout.fillWidth: true; onMoved: setupController.qrCodeScale = value }
+                                Label { text: Math.round(setupController.qrCodeScale * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11; Layout.preferredWidth: 40 }
+                            }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.qrCodeOffsetX; Layout.fillWidth: true; onMoved: setupController.qrCodeOffsetX = value }
@@ -970,6 +993,11 @@ ApplicationWindow {
 
                             // Scoreboard
                             Label { text: "Scoreboard"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                Slider { from: 0.5; to: 2.0; stepSize: 0.1; value: setupController.scoreboardScale; Layout.fillWidth: true; onMoved: setupController.scoreboardScale = value }
+                                Label { text: Math.round(setupController.scoreboardScale * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11; Layout.preferredWidth: 40 }
+                            }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.scoreboardOffsetX; Layout.fillWidth: true; onMoved: setupController.scoreboardOffsetX = value }

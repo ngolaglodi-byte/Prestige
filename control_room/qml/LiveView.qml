@@ -419,11 +419,13 @@ Item {
                     id: previewNameplate
                     visible: liveController.talentNameplateVisible && liveController.talentDetected && !liveController.isBypassed
 
+                    property real npScale: setupController.nameplateScale
+
                     anchors.bottom: wysiwygTickerBar.top; anchors.left: parent.left
                     anchors.margins: wysiwygOverlay.pw * 0.008
 
-                    width: Math.max(wysiwygOverlay.pw * 0.198, talentCol.implicitWidth + wysiwygOverlay.pw * 0.017)
-                    height: wysiwygOverlay.ph * 0.041
+                    width: Math.max(wysiwygOverlay.pw * 0.198 * npScale, talentCol.implicitWidth + wysiwygOverlay.pw * 0.017)
+                    height: wysiwygOverlay.ph * 0.041 * npScale
                     radius: wysiwygOverlay.ph * 0.004
                     color: Qt.rgba(0, 0, 0, setupController.backgroundOpacity > 0 ? setupController.backgroundOpacity : 0.82)
 
@@ -437,12 +439,12 @@ Item {
                         id: talentCol; anchors.centerIn: parent; spacing: 1
                         Label {
                             text: liveController.detectedName || ""
-                            font.pixelSize: wysiwygOverlay.ph * 0.015; font.weight: Font.Bold; color: "white"
+                            font.pixelSize: wysiwygOverlay.ph * 0.015 * previewNameplate.npScale; font.weight: Font.Bold; color: "white"
                         }
                         Label {
                             visible: liveController.detectedRole !== ""
                             text: liveController.detectedRole || ""
-                            font.pixelSize: wysiwygOverlay.ph * 0.011; color: Qt.rgba(1,1,1,0.7)
+                            font.pixelSize: wysiwygOverlay.ph * 0.011 * previewNameplate.npScale; color: Qt.rgba(1,1,1,0.7)
                         }
                     }
 
@@ -507,11 +509,14 @@ Item {
                 Rectangle {
                     id: wysiwygCountdown
                     visible: liveController.countdownActive && !liveController.isBypassed
+
+                    property real cdScale: setupController.countdownScale
+
                     x: wysiwygOverlay.pw * 0.008 + setupController.countdownOffsetX * (wysiwygOverlay.pw / 1920.0)
                     y: (previewLogoContainer.visible ? previewLogoContainer.height + wysiwygOverlay.ph * 0.022 : wysiwygOverlay.ph * 0.015) + setupController.countdownOffsetY * (wysiwygOverlay.ph / 1080.0)
 
-                    width: Math.max(wysiwygOverlay.pw * 0.073, cdLbl.implicitWidth + wysiwygOverlay.pw * 0.011)
-                    height: wysiwygOverlay.ph * 0.033
+                    width: Math.max(wysiwygOverlay.pw * 0.073 * cdScale, cdLbl.implicitWidth + wysiwygOverlay.pw * 0.011)
+                    height: wysiwygOverlay.ph * 0.033 * cdScale
                     radius: height / 2
                     color: Qt.rgba(204/255, 0, 0, 0.85)
 
@@ -525,7 +530,7 @@ Item {
                             var time = (mm < 10 ? "0" : "") + mm + ":" + (ss < 10 ? "0" : "") + ss
                             return label ? label + " " + time : time
                         }
-                        font.pixelSize: wysiwygOverlay.ph * 0.013; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
+                        font.pixelSize: wysiwygOverlay.ph * 0.013 * wysiwygCountdown.cdScale; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
                     }
                 }
 
@@ -533,18 +538,21 @@ Item {
                 Rectangle {
                     id: wysiwygClock
                     visible: setupController.clockVisible && !liveController.isBypassed
+
+                    property real ckScale: setupController.clockScale
+
                     x: parent.width - width - wysiwygOverlay.pw * 0.008 + setupController.clockOffsetX * (wysiwygOverlay.pw / 1920.0)
                     y: wysiwygOverlay.ph * 0.015 + setupController.clockOffsetY * (wysiwygOverlay.ph / 1080.0)
 
-                    width: wysiwygOverlay.pw * 0.063
-                    height: wysiwygOverlay.ph * 0.030
+                    width: wysiwygOverlay.pw * 0.063 * ckScale
+                    height: wysiwygOverlay.ph * 0.030 * ckScale
                     radius: wysiwygOverlay.ph * 0.004
                     color: Qt.rgba(0, 0, 0, 0.6)
 
                     Label {
                         id: clockLbl; anchors.centerIn: parent
                         text: Qt.formatTime(new Date(), setupController.clockFormat)
-                        font.pixelSize: wysiwygOverlay.ph * 0.013; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
+                        font.pixelSize: wysiwygOverlay.ph * 0.013 * wysiwygClock.ckScale; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
                     }
                     Timer { interval: 1000; running: true; repeat: true; onTriggered: clockLbl.text = Qt.formatTime(new Date(), setupController.clockFormat) }
                 }
@@ -554,6 +562,7 @@ Item {
                     id: wysiwygQrCode
                     visible: liveController.qrCodeVisible && liveController.qrCodeUrl !== "" && !liveController.isBypassed
 
+                    property real qrScale: setupController.qrCodeScale
                     property string pos: liveController.qrCodePosition || "bottom_right"
                     property real qrBaseMargin: wysiwygOverlay.pw * 0.008
                     x: {
@@ -571,7 +580,7 @@ Item {
                         }
                     }
 
-                    width: wysiwygOverlay.pw * 0.052; height: wysiwygOverlay.pw * 0.052
+                    width: wysiwygOverlay.pw * 0.052 * qrScale; height: wysiwygOverlay.pw * 0.052 * qrScale
                     radius: wysiwygOverlay.ph * 0.006
                     color: "white"
 
@@ -581,7 +590,7 @@ Item {
                         Repeater {
                             model: 25
                             Rectangle {
-                                width: wysiwygOverlay.pw * 0.005; height: wysiwygOverlay.pw * 0.005
+                                width: wysiwygOverlay.pw * 0.005 * wysiwygQrCode.qrScale; height: wysiwygOverlay.pw * 0.005 * wysiwygQrCode.qrScale
                                 color: (index % 3 === 0 || index % 7 === 0) ? "#000" : "white"
                             }
                         }
@@ -590,7 +599,7 @@ Item {
                     Label {
                         anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottomMargin: wysiwygOverlay.ph * 0.002
-                        text: "SCAN"; font.pixelSize: wysiwygOverlay.ph * 0.007; font.weight: Font.Bold; color: "#5B4FDB"
+                        text: "SCAN"; font.pixelSize: wysiwygOverlay.ph * 0.007 * wysiwygQrCode.qrScale; font.weight: Font.Bold; color: "#5B4FDB"
                     }
                 }
 
@@ -599,6 +608,7 @@ Item {
                     id: wysiwygScoreboard
                     visible: setupController.scoreboardVisible && !liveController.isBypassed
 
+                    property real sbScale: setupController.scoreboardScale
                     property string sbPos: setupController.scoreboardPosition || "top_left"
                     x: {
                         if (sbPos === "top_left" || sbPos === "bottom_left")
@@ -613,7 +623,7 @@ Item {
                             return parent.height - height - wysiwygOverlay.ph * 0.056 + setupController.scoreboardOffsetY * (wysiwygOverlay.ph / 1080.0)
                     }
 
-                    width: wysiwygOverlay.pw * 0.167; height: wysiwygOverlay.ph * 0.074
+                    width: wysiwygOverlay.pw * 0.167 * sbScale; height: wysiwygOverlay.ph * 0.074 * sbScale
                     radius: wysiwygOverlay.ph * 0.006
                     color: Qt.rgba(0, 0, 0, 0.75)
                     border.color: Qt.rgba(1,1,1,0.1)
@@ -622,14 +632,14 @@ Item {
                         anchors.centerIn: parent; spacing: wysiwygOverlay.pw * 0.005
                         ColumnLayout {
                             spacing: 1
-                            Label { text: setupController.scoreboardTeamA; font.pixelSize: wysiwygOverlay.ph * 0.009; color: setupController.scoreboardColorA; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                            Label { text: setupController.scoreboardScoreA.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardTeamA; font.pixelSize: wysiwygOverlay.ph * 0.009 * wysiwygScoreboard.sbScale; color: setupController.scoreboardColorA; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardScoreA.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022 * wysiwygScoreboard.sbScale; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
-                        Label { text: "-"; font.pixelSize: wysiwygOverlay.ph * 0.015; color: "#555" }
+                        Label { text: "-"; font.pixelSize: wysiwygOverlay.ph * 0.015 * wysiwygScoreboard.sbScale; color: "#555" }
                         ColumnLayout {
                             spacing: 1
-                            Label { text: setupController.scoreboardTeamB; font.pixelSize: wysiwygOverlay.ph * 0.009; color: setupController.scoreboardColorB; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                            Label { text: setupController.scoreboardScoreB.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardTeamB; font.pixelSize: wysiwygOverlay.ph * 0.009 * wysiwygScoreboard.sbScale; color: setupController.scoreboardColorB; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardScoreB.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022 * wysiwygScoreboard.sbScale; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
                     }
                     // Timer + Period
@@ -637,7 +647,7 @@ Item {
                         anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottomMargin: wysiwygOverlay.ph * 0.003
                         text: setupController.scoreboardMatchTime + "  P" + setupController.scoreboardPeriod
-                        font.pixelSize: wysiwygOverlay.ph * 0.008; font.family: "Menlo"; color: "#00E5FF"
+                        font.pixelSize: wysiwygOverlay.ph * 0.008 * wysiwygScoreboard.sbScale; font.family: "Menlo"; color: "#00E5FF"
                     }
                 }
 
@@ -646,20 +656,22 @@ Item {
                     id: wysiwygWeather
                     visible: setupController.weatherVisible && weatherFetcher.city !== "" && !liveController.isBypassed
 
+                    property real wScale: setupController.weatherScale
+
                     x: parent.width - width - wysiwygOverlay.pw * 0.008 + setupController.weatherOffsetX * (wysiwygOverlay.pw / 1920.0)
                     y: parent.height - height - wysiwygOverlay.ph * 0.074 + setupController.weatherOffsetY * (wysiwygOverlay.ph / 1080.0)
 
-                    width: wysiwygOverlay.pw * 0.104; height: wysiwygOverlay.ph * 0.065
+                    width: wysiwygOverlay.pw * 0.104 * wScale; height: wysiwygOverlay.ph * 0.065 * wScale
                     radius: wysiwygOverlay.ph * 0.006
                     color: Qt.rgba(0, 0, 0, 0.7)
 
                     RowLayout {
                         anchors.centerIn: parent; spacing: wysiwygOverlay.pw * 0.004
-                        Label { text: weatherFetcher.conditionIcon; font.pixelSize: wysiwygOverlay.ph * 0.020 }
+                        Label { text: weatherFetcher.conditionIcon; font.pixelSize: wysiwygOverlay.ph * 0.020 * wysiwygWeather.wScale }
                         ColumnLayout {
                             spacing: 0
-                            Label { text: weatherFetcher.city; font.pixelSize: wysiwygOverlay.ph * 0.011; font.weight: Font.Bold; color: "white" }
-                            Label { text: Math.round(weatherFetcher.temperature) + weatherFetcher.unit; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#CCC" }
+                            Label { text: weatherFetcher.city; font.pixelSize: wysiwygOverlay.ph * 0.011 * wysiwygWeather.wScale; font.weight: Font.Bold; color: "white" }
+                            Label { text: Math.round(weatherFetcher.temperature) + weatherFetcher.unit; font.pixelSize: wysiwygOverlay.ph * 0.009 * wysiwygWeather.wScale; color: "#CCC" }
                         }
                     }
                 }

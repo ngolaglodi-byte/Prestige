@@ -120,6 +120,14 @@ class SetupController : public QObject {
     Q_PROPERTY(int weatherOffsetX READ weatherOffsetX WRITE setWeatherOffsetX NOTIFY brandingChanged)
     Q_PROPERTY(int weatherOffsetY READ weatherOffsetY WRITE setWeatherOffsetY NOTIFY brandingChanged)
 
+    // Overlay scale factors (0.5 – 2.0, default 1.0 = 100%)
+    Q_PROPERTY(double nameplateScale READ nameplateScale WRITE setNameplateScale NOTIFY brandingChanged)
+    Q_PROPERTY(double scoreboardScale READ scoreboardScale WRITE setScoreboardScale NOTIFY brandingChanged)
+    Q_PROPERTY(double weatherScale READ weatherScale WRITE setWeatherScale NOTIFY brandingChanged)
+    Q_PROPERTY(double clockScale READ clockScale WRITE setClockScale NOTIFY brandingChanged)
+    Q_PROPERTY(double countdownScale READ countdownScale WRITE setCountdownScale NOTIFY brandingChanged)
+    Q_PROPERTY(double qrCodeScale READ qrCodeScale WRITE setQrCodeScale NOTIFY brandingChanged)
+
     // Show title design & animation
     Q_PROPERTY(QString showTitleShape READ showTitleShape WRITE setShowTitleShape NOTIFY showTitleChanged)
     Q_PROPERTY(QString showTitleBgColor READ showTitleBgColor WRITE setShowTitleBgColor NOTIFY showTitleChanged)
@@ -350,6 +358,20 @@ public:
     int weatherOffsetY() const { return m_weatherOffsetY; }
     void setWeatherOffsetY(int v);
 
+    // Overlay scale factors
+    double nameplateScale() const { return m_nameplateScale; }
+    void setNameplateScale(double v);
+    double scoreboardScale() const { return m_scoreboardScale; }
+    void setScoreboardScale(double v);
+    double weatherScale() const { return m_weatherScale; }
+    void setWeatherScale(double v);
+    double clockScale() const { return m_clockScale; }
+    void setClockScale(double v);
+    double countdownScale() const { return m_countdownScale; }
+    void setCountdownScale(double v);
+    double qrCodeScale() const { return m_qrCodeScale; }
+    void setQrCodeScale(double v);
+
     // Talent display timing
     int talentDisplayDurationSec() const { return m_talentDisplayDurationSec; }
     void setTalentDisplayDurationSec(int v);
@@ -510,6 +532,14 @@ private:
     // Weather offsets
     int     m_weatherOffsetX = 0;
     int     m_weatherOffsetY = 0;
+
+    // Overlay scale factors
+    double  m_nameplateScale = 1.0;
+    double  m_scoreboardScale = 1.0;
+    double  m_weatherScale = 1.0;
+    double  m_clockScale = 1.0;
+    double  m_countdownScale = 1.0;
+    double  m_qrCodeScale = 1.0;
 
     // Talent display timing
     int     m_talentDisplayDurationSec = 8;

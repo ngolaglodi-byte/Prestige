@@ -272,6 +272,15 @@ void SetupController::setScoreboardOffsetY(int v) { if (m_scoreboardOffsetY == v
 void SetupController::setWeatherOffsetX(int v) { if (m_weatherOffsetX == v) return; m_weatherOffsetX = v; emit brandingChanged(); }
 void SetupController::setWeatherOffsetY(int v) { if (m_weatherOffsetY == v) return; m_weatherOffsetY = v; emit brandingChanged(); }
 
+// ── Overlay scale factors ───────────────────────────────────
+
+void SetupController::setNameplateScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_nameplateScale, v)) return; m_nameplateScale = v; emit brandingChanged(); }
+void SetupController::setScoreboardScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_scoreboardScale, v)) return; m_scoreboardScale = v; emit brandingChanged(); }
+void SetupController::setWeatherScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_weatherScale, v)) return; m_weatherScale = v; emit brandingChanged(); }
+void SetupController::setClockScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_clockScale, v)) return; m_clockScale = v; emit brandingChanged(); }
+void SetupController::setCountdownScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_countdownScale, v)) return; m_countdownScale = v; emit brandingChanged(); }
+void SetupController::setQrCodeScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_qrCodeScale, v)) return; m_qrCodeScale = v; emit brandingChanged(); }
+
 // ── Talent display timing ───────────────────────────────────
 
 void SetupController::setTalentDisplayDurationSec(int v) { if (m_talentDisplayDurationSec == v) return; m_talentDisplayDurationSec = qBound(3, v, 30); emit timingChanged(); }
