@@ -133,6 +133,19 @@ class SetupController : public QObject {
     Q_PROPERTY(int talentDisplayDurationSec READ talentDisplayDurationSec WRITE setTalentDisplayDurationSec NOTIFY timingChanged)
     Q_PROPERTY(int titleReappearDelaySec READ titleReappearDelaySec WRITE setTitleReappearDelaySec NOTIFY timingChanged)
 
+    // Overlay visibility
+    Q_PROPERTY(bool scoreboardVisible READ scoreboardVisible WRITE setScoreboardVisible NOTIFY brandingChanged)
+    Q_PROPERTY(bool weatherVisible READ weatherVisible WRITE setWeatherVisible NOTIFY brandingChanged)
+    Q_PROPERTY(bool clockVisible READ clockVisible WRITE setClockVisible NOTIFY brandingChanged)
+    Q_PROPERTY(QString clockFormat READ clockFormat WRITE setClockFormat NOTIFY brandingChanged)
+    Q_PROPERTY(bool tickerVisible READ tickerVisible WRITE setTickerVisible NOTIFY brandingChanged)
+
+    // Scoreboard data
+    Q_PROPERTY(QString scoreboardTeamA READ scoreboardTeamA WRITE setScoreboardTeamA NOTIFY brandingChanged)
+    Q_PROPERTY(QString scoreboardTeamB READ scoreboardTeamB WRITE setScoreboardTeamB NOTIFY brandingChanged)
+    Q_PROPERTY(int scoreboardScoreA READ scoreboardScoreA WRITE setScoreboardScoreA NOTIFY brandingChanged)
+    Q_PROPERTY(int scoreboardScoreB READ scoreboardScoreB WRITE setScoreboardScoreB NOTIFY brandingChanged)
+
 public:
     explicit SetupController(ProfileManager* profiles, QObject* parent = nullptr);
 
@@ -321,6 +334,28 @@ public:
     int titleReappearDelaySec() const { return m_titleReappearDelaySec; }
     void setTitleReappearDelaySec(int v);
 
+    // Overlay visibility
+    bool scoreboardVisible() const { return m_scoreboardVisible; }
+    void setScoreboardVisible(bool v);
+    bool weatherVisible() const { return m_weatherVisible; }
+    void setWeatherVisible(bool v);
+    bool clockVisible() const { return m_clockVisible; }
+    void setClockVisible(bool v);
+    QString clockFormat() const { return m_clockFormat; }
+    void setClockFormat(const QString& v);
+    bool tickerVisible() const { return m_tickerVisible; }
+    void setTickerVisible(bool v);
+
+    // Scoreboard data
+    QString scoreboardTeamA() const { return m_scoreboardTeamA; }
+    void setScoreboardTeamA(const QString& v);
+    QString scoreboardTeamB() const { return m_scoreboardTeamB; }
+    void setScoreboardTeamB(const QString& v);
+    int scoreboardScoreA() const { return m_scoreboardScoreA; }
+    void setScoreboardScoreA(int v);
+    int scoreboardScoreB() const { return m_scoreboardScoreB; }
+    void setScoreboardScoreB(int v);
+
     Q_INVOKABLE void loadAnimatedLogo(const QString& path);
     Q_INVOKABLE bool isReadyToGo() const;
     Q_INVOKABLE void saveProfile();
@@ -421,6 +456,19 @@ private:
     // Talent display timing
     int     m_talentDisplayDurationSec = 8;
     int     m_titleReappearDelaySec = 2;
+
+    // Overlay visibility
+    bool    m_scoreboardVisible = false;
+    bool    m_weatherVisible = false;
+    bool    m_clockVisible = true;
+    QString m_clockFormat = "HH:mm:ss";
+    bool    m_tickerVisible = true;
+
+    // Scoreboard data
+    QString m_scoreboardTeamA = "TEAM A";
+    QString m_scoreboardTeamB = "TEAM B";
+    int     m_scoreboardScoreA = 0;
+    int     m_scoreboardScoreB = 0;
 };
 
 } // namespace prestige

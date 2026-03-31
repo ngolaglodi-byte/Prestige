@@ -354,7 +354,7 @@ Item {
                     anchors.bottomMargin: (wysiwygSubtitleBar.visible ? (wysiwygSubtitleBar.height + wysiwygOverlay.ph * 0.007) : 0) - setupController.tickerOffsetY * (wysiwygOverlay.ph / 1080.0)
                     anchors.left: parent.left; anchors.right: parent.right
                     height: visible ? wysiwygOverlay.ph * 0.033 : 0
-                    visible: rssFetcher.headlines !== "" && !liveController.isBypassed
+                    visible: setupController.tickerVisible && rssFetcher.headlines !== "" && !liveController.isBypassed
                     color: "#CC0000"
                     clip: true
 
@@ -419,7 +419,7 @@ Item {
 
                 // ── Clock (top-right) ────────────────────────
                 Rectangle {
-                    visible: true
+                    visible: setupController.clockVisible && !liveController.isBypassed
                     x: parent.width - width - wysiwygOverlay.pw * 0.008 + setupController.clockOffsetX * (wysiwygOverlay.pw / 1920.0)
                     y: wysiwygOverlay.ph * 0.015 + setupController.clockOffsetY * (wysiwygOverlay.ph / 1080.0)
 
@@ -430,10 +430,10 @@ Item {
 
                     Label {
                         id: clockLbl; anchors.centerIn: parent
-                        text: Qt.formatTime(new Date(), "HH:mm:ss")
+                        text: Qt.formatTime(new Date(), setupController.clockFormat)
                         font.pixelSize: wysiwygOverlay.ph * 0.013; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
                     }
-                    Timer { interval: 1000; running: true; repeat: true; onTriggered: clockLbl.text = Qt.formatTime(new Date(), "HH:mm:ss") }
+                    Timer { interval: 1000; running: true; repeat: true; onTriggered: clockLbl.text = Qt.formatTime(new Date(), setupController.clockFormat) }
                 }
 
                 // ── QR Code placeholder (when active) ────────
@@ -483,7 +483,7 @@ Item {
                 // ── Scoreboard overlay ──────────────────────
                 Rectangle {
                     id: wysiwygScoreboard
-                    visible: mainWindow.overlaysActive && !liveController.isBypassed
+                    visible: setupController.scoreboardVisible && !liveController.isBypassed
 
                     x: (wysiwygOverlay.pw * 0.008) + setupController.scoreboardOffsetX * (wysiwygOverlay.pw / 1920.0)
                     y: (wysiwygOverlay.ph * 0.056) + setupController.scoreboardOffsetY * (wysiwygOverlay.ph / 1080.0)
@@ -497,14 +497,14 @@ Item {
                         anchors.centerIn: parent; spacing: wysiwygOverlay.pw * 0.005
                         ColumnLayout {
                             spacing: 1
-                            Label { text: "TEAM A"; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#CC0000"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                            Label { text: "0"; font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardTeamA; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#CC0000"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardScoreA.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
                         Label { text: "-"; font.pixelSize: wysiwygOverlay.ph * 0.015; color: "#555" }
                         ColumnLayout {
                             spacing: 1
-                            Label { text: "TEAM B"; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#0066CC"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                            Label { text: "0"; font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardTeamB; font.pixelSize: wysiwygOverlay.ph * 0.009; color: "#0066CC"; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                            Label { text: setupController.scoreboardScoreB.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
                     }
                 }
@@ -512,7 +512,7 @@ Item {
                 // ── Weather overlay ──────────────────────────
                 Rectangle {
                     id: wysiwygWeather
-                    visible: weatherFetcher.city !== "" && !liveController.isBypassed
+                    visible: setupController.weatherVisible && weatherFetcher.city !== "" && !liveController.isBypassed
 
                     x: parent.width - width - wysiwygOverlay.pw * 0.008 + setupController.weatherOffsetX * (wysiwygOverlay.pw / 1920.0)
                     y: parent.height - height - wysiwygOverlay.ph * 0.074 + setupController.weatherOffsetY * (wysiwygOverlay.ph / 1080.0)

@@ -277,6 +277,21 @@ void SetupController::setWeatherOffsetY(int v) { if (m_weatherOffsetY == v) retu
 void SetupController::setTalentDisplayDurationSec(int v) { if (m_talentDisplayDurationSec == v) return; m_talentDisplayDurationSec = qBound(3, v, 30); emit timingChanged(); }
 void SetupController::setTitleReappearDelaySec(int v) { if (m_titleReappearDelaySec == v) return; m_titleReappearDelaySec = qBound(1, v, 10); emit timingChanged(); }
 
+// ── Overlay visibility ───────────────────────────────────────
+
+void SetupController::setScoreboardVisible(bool v) { if (m_scoreboardVisible == v) return; m_scoreboardVisible = v; emit brandingChanged(); }
+void SetupController::setWeatherVisible(bool v) { if (m_weatherVisible == v) return; m_weatherVisible = v; emit brandingChanged(); }
+void SetupController::setClockVisible(bool v) { if (m_clockVisible == v) return; m_clockVisible = v; emit brandingChanged(); }
+void SetupController::setClockFormat(const QString& v) { if (m_clockFormat == v) return; m_clockFormat = v; emit brandingChanged(); }
+void SetupController::setTickerVisible(bool v) { if (m_tickerVisible == v) return; m_tickerVisible = v; emit brandingChanged(); }
+
+// ── Scoreboard data ─────────────────────────────────────────
+
+void SetupController::setScoreboardTeamA(const QString& v) { if (m_scoreboardTeamA == v) return; m_scoreboardTeamA = v; emit brandingChanged(); }
+void SetupController::setScoreboardTeamB(const QString& v) { if (m_scoreboardTeamB == v) return; m_scoreboardTeamB = v; emit brandingChanged(); }
+void SetupController::setScoreboardScoreA(int v) { if (m_scoreboardScoreA == v) return; m_scoreboardScoreA = v; emit brandingChanged(); }
+void SetupController::setScoreboardScoreB(int v) { if (m_scoreboardScoreB == v) return; m_scoreboardScoreB = v; emit brandingChanged(); }
+
 void SetupController::loadAnimatedLogo(const QString& path)
 {
     QString localPath = path;

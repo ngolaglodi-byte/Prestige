@@ -28,7 +28,7 @@ Item {
             }
         }
 
-        Switch { text: "Afficher sur la sortie"; checked: weatherRoot.showOnOutput; onToggled: weatherRoot.showOnOutput = checked; leftPadding: 8 }
+        Switch { text: "Afficher sur la sortie"; checked: setupController.weatherVisible; onToggled: setupController.weatherVisible = checked; leftPadding: 8 }
 
         // ── Mode toggle ───────────────────────────────────────
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 8; Layout.rightMargin: 8 }

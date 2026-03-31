@@ -837,6 +837,32 @@ ApplicationWindow {
                             Label { text: "Theme"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
                             Switch { text: "Mode sombre"; checked: window.darkMode; onToggled: window.darkMode = checked; leftPadding: 12 }
 
+                            // Horloge
+                            Label { text: "Horloge"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            Switch { text: "Afficher l'horloge"; checked: setupController.clockVisible; onToggled: setupController.clockVisible = checked; leftPadding: 12 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 12
+                                Label { text: "Format:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                ComboBox {
+                                    model: ["HH:mm:ss", "HH:mm", "hh:mm AP"]
+                                    currentIndex: {
+                                        var f = setupController.clockFormat
+                                        if (f === "HH:mm") return 1
+                                        if (f === "hh:mm AP") return 2
+                                        return 0
+                                    }
+                                    onCurrentIndexChanged: {
+                                        var formats = ["HH:mm:ss", "HH:mm", "hh:mm AP"]
+                                        setupController.clockFormat = formats[currentIndex]
+                                    }
+                                    Layout.fillWidth: true
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
+
+                            // Ticker
+                            Label { text: "Ticker"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
+                            Switch { text: "Afficher le ticker"; checked: setupController.tickerVisible; onToggled: setupController.tickerVisible = checked; leftPadding: 12 }
+
                             // Nom chaine
                             Label { text: "Chaine"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
                             RowLayout { spacing: 4; Layout.leftMargin: 12; Layout.rightMargin: 12
