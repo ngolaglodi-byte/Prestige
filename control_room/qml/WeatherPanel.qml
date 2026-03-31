@@ -4,7 +4,6 @@ import QtQuick.Layouts 1.15
 
 Item {
     id: weatherRoot
-    property bool showOnOutput: false
 
     Flickable {
         anchors.fill: parent; contentHeight: wCol.implicitHeight; clip: true

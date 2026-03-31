@@ -4,7 +4,6 @@ import QtQuick.Layouts 1.15
 
 Item {
     id: tk
-    property bool showOnOutput: false
     property string manualText: ""
     property int scrollSpeed: setupController.tickerSpeed
     property string bgColor: setupController.tickerBgColor
@@ -33,13 +32,13 @@ Item {
             }
         }
 
-        Switch { text: "Afficher le ticker"; checked: tk.showOnOutput; onToggled: tk.showOnOutput = checked; leftPadding: 8 }
+        Switch { text: "Afficher le ticker"; checked: setupController.tickerVisible; onToggled: setupController.tickerVisible = checked; leftPadding: 8 }
 
         // ── Manual Text ───────────────────────────────────────
         Label { text: "Texte manuel"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
         TextArea {
             Layout.fillWidth: true; Layout.preferredHeight: 50; Layout.leftMargin: 8; Layout.rightMargin: 8
-            text: tk.manualText; onTextChanged: tk.manualText = text
+            text: setupController.tickerManualText; onTextChanged: setupController.tickerManualText = text
             placeholderText: "DERNIERE MINUTE — Texte ici..."
             font.pixelSize: 11; color: window.darkMode ? "#FFF" : "#1A1A1A"; wrapMode: TextArea.Wrap
             background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
@@ -132,8 +131,8 @@ Item {
             clip: true
             Label {
                 id: previewTicker
-                text: rssFetcher.headlines ? rssFetcher.headlines : (tk.manualText ? tk.manualText : "Les titres apparaitront ici...")
-                color: rssFetcher.headlines || tk.manualText ? tk.textColor : "#555"
+                text: rssFetcher.headlines ? rssFetcher.headlines : (setupController.tickerManualText ? setupController.tickerManualText : "Les titres apparaitront ici...")
+                color: rssFetcher.headlines || setupController.tickerManualText ? tk.textColor : "#555"
                 font.pixelSize: tk.fontSize * 0.8; font.bold: true
                 y: (parent.height - height) / 2
                 NumberAnimation on x {
@@ -141,7 +140,7 @@ Item {
                     to: -previewTicker.implicitWidth
                     duration: 12000
                     loops: Animation.Infinite
-                    running: tk.showOnOutput
+                    running: setupController.tickerVisible
                 }
             }
         }

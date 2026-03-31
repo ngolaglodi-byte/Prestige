@@ -424,13 +424,13 @@ Item {
                     anchors.bottomMargin: (wysiwygSubtitleBar.visible ? (wysiwygSubtitleBar.height + wysiwygOverlay.ph * 0.007) : 0) - setupController.tickerOffsetY * (wysiwygOverlay.ph / 1080.0)
                     anchors.left: parent.left; anchors.right: parent.right
                     height: visible ? wysiwygOverlay.ph * 0.033 : 0
-                    visible: setupController.tickerVisible && rssFetcher.headlines !== "" && !liveController.isBypassed
+                    visible: setupController.tickerVisible && (rssFetcher.headlines !== "" || setupController.tickerManualText !== "") && !liveController.isBypassed
                     color: setupController.tickerBgColor
                     clip: true
 
                     Label {
                         id: tickerText
-                        text: rssFetcher.headlines || ""
+                        text: rssFetcher.headlines || setupController.tickerManualText || ""
                         font.pixelSize: setupController.tickerFontSize * (wysiwygOverlay.ph / 1080.0); font.weight: Font.Bold; color: setupController.tickerTextColor
                         y: (parent.height - height) / 2
                         NumberAnimation on x {
@@ -446,7 +446,15 @@ Item {
                 Rectangle {
                     id: wysiwygSubtitleBar
                     x: (parent.width - width) / 2 + setupController.subtitleOffsetX * (wysiwygOverlay.pw / 1920.0)
-                    y: parent.height - height - wysiwygOverlay.ph * 0.008 + setupController.subtitleOffsetY * (wysiwygOverlay.ph / 1080.0)
+                    y: {
+                        var oy = setupController.subtitleOffsetY * (wysiwygOverlay.ph / 1080.0)
+                        if (subtitleController.position === "top")
+                            return wysiwygOverlay.ph * 0.015 + oy
+                        else {
+                            var tickerH = wysiwygTickerBar.visible ? wysiwygTickerBar.height + wysiwygOverlay.ph * 0.007 : 0
+                            return wysiwygOverlay.ph - height - wysiwygOverlay.ph * 0.008 - tickerH + oy
+                        }
+                    }
                     visible: subtitleController.enabled && subtitleController.currentText !== "" && !liveController.isBypassed
 
                     width: Math.max(wysiwygOverlay.pw * 0.313, subLbl.implicitWidth + wysiwygOverlay.pw * 0.013)
@@ -464,6 +472,7 @@ Item {
 
                 // ── Countdown (top-left area) ────────────────
                 Rectangle {
+                    id: wysiwygCountdown
                     visible: liveController.countdownActive && !liveController.isBypassed
                     x: wysiwygOverlay.pw * 0.008 + setupController.countdownOffsetX * (wysiwygOverlay.pw / 1920.0)
                     y: (previewLogoContainer.visible ? previewLogoContainer.height + wysiwygOverlay.ph * 0.022 : wysiwygOverlay.ph * 0.015) + setupController.countdownOffsetY * (wysiwygOverlay.ph / 1080.0)
@@ -489,6 +498,7 @@ Item {
 
                 // ── Clock (top-right) ────────────────────────
                 Rectangle {
+                    id: wysiwygClock
                     visible: setupController.clockVisible && !liveController.isBypassed
                     x: parent.width - width - wysiwygOverlay.pw * 0.008 + setupController.clockOffsetX * (wysiwygOverlay.pw / 1920.0)
                     y: wysiwygOverlay.ph * 0.015 + setupController.clockOffsetY * (wysiwygOverlay.ph / 1080.0)
@@ -508,6 +518,7 @@ Item {
 
                 // ── QR Code placeholder (when active) ────────
                 Rectangle {
+                    id: wysiwygQrCode
                     visible: liveController.qrCodeVisible && liveController.qrCodeUrl !== "" && !liveController.isBypassed
 
                     property string pos: liveController.qrCodePosition || "bottom_right"
@@ -587,6 +598,13 @@ Item {
                             Label { text: setupController.scoreboardTeamB; font.pixelSize: wysiwygOverlay.ph * 0.009; color: setupController.scoreboardColorB; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
                             Label { text: setupController.scoreboardScoreB.toString(); font.pixelSize: wysiwygOverlay.ph * 0.022; font.weight: Font.Bold; color: "white"; Layout.alignment: Qt.AlignHCenter }
                         }
+                    }
+                    // Timer + Period
+                    Label {
+                        anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottomMargin: wysiwygOverlay.ph * 0.003
+                        text: setupController.scoreboardMatchTime + "  P" + setupController.scoreboardPeriod
+                        font.pixelSize: wysiwygOverlay.ph * 0.008; font.family: "Menlo"; color: "#00E5FF"
                     }
                 }
 
@@ -782,6 +800,89 @@ Item {
                         onReleased: {
                             setupController.weatherOffsetX = Math.round((wysiwygWeather.x - (wysiwygOverlay.pw - wysiwygWeather.width - wysiwygOverlay.pw * 0.008)) * 1920.0 / wysiwygOverlay.pw)
                             setupController.weatherOffsetY = Math.round((wysiwygWeather.y - (wysiwygOverlay.ph - wysiwygWeather.height - wysiwygOverlay.ph * 0.074)) * 1080.0 / wysiwygOverlay.ph)
+                        }
+                    }
+                }
+
+                // Drag handle: Clock
+                Rectangle {
+                    visible: wysiwygClock.visible
+                    x: wysiwygClock.x + wysiwygClock.width - 8
+                    y: wysiwygClock.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragClockMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragClockMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: wysiwygClock
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            setupController.clockOffsetX = Math.round((wysiwygClock.x - (wysiwygOverlay.pw - wysiwygClock.width - wysiwygOverlay.pw * 0.008)) * 1920.0 / wysiwygOverlay.pw)
+                            setupController.clockOffsetY = Math.round((wysiwygClock.y - wysiwygOverlay.ph * 0.015) * 1080.0 / wysiwygOverlay.ph)
+                        }
+                    }
+                }
+
+                // Drag handle: Countdown
+                Rectangle {
+                    visible: wysiwygCountdown.visible
+                    x: wysiwygCountdown.x + wysiwygCountdown.width - 8
+                    y: wysiwygCountdown.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragCountdownMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragCountdownMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: wysiwygCountdown
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            setupController.countdownOffsetX = Math.round((wysiwygCountdown.x - wysiwygOverlay.pw * 0.008) * 1920.0 / wysiwygOverlay.pw)
+                            var baseY = previewLogoContainer.visible ? previewLogoContainer.height + wysiwygOverlay.ph * 0.022 : wysiwygOverlay.ph * 0.015
+                            setupController.countdownOffsetY = Math.round((wysiwygCountdown.y - baseY) * 1080.0 / wysiwygOverlay.ph)
+                        }
+                    }
+                }
+
+                // Drag handle: QR Code
+                Rectangle {
+                    visible: wysiwygQrCode.visible
+                    x: wysiwygQrCode.x + wysiwygQrCode.width - 8
+                    y: wysiwygQrCode.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragQrMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragQrMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: wysiwygQrCode
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            var qrPos = liveController.qrCodePosition || "bottom_right"
+                            var qrBaseMargin = wysiwygOverlay.pw * 0.008
+                            if (qrPos === "bottom_left" || qrPos === "top_left")
+                                setupController.qrCodeOffsetX = Math.round((wysiwygQrCode.x - qrBaseMargin) * 1920.0 / wysiwygOverlay.pw)
+                            else
+                                setupController.qrCodeOffsetX = Math.round((wysiwygQrCode.x - (wysiwygOverlay.pw - wysiwygQrCode.width - qrBaseMargin)) * 1920.0 / wysiwygOverlay.pw)
+                            if (qrPos === "top_right" || qrPos === "top_left")
+                                setupController.qrCodeOffsetY = Math.round((wysiwygQrCode.y - qrBaseMargin) * 1080.0 / wysiwygOverlay.ph)
+                            else {
+                                var tickerH = wysiwygTickerBar.visible ? wysiwygTickerBar.height : 0
+                                setupController.qrCodeOffsetY = Math.round((wysiwygQrCode.y - (wysiwygOverlay.ph - wysiwygQrCode.height - qrBaseMargin - tickerH)) * 1080.0 / wysiwygOverlay.ph)
+                            }
+                        }
+                    }
+                }
+
+                // Drag handle: Subtitle
+                Rectangle {
+                    visible: wysiwygSubtitleBar.visible
+                    x: wysiwygSubtitleBar.x + wysiwygSubtitleBar.width - 8
+                    y: wysiwygSubtitleBar.y - 4
+                    width: 12; height: 12; radius: 2; z: 20
+                    color: dragSubMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    MouseArea {
+                        id: dragSubMa; anchors.fill: parent; hoverEnabled: true
+                        drag.target: wysiwygSubtitleBar
+                        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
+                        onReleased: {
+                            setupController.subtitleOffsetX = Math.round((wysiwygSubtitleBar.x - (wysiwygOverlay.pw - wysiwygSubtitleBar.width) / 2) * 1920.0 / wysiwygOverlay.pw)
+                            setupController.subtitleOffsetY = Math.round((wysiwygSubtitleBar.y - (wysiwygOverlay.ph - wysiwygSubtitleBar.height - wysiwygOverlay.ph * 0.008)) * 1080.0 / wysiwygOverlay.ph)
                         }
                     }
                 }

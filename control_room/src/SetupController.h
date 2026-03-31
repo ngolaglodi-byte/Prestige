@@ -157,6 +157,17 @@ class SetupController : public QObject {
     Q_PROPERTY(QString scoreboardColorB READ scoreboardColorB WRITE setScoreboardColorB NOTIFY brandingChanged)
     Q_PROPERTY(QString scoreboardPosition READ scoreboardPosition WRITE setScoreboardPosition NOTIFY brandingChanged)
 
+    // Ticker manual text
+    Q_PROPERTY(QString tickerManualText READ tickerManualText WRITE setTickerManualText NOTIFY brandingChanged)
+
+    // Scoreboard timer/period/cards
+    Q_PROPERTY(QString scoreboardMatchTime READ scoreboardMatchTime WRITE setScoreboardMatchTime NOTIFY brandingChanged)
+    Q_PROPERTY(int scoreboardPeriod READ scoreboardPeriod WRITE setScoreboardPeriod NOTIFY brandingChanged)
+    Q_PROPERTY(int scoreboardYellowA READ scoreboardYellowA WRITE setScoreboardYellowA NOTIFY brandingChanged)
+    Q_PROPERTY(int scoreboardYellowB READ scoreboardYellowB WRITE setScoreboardYellowB NOTIFY brandingChanged)
+    Q_PROPERTY(int scoreboardRedA READ scoreboardRedA WRITE setScoreboardRedA NOTIFY brandingChanged)
+    Q_PROPERTY(int scoreboardRedB READ scoreboardRedB WRITE setScoreboardRedB NOTIFY brandingChanged)
+
 public:
     explicit SetupController(ProfileManager* profiles, QObject* parent = nullptr);
 
@@ -385,6 +396,24 @@ public:
     QString scoreboardPosition() const { return m_scoreboardPosition; }
     void setScoreboardPosition(const QString& v);
 
+    // Ticker manual text
+    QString tickerManualText() const { return m_tickerManualText; }
+    void setTickerManualText(const QString& v);
+
+    // Scoreboard timer/period/cards
+    QString scoreboardMatchTime() const { return m_scoreboardMatchTime; }
+    void setScoreboardMatchTime(const QString& v);
+    int scoreboardPeriod() const { return m_scoreboardPeriod; }
+    void setScoreboardPeriod(int v);
+    int scoreboardYellowA() const { return m_scoreboardYellowA; }
+    void setScoreboardYellowA(int v);
+    int scoreboardYellowB() const { return m_scoreboardYellowB; }
+    void setScoreboardYellowB(int v);
+    int scoreboardRedA() const { return m_scoreboardRedA; }
+    void setScoreboardRedA(int v);
+    int scoreboardRedB() const { return m_scoreboardRedB; }
+    void setScoreboardRedB(int v);
+
     Q_INVOKABLE void loadAnimatedLogo(const QString& path);
     Q_INVOKABLE bool isReadyToGo() const;
     Q_INVOKABLE void saveProfile();
@@ -509,6 +538,17 @@ private:
     QString m_scoreboardColorA = "#CC0000";
     QString m_scoreboardColorB = "#0066CC";
     QString m_scoreboardPosition = "top_left";
+
+    // Ticker manual text
+    QString m_tickerManualText;
+
+    // Scoreboard timer/period/cards
+    QString m_scoreboardMatchTime = "00:00";
+    int     m_scoreboardPeriod = 1;
+    int     m_scoreboardYellowA = 0;
+    int     m_scoreboardYellowB = 0;
+    int     m_scoreboardRedA = 0;
+    int     m_scoreboardRedB = 0;
 };
 
 } // namespace prestige

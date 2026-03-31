@@ -305,6 +305,19 @@ void SetupController::setScoreboardColorA(const QString& v) { if (m_scoreboardCo
 void SetupController::setScoreboardColorB(const QString& v) { if (m_scoreboardColorB == v) return; m_scoreboardColorB = v; emit brandingChanged(); }
 void SetupController::setScoreboardPosition(const QString& v) { if (m_scoreboardPosition == v) return; m_scoreboardPosition = v; emit brandingChanged(); }
 
+// ── Ticker manual text ───────────────────────────────────────
+
+void SetupController::setTickerManualText(const QString& v) { if (m_tickerManualText == v) return; m_tickerManualText = v; emit brandingChanged(); }
+
+// ── Scoreboard timer/period/cards ────────────────────────────
+
+void SetupController::setScoreboardMatchTime(const QString& v) { if (m_scoreboardMatchTime == v) return; m_scoreboardMatchTime = v; emit brandingChanged(); }
+void SetupController::setScoreboardPeriod(int v) { if (m_scoreboardPeriod == v) return; m_scoreboardPeriod = v; emit brandingChanged(); }
+void SetupController::setScoreboardYellowA(int v) { if (m_scoreboardYellowA == v) return; m_scoreboardYellowA = v; emit brandingChanged(); }
+void SetupController::setScoreboardYellowB(int v) { if (m_scoreboardYellowB == v) return; m_scoreboardYellowB = v; emit brandingChanged(); }
+void SetupController::setScoreboardRedA(int v) { if (m_scoreboardRedA == v) return; m_scoreboardRedA = v; emit brandingChanged(); }
+void SetupController::setScoreboardRedB(int v) { if (m_scoreboardRedB == v) return; m_scoreboardRedB = v; emit brandingChanged(); }
+
 void SetupController::loadAnimatedLogo(const QString& path)
 {
     QString localPath = path;
