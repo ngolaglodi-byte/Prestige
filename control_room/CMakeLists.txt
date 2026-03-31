@@ -65,16 +65,11 @@ qt_add_qml_module(prestige_control
     VERSION 1.0
     QML_FILES
         qml/MainView.qml
-        qml/SetupView.qml
         qml/LiveView.qml
         qml/StyleStep.qml
         qml/TalentStep.qml
         qml/SourceStep.qml
         qml/OutputStep.qml
-        qml/TestStep.qml
-        qml/MonitorPanel.qml
-        qml/OverlayPanel.qml
-        qml/SettingsPanel.qml
         qml/ScoreboardPanel.qml
         qml/TickerPanel.qml
         qml/WeatherPanel.qml
