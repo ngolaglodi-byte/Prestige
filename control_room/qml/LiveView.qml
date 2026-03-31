@@ -165,129 +165,161 @@ Item {
                 property real ph: parent.height  // Preview height
 
                 // ── Layer 1: Channel Logo ────────────────────
-                Image {
-                    id: previewLogo
+                Item {
+                    id: previewLogoContainer
                     visible: setupController.channelLogoPath !== "" && !(liveController.isBypassed && !setupController.keepLogoDuringAds)
-                    source: setupController.channelLogoPath ? ("file:///" + setupController.channelLogoPath) : ""
 
-                    height: setupController.channelLogoSize * (wysiwygOverlay.ph / 1080.0)
-                    fillMode: Image.PreserveAspectFit
-
-                    // Base position + offset
                     property string pos: setupController.channelLogoPosition
                     property real baseMargin: wysiwygOverlay.pw * 0.008
+                    property real logoH: setupController.channelLogoSize * (wysiwygOverlay.ph / 1080.0)
+
+                    width: logoH; height: logoH
+
                     x: {
+                        var ox = setupController.channelLogoOffsetX * (wysiwygOverlay.pw / 1920.0)
                         if (pos === "top_left" || pos === "bottom_left")
-                            return baseMargin + setupController.channelLogoOffsetX * (wysiwygOverlay.pw / 1920.0)
+                            return baseMargin + ox
                         else
-                            return parent.width - width - baseMargin + setupController.channelLogoOffsetX * (wysiwygOverlay.pw / 1920.0)
+                            return wysiwygOverlay.pw - width - baseMargin + ox
                     }
                     y: {
+                        var oy = setupController.channelLogoOffsetY * (wysiwygOverlay.ph / 1080.0)
                         if (pos === "top_left" || pos === "top_right")
-                            return baseMargin + setupController.channelLogoOffsetY * (wysiwygOverlay.ph / 1080.0)
+                            return baseMargin + oy
                         else
-                            return parent.height - height - baseMargin + setupController.channelLogoOffsetY * (wysiwygOverlay.ph / 1080.0)
+                            return wysiwygOverlay.ph - height - baseMargin + oy
                     }
 
-                    // Loop animations
-                    property string loopAnim: setupController.logoLoopAnim
-                    // Pulse (+ rotate maps to pulse)
-                    SequentialAnimation on scale {
-                        loops: Animation.Infinite; running: previewLogo.loopAnim === "pulse" || previewLogo.loopAnim === "rotate"
-                        NumberAnimation { to: 1.03; duration: 1200; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
+                    Image {
+                        id: previewLogo
+                        anchors.fill: parent
+                        source: setupController.channelLogoPath ? ("file:///" + setupController.channelLogoPath) : ""
+                        fillMode: Image.PreserveAspectFit
+
+                        // Loop: Pulse
+                        SequentialAnimation on scale {
+                            loops: Animation.Infinite
+                            running: setupController.logoLoopAnim === "pulse" || setupController.logoLoopAnim === "rotate"
+                            NumberAnimation { to: 1.04; duration: 1200; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
+                        }
                     }
-                    // Glow (+ shimmer maps to glow): opacity pulse
-                    SequentialAnimation {
-                        loops: Animation.Infinite; running: previewLogo.loopAnim === "glow" || previewLogo.loopAnim === "shimmer"
-                        NumberAnimation { target: previewLogo; property: "opacity"; to: 0.7; duration: 1000; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: previewLogo; property: "opacity"; to: 1.0; duration: 1000; easing.type: Easing.InOutSine }
+
+                    // Loop: Glow (overlay rectangle that pulses opacity)
+                    Rectangle {
+                        anchors.fill: parent; radius: 4
+                        color: "transparent"; border.color: "#5B4FDB"; border.width: 2
+                        visible: setupController.logoLoopAnim === "glow" || setupController.logoLoopAnim === "shimmer"
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite; running: setupController.logoLoopAnim === "glow" || setupController.logoLoopAnim === "shimmer"
+                            NumberAnimation { to: 0.0; duration: 1000; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0.6; duration: 1000; easing.type: Easing.InOutSine }
+                        }
                     }
-                    // Bounce: y offset animation
-                    property real bounceBaseY: y
-                    SequentialAnimation {
-                        loops: Animation.Infinite; running: previewLogo.loopAnim === "bounce"
-                        NumberAnimation { target: previewLogo; property: "y"; to: previewLogo.bounceBaseY - 3; duration: 600; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: previewLogo; property: "y"; to: previewLogo.bounceBaseY; duration: 600; easing.type: Easing.InOutSine }
+
+                    // Loop: Bounce (animate the container's y via transform)
+                    transform: Translate {
+                        id: logoBounceTransform
+                        y: 0
+                        SequentialAnimation on y {
+                            loops: Animation.Infinite
+                            running: setupController.logoLoopAnim === "bounce"
+                            NumberAnimation { to: -4; duration: 600; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0; duration: 600; easing.type: Easing.InOutSine }
+                        }
                     }
+
+                    // Entry animation
                     opacity: 0
-                    Component.onCompleted: {
-                        logoEntryTimer.start()
-                    }
-                    Timer {
-                        id: logoEntryTimer; interval: 300; onTriggered: previewLogo.opacity = 1
-                    }
-                    Behavior on opacity {
-                        NumberAnimation { duration: setupController.logoEntryAnim === "none" ? 0 : 800; easing.type: Easing.OutCubic }
-                    }
+                    Component.onCompleted: logoEntryTimer.start()
+                    Timer { id: logoEntryTimer; interval: 300; onTriggered: previewLogoContainer.opacity = 1 }
+                    Behavior on opacity { NumberAnimation { duration: setupController.logoEntryAnim === "none" ? 0 : 800; easing.type: Easing.OutCubic } }
                 }
 
                 // ── Layer 1b: Channel Name ───────────────────
-                Rectangle {
-                    id: previewChannelName
+                Item {
+                    id: previewChannelNameContainer
                     visible: setupController.showChannelNameText && configManager.channelName !== "" && !(liveController.isBypassed && !setupController.keepLogoDuringAds)
-
-                    width: nameLbl.implicitWidth + wysiwygOverlay.pw * 0.008
-                    height: wysiwygOverlay.ph * 0.033
 
                     property string pos: setupController.channelLogoPosition
                     property real baseMargin: wysiwygOverlay.pw * 0.005
+                    property real nameW: nameLbl.implicitWidth + wysiwygOverlay.pw * 0.012
+                    property real nameH: wysiwygOverlay.ph * 0.033
+
+                    width: nameW; height: nameH
+
                     x: {
+                        var ox = setupController.channelNameOffsetX * (wysiwygOverlay.pw / 1920.0)
                         if (pos === "top_left" || pos === "bottom_left")
-                            return baseMargin + setupController.channelNameOffsetX * (wysiwygOverlay.pw / 1920.0)
+                            return baseMargin + ox
                         else
-                            return parent.width - width - baseMargin + setupController.channelNameOffsetX * (wysiwygOverlay.pw / 1920.0)
+                            return wysiwygOverlay.pw - width - baseMargin + ox
                     }
                     y: {
-                        var logoBottom = previewLogo.visible ? (previewLogo.y + previewLogo.height + wysiwygOverlay.ph * 0.004) : 0
+                        var oy = setupController.channelNameOffsetY * (wysiwygOverlay.ph / 1080.0)
+                        var logoBottom = previewLogoContainer.visible ? (previewLogoContainer.y + previewLogoContainer.height + wysiwygOverlay.ph * 0.004) : 0
                         if (pos === "top_left" || pos === "top_right")
-                            return (previewLogo.visible ? logoBottom : baseMargin) + setupController.channelNameOffsetY * (wysiwygOverlay.ph / 1080.0)
+                            return (previewLogoContainer.visible ? logoBottom : baseMargin) + oy
                         else
-                            return parent.height - height - baseMargin + setupController.channelNameOffsetY * (wysiwygOverlay.ph / 1080.0)
-                    }
-                    radius: {
-                        var shape = setupController.channelNameShape
-                        if (shape === "pill") return height / 2
-                        if (shape === "square" || shape === "rectangle") return wysiwygOverlay.ph * 0.003
-                        return 0
-                    }
-                    color: setupController.channelNameShape === "frameless" ? "transparent" : setupController.channelNameBgColor
-                    border.color: setupController.channelNameShape === "frameless" ? "transparent" : setupController.channelNameBorderColor
-                    border.width: setupController.channelNameShape === "frameless" ? 0 : 1
-
-                    // Skew for angled shape
-                    transform: Rotation {
-                        angle: setupController.channelNameShape === "angled" ? -5 : 0
-                        origin.x: previewChannelName.width / 2; origin.y: previewChannelName.height / 2
+                            return wysiwygOverlay.ph - height - baseMargin + oy
                     }
 
-                    Label {
-                        id: nameLbl; anchors.centerIn: parent
-                        text: configManager.channelName
-                        font.pixelSize: setupController.channelNameFontSize * (wysiwygOverlay.ph / 1080.0)
-                        font.weight: Font.Bold
-                        color: setupController.channelNameTextColor
+                    Rectangle {
+                        id: previewChannelName
+                        anchors.fill: parent
+                        radius: {
+                            var shape = setupController.channelNameShape
+                            if (shape === "pill") return height / 2
+                            if (shape === "square" || shape === "rectangle") return wysiwygOverlay.ph * 0.003
+                            return 0
+                        }
+                        color: setupController.channelNameShape === "frameless" ? "transparent" : setupController.channelNameBgColor
+                        border.color: setupController.channelNameShape === "frameless" ? "transparent" : setupController.channelNameBorderColor
+                        border.width: setupController.channelNameShape === "frameless" ? 0 : 1
+
+                        Label {
+                            id: nameLbl; anchors.centerIn: parent
+                            text: configManager.channelName
+                            font.pixelSize: setupController.channelNameFontSize * (wysiwygOverlay.ph / 1080.0)
+                            font.weight: Font.Bold
+                            color: setupController.channelNameTextColor
+                        }
+
+                        // Loop: Pulse
+                        SequentialAnimation on scale {
+                            loops: Animation.Infinite; running: setupController.nameLoopAnim === "pulse"
+                            NumberAnimation { to: 1.04; duration: 1200; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
+                        }
                     }
 
-                    // Pulse animation
-                    SequentialAnimation on scale {
-                        loops: Animation.Infinite; running: setupController.nameLoopAnim === "pulse"
-                        NumberAnimation { to: 1.03; duration: 1200; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
+                    // Loop: Glow border
+                    Rectangle {
+                        anchors.fill: parent; radius: previewChannelName.radius
+                        color: "transparent"; border.color: setupController.channelNameBorderColor || "#5B4FDB"; border.width: 2
+                        visible: setupController.nameLoopAnim === "glow"
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite; running: setupController.nameLoopAnim === "glow"
+                            NumberAnimation { to: 0.0; duration: 1000; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0.8; duration: 1000; easing.type: Easing.InOutSine }
+                        }
                     }
-                    // Glow: opacity pulse
-                    SequentialAnimation {
-                        loops: Animation.Infinite; running: setupController.nameLoopAnim === "glow"
-                        NumberAnimation { target: previewChannelName; property: "opacity"; to: 0.7; duration: 1000; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: previewChannelName; property: "opacity"; to: 1.0; duration: 1000; easing.type: Easing.InOutSine }
-                    }
-                    // Bounce: y offset
-                    property real bounceBaseY: y
-                    SequentialAnimation {
-                        loops: Animation.Infinite; running: setupController.nameLoopAnim === "bounce"
-                        NumberAnimation { target: previewChannelName; property: "y"; to: previewChannelName.bounceBaseY - 3; duration: 600; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: previewChannelName; property: "y"; to: previewChannelName.bounceBaseY; duration: 600; easing.type: Easing.InOutSine }
-                    }
+
+                    // Loop: Bounce (via transform, no binding conflict)
+                    transform: [
+                        Translate {
+                            y: 0
+                            SequentialAnimation on y {
+                                loops: Animation.Infinite; running: setupController.nameLoopAnim === "bounce"
+                                NumberAnimation { to: -4; duration: 600; easing.type: Easing.InOutSine }
+                                NumberAnimation { to: 0; duration: 600; easing.type: Easing.InOutSine }
+                            }
+                        },
+                        Rotation {
+                            angle: setupController.channelNameShape === "angled" ? -5 : 0
+                            origin.x: previewChannelNameContainer.width / 2; origin.y: previewChannelNameContainer.height / 2
+                        }
+                    ]
                 }
 
                 // ── Layer 2: Show Title ──────────────────────
@@ -434,7 +466,7 @@ Item {
                 Rectangle {
                     visible: liveController.countdownActive && !liveController.isBypassed
                     x: wysiwygOverlay.pw * 0.008 + setupController.countdownOffsetX * (wysiwygOverlay.pw / 1920.0)
-                    y: (previewLogo.visible ? previewLogo.height + wysiwygOverlay.ph * 0.022 : wysiwygOverlay.ph * 0.015) + setupController.countdownOffsetY * (wysiwygOverlay.ph / 1080.0)
+                    y: (previewLogoContainer.visible ? previewLogoContainer.height + wysiwygOverlay.ph * 0.022 : wysiwygOverlay.ph * 0.015) + setupController.countdownOffsetY * (wysiwygOverlay.ph / 1080.0)
 
                     width: Math.max(wysiwygOverlay.pw * 0.073, cdLbl.implicitWidth + wysiwygOverlay.pw * 0.011)
                     height: wysiwygOverlay.ph * 0.033
@@ -652,7 +684,7 @@ Item {
                     color: dragNameMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragNameMa; anchors.fill: parent; hoverEnabled: true
-                        drag.target: previewChannelName
+                        drag.target: previewChannelNameContainer
                         cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
                         onReleased: {
                             var pos = setupController.channelLogoPosition
@@ -668,26 +700,26 @@ Item {
 
                 // Drag handle: Logo
                 Rectangle {
-                    visible: previewLogo.visible
-                    x: previewLogo.x + previewLogo.width - 8
-                    y: previewLogo.y - 4
+                    visible: previewLogoContainer.visible
+                    x: previewLogoContainer.x + previewLogoContainer.width - 8
+                    y: previewLogoContainer.y - 4
                     width: 12; height: 12; radius: 2; z: 20
                     color: dragLogoMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragLogoMa; anchors.fill: parent; hoverEnabled: true
-                        drag.target: previewLogo
+                        drag.target: previewLogoContainer
                         cursorShape: pressed ? Qt.ClosedHandCursor : Qt.SizeAllCursor
                         onReleased: {
                             var pos = setupController.channelLogoPosition
                             var baseMargin = wysiwygOverlay.pw * 0.008
                             if (pos === "top_left" || pos === "bottom_left")
-                                setupController.channelLogoOffsetX = Math.round((previewLogo.x - baseMargin) * 1920.0 / wysiwygOverlay.pw)
+                                setupController.channelLogoOffsetX = Math.round((previewLogoContainer.x - baseMargin) * 1920.0 / wysiwygOverlay.pw)
                             else
-                                setupController.channelLogoOffsetX = Math.round((previewLogo.x - (wysiwygOverlay.pw - previewLogo.width - baseMargin)) * 1920.0 / wysiwygOverlay.pw)
+                                setupController.channelLogoOffsetX = Math.round((previewLogoContainer.x - (wysiwygOverlay.pw - previewLogoContainer.width - baseMargin)) * 1920.0 / wysiwygOverlay.pw)
                             if (pos === "top_left" || pos === "top_right")
-                                setupController.channelLogoOffsetY = Math.round((previewLogo.y - baseMargin) * 1080.0 / wysiwygOverlay.ph)
+                                setupController.channelLogoOffsetY = Math.round((previewLogoContainer.y - baseMargin) * 1080.0 / wysiwygOverlay.ph)
                             else
-                                setupController.channelLogoOffsetY = Math.round((previewLogo.y - (wysiwygOverlay.ph - previewLogo.height - baseMargin)) * 1080.0 / wysiwygOverlay.ph)
+                                setupController.channelLogoOffsetY = Math.round((previewLogoContainer.y - (wysiwygOverlay.ph - previewLogoContainer.height - baseMargin)) * 1080.0 / wysiwygOverlay.ph)
                         }
                     }
                 }
