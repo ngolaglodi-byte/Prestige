@@ -43,19 +43,39 @@ Item {
                 }
             }
 
-            // Connection status
+            // Connection status (prominent)
             Rectangle {
-                Layout.fillWidth: true; Layout.preferredHeight: 32; radius: 6
-                color: talentManager.connected ? (window.darkMode ? "#0A1A0A" : "#E8F5E9") : (window.darkMode ? "#1A0A0A" : "#FFEBEE")
+                Layout.fillWidth: true; Layout.preferredHeight: talentManager.connected ? 36 : 52; radius: 8
+                color: talentManager.connected ? (window.darkMode ? "#0A1A0A" : "#E8F5E9") : (window.darkMode ? "#2A0A0A" : "#FFEBEE")
                 border.color: talentManager.connected ? "#1DB954" : "#CC3333"
-                RowLayout {
-                    anchors.fill: parent; anchors.margins: 8; spacing: 6
-                    Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: talentManager.connected ? "#1DB954" : "#CC3333" }
+                border.width: talentManager.connected ? 1 : 2
+                ColumnLayout {
+                    anchors.fill: parent; anchors.margins: 8; spacing: 2
+                    RowLayout {
+                        spacing: 8
+                        Rectangle {
+                            Layout.preferredWidth: 10; Layout.preferredHeight: 10; radius: 5
+                            color: talentManager.connected ? "#1DB954" : "#CC3333"
+                            SequentialAnimation on opacity {
+                                running: !talentManager.connected; loops: Animation.Infinite
+                                NumberAnimation { to: 0.3; duration: 800 }
+                                NumberAnimation { to: 1.0; duration: 800 }
+                            }
+                        }
+                        Label {
+                            text: talentManager.connected
+                                  ? window.t("ai_connected") + " \u2014 " + talentManager.talents.length + " " + window.t("talents_count")
+                                  : window.t("ai_disconnected")
+                            font.pixelSize: 12; font.weight: talentManager.connected ? Font.Normal : Font.Bold
+                            color: talentManager.connected ? (window.darkMode ? "#AAA" : "#444") : "#CC3333"
+                        }
+                    }
                     Label {
-                        text: talentManager.connected
-                              ? window.t("ai_connected") + " — " + talentManager.talents.length + " " + window.t("talents_count")
-                              : window.t("ai_disconnected")
-                        font.pixelSize: 11; color: talentManager.connected ? (window.darkMode ? "#AAA" : "#444") : "#CC6666"
+                        visible: !talentManager.connected
+                        text: "python3 ai_engine/talent_manager.py (port 5556)"
+                        font.pixelSize: 10; font.family: "Menlo"
+                        color: window.darkMode ? "#886666" : "#CC9999"
+                        Layout.leftMargin: 18
                     }
                 }
             }
@@ -323,11 +343,16 @@ Item {
                     text: "  Enregistrer  "
                     enabled: nameField.text.length > 0
                     onClicked: {
-                        talentManager.addTalent(nameField.text, roleField.text, addTalentDialog.selectedPhotoPath)
-                        nameField.text = ""
-                        roleField.text = ""
-                        addTalentDialog.selectedPhotoPath = ""
-                        addTalentDialog.close()
+                        var result = talentManager.addTalent(nameField.text, roleField.text, addTalentDialog.selectedPhotoPath)
+                        if (result && result.error) {
+                            console.log("[Talent] Error adding talent:", result.error)
+                        } else {
+                            nameField.text = ""
+                            roleField.text = ""
+                            addTalentDialog.selectedPhotoPath = ""
+                            addTalentDialog.close()
+                            talentManager.refreshTalents()
+                        }
                     }
                     background: Rectangle { color: parent.enabled ? "#5B4FDB" : (window.darkMode ? "#333" : "#CCC"); radius: 6 }
                     contentItem: Label { text: parent.text; color: "white"; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter }

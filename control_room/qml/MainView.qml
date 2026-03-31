@@ -179,179 +179,8 @@ ApplicationWindow {
     // ── Global font ────────────────────────────────────────
     font.family: "Helvetica Neue"
 
-    // ── Menu Bar ─────────────────────────────────────────
-    menuBar: MenuBar {
-        id: appMenuBar
+    // Menu Bar removed: using custom QML menu bar in content area
 
-        background: Rectangle { color: window.darkMode ? "#0D0D10" : "#E0E0E6"; Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.08) } }
-
-        delegate: MenuBarItem {
-            id: menuBarDelegate
-            contentItem: Label {
-                text: menuBarDelegate.text
-                font.pixelSize: 13
-                color: menuBarDelegate.highlighted ? "white" : "#999"
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
-            background: Rectangle {
-                color: menuBarDelegate.highlighted ? Qt.rgba(91/255,79/255,219/255,0.2) : "transparent"
-                Behavior on color { ColorAnimation { duration: 100 } }
-            }
-        }
-
-        // ── Fichier ────────────────────────────────────────
-        Menu {
-            title: window.t("file")
-            background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
-
-            MenuItem {
-                text: window.t("new_profile")
-                onTriggered: newProfileDialog.open()
-            }
-            MenuItem {
-                text: window.t("save_profile")
-                onTriggered: { setupController.saveProfile(); savedNotif.show() }
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("export_profile")
-                onTriggered: exportProfileDialog.open()
-            }
-            MenuItem {
-                text: window.t("import_profile")
-                onTriggered: importProfileDialog.open()
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("channel_name_menu")
-                onTriggered: channelNameDialog.open()
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("quit")
-                onTriggered: Qt.quit()
-            }
-        }
-
-        // ── Style ─────────────────────────────────────────
-        Menu {
-            title: window.t("style")
-            background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
-
-            MenuItem { text: "BFM TV"; checkable: true; checked: setupController.selectedStyle === "bfm"; onTriggered: setupController.selectedStyle = "bfm" }
-            MenuItem { text: "LCI"; checkable: true; checked: setupController.selectedStyle === "lci"; onTriggered: setupController.selectedStyle = "lci" }
-            MenuItem { text: "France 2"; checkable: true; checked: setupController.selectedStyle === "france2"; onTriggered: setupController.selectedStyle = "france2" }
-            MenuItem { text: "CNN"; checkable: true; checked: setupController.selectedStyle === "cnn"; onTriggered: setupController.selectedStyle = "cnn" }
-            MenuItem { text: "BBC News"; checkable: true; checked: setupController.selectedStyle === "bbc"; onTriggered: setupController.selectedStyle = "bbc" }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem { text: "Cinema / Festival"; checkable: true; checked: setupController.selectedStyle === "cinema"; onTriggered: setupController.selectedStyle = "cinema" }
-            MenuItem { text: "Luxury / Prestige"; checkable: true; checked: setupController.selectedStyle === "luxury"; onTriggered: setupController.selectedStyle = "luxury" }
-            MenuItem { text: "Tech / Innovation"; checkable: true; checked: setupController.selectedStyle === "tech"; onTriggered: setupController.selectedStyle = "tech" }
-            MenuItem { text: "Minimaliste"; checkable: true; checked: setupController.selectedStyle === "minimal"; onTriggered: setupController.selectedStyle = "minimal" }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem { text: "Breaking News"; checkable: true; checked: setupController.selectedStyle === "breaking"; onTriggered: setupController.selectedStyle = "breaking" }
-            MenuItem {
-                text: window.t("all_styles")
-                onTriggered: { navPanelDrawer.activePanel = 3; navPanelDrawer.open() }
-            }
-        }
-
-        // ── Affichage ─────────────────────────────────────
-        Menu {
-            title: window.t("display")
-            background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
-
-            MenuItem {
-                text: window.t("fullscreen")
-                checkable: true
-                checked: window.visibility === Window.FullScreen
-                onTriggered: {
-                    if (window.visibility === Window.FullScreen) window.showNormal()
-                    else window.showFullScreen()
-                }
-            }
-            MenuItem {
-                text: window.t("theme")
-                checkable: true
-                checked: !window.darkMode
-                onTriggered: {
-                    window.darkMode = !window.darkMode
-                }
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            Menu {
-                title: window.t("language")
-                MenuItem { text: "Fran\u00E7ais"; checkable: true; checked: window.lang === "fr"; onTriggered: mainWindow.language = "fr" }
-                MenuItem { text: "English"; checkable: true; checked: window.lang === "en"; onTriggered: mainWindow.language = "en" }
-                MenuItem { text: "Espa\u00F1ol"; checkable: true; checked: window.lang === "es"; onTriggered: mainWindow.language = "es" }
-                MenuItem { text: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629"; checkable: true; checked: window.lang === "ar"; onTriggered: mainWindow.language = "ar" }
-                MenuItem { text: "\u4E2D\u6587"; checkable: true; checked: window.lang === "zh"; onTriggered: mainWindow.language = "zh" }
-            }
-        }
-
-        // ── Outils ────────────────────────────────────────
-        Menu {
-            title: window.t("tools")
-            background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
-
-            MenuItem {
-                text: window.t("source_config")
-                onTriggered: { navPanelDrawer.activePanel = 0; navPanelDrawer.open() }
-            }
-            MenuItem {
-                text: window.t("output_config")
-                onTriggered: { navPanelDrawer.activePanel = 1; navPanelDrawer.open() }
-            }
-            MenuItem {
-                text: window.t("talent_mgmt")
-                onTriggered: { navPanelDrawer.activePanel = 2; navPanelDrawer.open() }
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("branding")
-                onTriggered: { navPanelDrawer.activePanel = 3; navPanelDrawer.open() }
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("scan_hw")
-                onTriggered: { hardwareScanner.scan(); hardwareScanNotif.show() }
-            }
-            MenuItem {
-                text: window.t("sdk_status")
-                onTriggered: sdkStatusDialog.open()
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("remote") + (webRemote.running ? " (:" + webRemote.port + ")" : "")
-                onTriggered: {
-                    if (webRemote.running) webRemote.stop()
-                    else webRemote.start()
-                }
-            }
-        }
-
-        // ── Aide ──────────────────────────────────────────
-        Menu {
-            title: window.t("help")
-            background: Rectangle { color: window.darkMode ? "#16161A" : "#FFFFFF"; border.color: window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.12); radius: 6 }
-
-            MenuItem {
-                text: window.t("shortcuts")
-                onTriggered: shortcutsDialog.open()
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: window.t("about")
-                onTriggered: aboutDialog.open()
-            }
-            MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Qt.rgba(1,1,1,0.06) } }
-            MenuItem {
-                text: "Licence..."
-                onTriggered: licenseInfoDialog.open()
-            }
-        }
-    }
 
     // ── Keyboard shortcuts ──────────────────────────────────
     Shortcut { sequence: "Ctrl+N"; onActivated: newProfileDialog.open() }
@@ -364,6 +193,162 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+1"; onActivated: { navPanelDrawer.activePanel = 0; navPanelDrawer.open() } }
     Shortcut { sequence: "Ctrl+2"; onActivated: mainWindow.toggleOverlays() }
     Shortcut { sequence: "Ctrl+T"; onActivated: { navPanelDrawer.activePanel = 2; navPanelDrawer.open() } }
+
+    // ── Custom Menu Popup helper component ──────────────────
+    component CustomMenuItem : Rectangle {
+        property string itemText: ""
+        property string shortcutText: ""
+        property bool isSeparator: false
+        property bool isCheckable: false
+        property bool isChecked: false
+        signal menuClicked()
+
+        width: parent ? parent.width : 200
+        height: isSeparator ? 9 : 32
+        color: isSeparator ? "transparent" : (cmiMa.containsMouse ? (window.darkMode ? Qt.rgba(91/255,79/255,219/255,0.15) : Qt.rgba(91/255,79/255,219/255,0.1)) : "transparent")
+        radius: 4
+
+        Rectangle {
+            visible: isSeparator
+            anchors.centerIn: parent; width: parent.width - 16; height: 1
+            color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08)
+        }
+
+        RowLayout {
+            visible: !isSeparator
+            anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12
+            Label {
+                text: isCheckable ? (isChecked ? "\u25CF " : "   ") + itemText : itemText
+                font.pixelSize: 13; color: window.darkMode ? "#DDD" : "#222"; Layout.fillWidth: true
+            }
+            Label { text: shortcutText; font.pixelSize: 11; color: window.darkMode ? "#666" : "#AAA" }
+        }
+
+        MouseArea {
+            id: cmiMa; anchors.fill: parent; hoverEnabled: true
+            cursorShape: !isSeparator ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: { if (!isSeparator) menuClicked() }
+        }
+    }
+
+    // ── FILE MENU POPUP ──
+    Popup {
+        id: fileMenuPopup
+        width: 280; padding: 4
+        background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#FFFFFF"; radius: 8; border.color: window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.12) }
+
+        Column {
+            width: parent.width; spacing: 2
+            CustomMenuItem { itemText: window.t("new_profile"); shortcutText: "Ctrl+N"; onMenuClicked: { fileMenuPopup.close(); newProfileDialog.open() } }
+            CustomMenuItem { itemText: window.t("save_profile"); shortcutText: "Ctrl+S"; onMenuClicked: { fileMenuPopup.close(); setupController.saveProfile(); savedNotif.show() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("export_profile"); onMenuClicked: { fileMenuPopup.close(); exportProfileDialog.open() } }
+            CustomMenuItem { itemText: window.t("import_profile"); onMenuClicked: { fileMenuPopup.close(); importProfileDialog.open() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("scan_hw"); onMenuClicked: { fileMenuPopup.close(); hardwareScanner.scan() } }
+            CustomMenuItem { itemText: window.t("refresh_talents"); onMenuClicked: { fileMenuPopup.close(); talentManager.refreshTalents() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("channel_name_menu"); onMenuClicked: { fileMenuPopup.close(); channelNameDialog.open() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("quit"); shortcutText: "Ctrl+Q"; onMenuClicked: { fileMenuPopup.close(); Qt.quit() } }
+        }
+    }
+
+    // ── STYLE MENU POPUP ──
+    Popup {
+        id: styleMenuPopup
+        width: 280; padding: 4
+        background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#FFFFFF"; radius: 8; border.color: window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.12) }
+
+        Column {
+            width: parent.width; spacing: 2
+            CustomMenuItem { itemText: "BFM TV"; isCheckable: true; isChecked: setupController.selectedStyle === "bfm"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "bfm" } }
+            CustomMenuItem { itemText: "LCI"; isCheckable: true; isChecked: setupController.selectedStyle === "lci"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "lci" } }
+            CustomMenuItem { itemText: "France 2"; isCheckable: true; isChecked: setupController.selectedStyle === "france2"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "france2" } }
+            CustomMenuItem { itemText: "CNN"; isCheckable: true; isChecked: setupController.selectedStyle === "cnn"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "cnn" } }
+            CustomMenuItem { itemText: "BBC News"; isCheckable: true; isChecked: setupController.selectedStyle === "bbc"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "bbc" } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: "Cinema / Festival"; isCheckable: true; isChecked: setupController.selectedStyle === "cinema"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "cinema" } }
+            CustomMenuItem { itemText: "Luxury / Prestige"; isCheckable: true; isChecked: setupController.selectedStyle === "luxury"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "luxury" } }
+            CustomMenuItem { itemText: "Tech / Innovation"; isCheckable: true; isChecked: setupController.selectedStyle === "tech"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "tech" } }
+            CustomMenuItem { itemText: "Minimaliste"; isCheckable: true; isChecked: setupController.selectedStyle === "minimal"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "minimal" } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: "Breaking News"; isCheckable: true; isChecked: setupController.selectedStyle === "breaking"; onMenuClicked: { styleMenuPopup.close(); setupController.selectedStyle = "breaking" } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("all_styles"); onMenuClicked: { styleMenuPopup.close(); navPanelDrawer.activePanel = 3; navPanelDrawer.open() } }
+        }
+    }
+
+    // ── DISPLAY MENU POPUP ──
+    Popup {
+        id: displayMenuPopup
+        width: 280; padding: 4
+        background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#FFFFFF"; radius: 8; border.color: window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.12) }
+
+        Column {
+            width: parent.width; spacing: 2
+            CustomMenuItem { itemText: window.t("fullscreen"); shortcutText: "F11"; isCheckable: true; isChecked: window.visibility === Window.FullScreen; onMenuClicked: { displayMenuPopup.close(); if (window.visibility === Window.FullScreen) window.showNormal(); else window.showFullScreen() } }
+            CustomMenuItem { itemText: window.t("theme"); isCheckable: true; isChecked: !window.darkMode; onMenuClicked: { displayMenuPopup.close(); window.darkMode = !window.darkMode } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("source_config"); shortcutText: "Ctrl+1"; onMenuClicked: { displayMenuPopup.close(); navPanelDrawer.activePanel = 0; navPanelDrawer.open() } }
+            CustomMenuItem { itemText: window.t("activate_overlays"); shortcutText: "Ctrl+2"; onMenuClicked: { displayMenuPopup.close(); mainWindow.toggleOverlays() } }
+            CustomMenuItem { isSeparator: true }
+
+            // Language sub-header
+            Rectangle {
+                width: parent.width; height: 24
+                color: "transparent"
+                Label { anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: window.t("language"); font.pixelSize: 11; font.weight: Font.Bold; color: window.darkMode ? "#888" : "#999" }
+            }
+            CustomMenuItem { itemText: "Fran\u00E7ais"; isCheckable: true; isChecked: window.lang === "fr"; onMenuClicked: { displayMenuPopup.close(); mainWindow.language = "fr" } }
+            CustomMenuItem { itemText: "English"; isCheckable: true; isChecked: window.lang === "en"; onMenuClicked: { displayMenuPopup.close(); mainWindow.language = "en" } }
+            CustomMenuItem { itemText: "Espa\u00F1ol"; isCheckable: true; isChecked: window.lang === "es"; onMenuClicked: { displayMenuPopup.close(); mainWindow.language = "es" } }
+            CustomMenuItem { itemText: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629"; isCheckable: true; isChecked: window.lang === "ar"; onMenuClicked: { displayMenuPopup.close(); mainWindow.language = "ar" } }
+            CustomMenuItem { itemText: "\u4E2D\u6587"; isCheckable: true; isChecked: window.lang === "zh"; onMenuClicked: { displayMenuPopup.close(); mainWindow.language = "zh" } }
+        }
+    }
+
+    // ── TOOLS MENU POPUP ──
+    Popup {
+        id: toolsMenuPopup
+        width: 280; padding: 4
+        background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#FFFFFF"; radius: 8; border.color: window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.12) }
+
+        Column {
+            width: parent.width; spacing: 2
+            CustomMenuItem { itemText: window.t("source_config"); onMenuClicked: { toolsMenuPopup.close(); navPanelDrawer.activePanel = 0; navPanelDrawer.open() } }
+            CustomMenuItem { itemText: window.t("output_config"); onMenuClicked: { toolsMenuPopup.close(); navPanelDrawer.activePanel = 1; navPanelDrawer.open() } }
+            CustomMenuItem { itemText: window.t("talent_mgmt"); shortcutText: "Ctrl+T"; onMenuClicked: { toolsMenuPopup.close(); navPanelDrawer.activePanel = 2; navPanelDrawer.open() } }
+            CustomMenuItem { itemText: window.t("scan_hw"); onMenuClicked: { toolsMenuPopup.close(); hardwareScanner.scan(); hardwareScanNotif.show() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("sdk_status"); onMenuClicked: { toolsMenuPopup.close(); sdkStatusDialog.open() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("teleprompter"); onMenuClicked: { toolsMenuPopup.close() } }
+            CustomMenuItem { itemText: window.t("macros"); onMenuClicked: { toolsMenuPopup.close() } }
+            CustomMenuItem { itemText: window.t("ticker"); onMenuClicked: { toolsMenuPopup.close() } }
+            CustomMenuItem { itemText: window.t("stats"); onMenuClicked: { toolsMenuPopup.close() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("branding"); onMenuClicked: { toolsMenuPopup.close(); navPanelDrawer.activePanel = 3; navPanelDrawer.open() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("remote") + (webRemote.running ? " (:" + webRemote.port + ")" : ""); onMenuClicked: { toolsMenuPopup.close(); if (webRemote.running) webRemote.stop(); else webRemote.start() } }
+        }
+    }
+
+    // ── HELP MENU POPUP ──
+    Popup {
+        id: helpMenuPopup
+        width: 280; padding: 4
+        background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#FFFFFF"; radius: 8; border.color: window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.12) }
+
+        Column {
+            width: parent.width; spacing: 2
+            CustomMenuItem { itemText: window.t("shortcuts"); onMenuClicked: { helpMenuPopup.close(); shortcutsDialog.open() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: window.t("about"); onMenuClicked: { helpMenuPopup.close(); aboutDialog.open() } }
+            CustomMenuItem { isSeparator: true }
+            CustomMenuItem { itemText: "Licence..."; onMenuClicked: { helpMenuPopup.close(); licenseInfoDialog.open() } }
+        }
+    }
 
     // ── MAIN LAYOUT: Nav bar (left) + Content (right) ─────
     RowLayout {
@@ -453,6 +438,74 @@ ApplicationWindow {
         // ── MAIN CONTENT (program bar + preview) ──
         ColumnLayout {
             Layout.fillWidth: true; Layout.fillHeight: true; spacing: 0
+
+            // ── Custom Menu Bar (replaces broken Qt MenuBar) ──
+            Rectangle {
+                id: customMenuBar
+                Layout.fillWidth: true; Layout.preferredHeight: 32
+                color: window.darkMode ? "#0D0D10" : "#E0E0E6"
+
+                RowLayout {
+                    anchors.fill: parent; anchors.leftMargin: 8; spacing: 0
+
+                    Repeater {
+                        model: [
+                            { title: window.t("file"), menuId: "file" },
+                            { title: window.t("style"), menuId: "style" },
+                            { title: window.t("display"), menuId: "display" },
+                            { title: window.t("tools"), menuId: "tools" },
+                            { title: window.t("help"), menuId: "help" }
+                        ]
+
+                        Rectangle {
+                            Layout.preferredWidth: cmbTitleLbl.implicitWidth + 20
+                            Layout.preferredHeight: 32
+                            color: {
+                                var popup = null
+                                if (modelData.menuId === "file") popup = fileMenuPopup
+                                else if (modelData.menuId === "style") popup = styleMenuPopup
+                                else if (modelData.menuId === "display") popup = displayMenuPopup
+                                else if (modelData.menuId === "tools") popup = toolsMenuPopup
+                                else if (modelData.menuId === "help") popup = helpMenuPopup
+                                if (popup && popup.visible)
+                                    return window.darkMode ? Qt.rgba(91/255,79/255,219/255,0.2) : Qt.rgba(91/255,79/255,219/255,0.15)
+                                if (cmbBtnMa.containsMouse)
+                                    return window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)
+                                return "transparent"
+                            }
+
+                            Label {
+                                id: cmbTitleLbl; anchors.centerIn: parent
+                                text: modelData.title
+                                font.pixelSize: 13; color: window.darkMode ? "#CCC" : "#333"
+                            }
+
+                            MouseArea {
+                                id: cmbBtnMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    var popup = null
+                                    if (modelData.menuId === "file") popup = fileMenuPopup
+                                    else if (modelData.menuId === "style") popup = styleMenuPopup
+                                    else if (modelData.menuId === "display") popup = displayMenuPopup
+                                    else if (modelData.menuId === "tools") popup = toolsMenuPopup
+                                    else if (modelData.menuId === "help") popup = helpMenuPopup
+                                    if (popup) {
+                                        // Position relative to this button
+                                        var globalPos = parent.mapToItem(null, 0, parent.height)
+                                        popup.x = globalPos.x
+                                        popup.y = globalPos.y
+                                        popup.open()
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Item { Layout.fillWidth: true }
+                }
+
+                Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.08) }
+            }
 
             // ── Slim program bar (top, 42px) ──────────────────
             Rectangle {
