@@ -514,6 +514,34 @@ ApplicationWindow {
                 Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
             }
 
+            // License expiration warning banner
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: licenseManager.isExpired ? 40 : (licenseManager.isExpiringSoon ? 32 : 0)
+                visible: licenseManager.isExpired || licenseManager.isExpiringSoon
+                color: licenseManager.isExpired ? Qt.rgba(204/255, 0, 0, 0.15) : Qt.rgba(255/255, 184/255, 0, 0.15)
+
+                RowLayout {
+                    anchors.centerIn: parent; spacing: 8
+                    Label {
+                        text: licenseManager.isExpired ? "\u26A0" : "\u23F0"
+                        font.pixelSize: 14
+                    }
+                    Label {
+                        text: licenseManager.statusMessage
+                        font.pixelSize: 12; font.weight: Font.DemiBold
+                        color: licenseManager.isExpired ? "#CC0000" : "#B8860B"
+                    }
+                    Rectangle {
+                        visible: licenseManager.isExpired
+                        Layout.preferredWidth: renewLbl.implicitWidth + 16; Layout.preferredHeight: 24; radius: 4
+                        color: "#CC0000"
+                        Label { id: renewLbl; anchors.centerIn: parent; text: "Renouveler"; font.pixelSize: 11; color: "white"; font.weight: Font.Bold }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: licenseInfoDialog.open() }
+                    }
+                }
+            }
+
             // ── Main content: LiveView always visible ─────────
             LiveView { id: liveView; Layout.fillWidth: true; Layout.fillHeight: true }
         }
@@ -1822,6 +1850,10 @@ ApplicationWindow {
             function onActivationSuccess() { licenseDialog.close() }
             function onStatusChanged() {
                 if (licenseManager.isActivated) licenseDialog.close()
+                if (!licenseManager.isActivated && configManager.channelName !== "") {
+                    // License lost/expired — reopen activation
+                    licenseDialog.open()
+                }
             }
         }
 
@@ -1885,13 +1917,20 @@ ApplicationWindow {
                         }
                     }
 
-                    Label {
+                    // Error/warning display
+                    Rectangle {
                         visible: licenseManager.errorString !== ""
-                        text: licenseManager.errorString
-                        font.pixelSize: 11; color: "#CC3333"
-                        Layout.alignment: Qt.AlignHCenter
-                        wrapMode: Text.WordWrap; Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignHCenter
+                        Layout.fillWidth: true; Layout.leftMargin: 20; Layout.rightMargin: 20
+                        Layout.preferredHeight: errLbl.implicitHeight + 16
+                        radius: 8
+                        color: Qt.rgba(204/255, 0, 0, 0.1)
+                        border.color: Qt.rgba(204/255, 0, 0, 0.3)
+                        Label {
+                            id: errLbl; anchors.centerIn: parent; width: parent.width - 24
+                            text: licenseManager.errorString
+                            font.pixelSize: 12; color: "#CC3333"
+                            wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter
+                        }
                     }
                 }
             }
@@ -2050,6 +2089,23 @@ ApplicationWindow {
             Label { text: "Type: " + licenseManager.licenseType; font.pixelSize: 12; color: window.darkMode ? "#AAA" : "#555"; Layout.alignment: Qt.AlignHCenter; visible: licenseManager.licenseType !== "" }
             Label { text: "Cle: " + licenseManager.licenseKey; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter; visible: licenseManager.licenseKey !== "" }
             Label { text: "Expiration: " + licenseManager.expirationDate; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter; visible: licenseManager.expirationDate !== "" }
+            // Status with color
+            Rectangle {
+                Layout.fillWidth: true; Layout.leftMargin: 16; Layout.rightMargin: 16
+                Layout.preferredHeight: 36; radius: 6
+                visible: licenseManager.statusMessage !== ""
+                color: licenseManager.isExpired ? Qt.rgba(204/255,0,0,0.1)
+                     : licenseManager.isExpiringSoon ? Qt.rgba(255/255,184/255,0,0.1)
+                     : Qt.rgba(29/255,185/255,84/255,0.1)
+                Label {
+                    anchors.centerIn: parent
+                    text: licenseManager.statusMessage
+                    font.pixelSize: 12; font.weight: Font.DemiBold
+                    color: licenseManager.isExpired ? "#CC0000"
+                         : licenseManager.isExpiringSoon ? "#B8860B"
+                         : "#1DB954"
+                }
+            }
             Item { Layout.preferredHeight: 8 }
             RowLayout {
                 Layout.alignment: Qt.AlignHCenter; spacing: 12
