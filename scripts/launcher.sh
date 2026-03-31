@@ -61,7 +61,7 @@ fi
 # Includes: face detection, tracking, talent manager (:5556), subtitles
 echo "[AI] Starting..." | tee -a "$LOG_DIR/launch.log"
 cd "$AI_ENGINE"
-"$PYTHON" main.py --dev > "$LOG_DIR/ai_engine.log" 2>&1 &
+"$PYTHON" main.py > "$LOG_DIR/ai_engine.log" 2>&1 &
 AI_PID=$!
 echo "[AI] PID=$AI_PID (detection + talents + subtitles)" | tee -a "$LOG_DIR/launch.log"
 
