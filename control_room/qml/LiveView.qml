@@ -320,6 +320,12 @@ Item {
                             origin.x: previewChannelNameContainer.width / 2; origin.y: previewChannelNameContainer.height / 2
                         }
                     ]
+
+                    // Entry animation
+                    opacity: 0
+                    Component.onCompleted: nameEntryTimer.start()
+                    Timer { id: nameEntryTimer; interval: 500; onTriggered: previewChannelNameContainer.opacity = 1 }
+                    Behavior on opacity { NumberAnimation { duration: setupController.nameEntryAnim === "none" ? 0 : 800; easing.type: Easing.OutCubic } }
                 }
 
                 // ── Layer 2: Show Title ──────────────────────
@@ -356,7 +362,34 @@ Item {
                     border.color: setupController.showTitleShape === "frameless" ? "transparent" : setupController.showTitleBorderColor
                     border.width: 1
                     opacity: liveController.showTitleVisible ? 1.0 : 0.0
-                    Behavior on opacity { NumberAnimation { duration: 400 } }
+                    Behavior on opacity { NumberAnimation { duration: setupController.showTitleEntryAnim === "none" ? 0 : 500; easing.type: Easing.OutCubic } }
+
+                    // Loop: Pulse
+                    SequentialAnimation on scale {
+                        loops: Animation.Infinite; running: setupController.showTitleLoopAnim === "pulse"
+                        NumberAnimation { to: 1.03; duration: 1200; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1.0; duration: 1200; easing.type: Easing.InOutSine }
+                    }
+                    // Loop: Glow border
+                    Rectangle {
+                        anchors.fill: parent; radius: parent.radius
+                        color: "transparent"; border.color: setupController.showTitleBorderColor || "#5B4FDB"; border.width: 2
+                        visible: setupController.showTitleLoopAnim === "glow"
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite; running: setupController.showTitleLoopAnim === "glow"
+                            NumberAnimation { to: 0.0; duration: 1000; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0.8; duration: 1000; easing.type: Easing.InOutSine }
+                        }
+                    }
+                    // Loop: Bounce
+                    transform: Translate {
+                        y: 0
+                        SequentialAnimation on y {
+                            loops: Animation.Infinite; running: setupController.showTitleLoopAnim === "bounce"
+                            NumberAnimation { to: -3; duration: 600; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0; duration: 600; easing.type: Easing.InOutSine }
+                        }
+                    }
 
                     // Accent bar on left
                     Rectangle {
