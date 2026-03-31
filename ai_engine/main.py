@@ -353,10 +353,23 @@ def main() -> None:
         else:
             logger.info("Whisper model load failed — subtitles disabled")
 
+    # ── Talent Manager Server (ZMQ REP :5556) ───────────────
+    from talent_manager import TalentDatabase, TalentManagerServer
+
+    talent_db = TalentDatabase(args.talents_db, "talent_photos")
+    talent_server = TalentManagerServer(talent_db, "tcp://127.0.0.1:5556")
+    threads.append(threading.Thread(
+        target=talent_server.run,
+        name="talent-manager",
+        daemon=True,
+    ))
+    logger.info("Talent Manager: started on :5556")
+
     for t in threads:
         t.start()
 
     logger.info("Pipeline: Capture → Detection → Tracking → ZMQ(:5555)")
+    logger.info("Pipeline: Talent Manager → ZMQ(:5556)")
     if subtitle_engine:
         logger.info("Pipeline: Audio → Whisper → Subtitles → ZMQ(:5555)")
 
