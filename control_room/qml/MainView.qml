@@ -428,27 +428,6 @@ ApplicationWindow {
     ColumnLayout {
         anchors.fill: parent; spacing: 0
 
-        // ── Animated background gradient (content area only) ──
-        Rectangle {
-            Layout.fillWidth: true; Layout.fillHeight: true
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: window.darkMode ? "#07070A" : "#F0F0F4" }
-                GradientStop { position: 0.5; color: window.darkMode ? "#0A0A12" : "#E8E8EE" }
-                GradientStop { position: 1.0; color: window.darkMode ? "#07070A" : "#F0F0F4" }
-            }
-            Behavior on color { ColorAnimation { duration: 300 } }
-            // Subtle animated accent glow top-left
-            Rectangle {
-                width: 400; height: 400; radius: 200
-                x: -100; y: -100
-                opacity: 0.03
-                color: "#5B4FDB"
-                Behavior on opacity { NumberAnimation { duration: 2000 } }
-            }
-
-            ColumnLayout {
-                anchors.fill: parent; spacing: 0
-
                 // ── Slim program bar (top, 42px) ──────────────────
                 Rectangle {
                     Layout.fillWidth: true; Layout.preferredHeight: 42
@@ -519,10 +498,8 @@ ApplicationWindow {
                     Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
                 }
 
-                // ── Main content: LiveView always visible ─────────
-                LiveView { id: liveView; Layout.fillWidth: true; Layout.fillHeight: true }
-            }
-        }
+        // ── Main content: LiveView always visible ─────────
+        LiveView { id: liveView; Layout.fillWidth: true; Layout.fillHeight: true }
     }
 
     // -- Drawer for program configuration --
