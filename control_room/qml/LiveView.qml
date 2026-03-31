@@ -732,7 +732,7 @@ Item {
                 Label {
                     id: fpsLbl; anchors.centerIn: parent
                     text: previewMonitor.sourceWidth + "\u00D7" + previewMonitor.sourceHeight + " @ " + previewMonitor.fps.toFixed(0) + "fps"
-                    font.pixelSize: 10; font.family: "Menlo"; color: window.darkMode ? "#888" : "#555"
+                    font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#888" : "#555"
                 }
             }
 
@@ -754,7 +754,7 @@ Item {
 
         // ── Detection panel ────────────────────────────────
         Rectangle {
-            Layout.fillWidth: true; Layout.preferredHeight: 80
+            Layout.fillWidth: true; Layout.preferredHeight: 90
             color: window.darkMode ? Qt.rgba(1, 1, 1, 0.02) : Qt.rgba(0, 0, 0, 0.02)
             Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
 
@@ -778,7 +778,7 @@ Item {
                 // Scene mode pill
                 Rectangle {
                     visible: liveController.talentDetected
-                    Layout.preferredWidth: modeLbl.implicitWidth + 16; Layout.preferredHeight: 24; radius: 12
+                    Layout.preferredWidth: modeLbl.implicitWidth + 16; Layout.preferredHeight: 28; radius: 14
                     color: liveController.isMultiFace ? Qt.rgba(91/255,79/255,219/255,0.15) : Qt.rgba(29/255,185/255,84/255,0.15)
                     border.color: liveController.isMultiFace ? Qt.rgba(91/255,79/255,219/255,0.3) : Qt.rgba(29/255,185/255,84/255,0.3)
                     Behavior on color { ColorAnimation { duration: 300 } }
@@ -787,7 +787,7 @@ Item {
                         id: modeLbl; anchors.centerIn: parent
                         text: liveController.isMultiFace ? liveController.faceCount + " " + window.t("faces") : "1 " + window.t("face")
                         color: liveController.isMultiFace ? "#8B80E0" : "#1DB954"
-                        font.pixelSize: 10; font.weight: Font.Bold
+                        font.pixelSize: 11; font.weight: Font.Bold
                     }
                 }
 
@@ -896,8 +896,8 @@ Item {
                     RowLayout {
                         anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 8
 
-                        Label { text: "QUEUE"; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 2; color: window.darkMode ? "#666" : "#999" }
-                        Label { text: graphicsQueue.count + " items"; font.pixelSize: 10; color: window.darkMode ? "#555" : "#AAA" }
+                        Label { text: "QUEUE"; font.pixelSize: 11; font.weight: Font.Bold; font.letterSpacing: 2; color: window.darkMode ? "#666" : "#999" }
+                        Label { text: graphicsQueue.count + " items"; font.pixelSize: 11; color: window.darkMode ? "#555" : "#AAA" }
 
                         Item { Layout.fillWidth: true }
 
@@ -905,32 +905,32 @@ Item {
                         Label {
                             visible: graphicsQueue.nextItem.type !== undefined
                             text: "NEXT: " + (graphicsQueue.nextItem.name || graphicsQueue.nextItem.text || "")
-                            font.pixelSize: 10; color: "#5B4FDB"; elide: Text.ElideRight; Layout.maximumWidth: 200
+                            font.pixelSize: 11; color: "#5B4FDB"; elide: Text.ElideRight; Layout.maximumWidth: 200
                         }
 
                         // TAKE button
                         Rectangle {
-                            Layout.preferredWidth: 60; Layout.preferredHeight: 26; radius: 6
+                            Layout.preferredWidth: 60; Layout.preferredHeight: 36; radius: 6
                             color: queueTakeMa.containsMouse ? "#DD0000" : "#CC0000"
                             visible: graphicsQueue.count > 0
-                            Label { anchors.centerIn: parent; text: "TAKE"; color: "white"; font.pixelSize: 10; font.weight: Font.Bold }
+                            Label { anchors.centerIn: parent; text: "TAKE"; color: "white"; font.pixelSize: 11; font.weight: Font.Bold }
                             MouseArea { id: queueTakeMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.takeNext() }
                         }
 
                         // Clear
                         Rectangle {
-                            Layout.preferredWidth: 50; Layout.preferredHeight: 26; radius: 6
+                            Layout.preferredWidth: 50; Layout.preferredHeight: 32; radius: 6
                             color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
                             visible: graphicsQueue.currentIndex >= 0
-                            Label { anchors.centerIn: parent; text: "CLEAR"; color: window.darkMode ? "#888" : "#666"; font.pixelSize: 9; font.weight: Font.Bold }
+                            Label { anchors.centerIn: parent; text: "CLEAR"; color: window.darkMode ? "#888" : "#666"; font.pixelSize: 11; font.weight: Font.Bold }
                             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.clearProgram() }
                         }
 
                         // Expand/collapse
                         Rectangle {
-                            Layout.preferredWidth: 26; Layout.preferredHeight: 26; radius: 4
+                            Layout.preferredWidth: 32; Layout.preferredHeight: 32; radius: 4
                             color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                            Label { anchors.centerIn: parent; text: queueBar.queueExpanded ? "\u25BC" : "\u25B2"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                            Label { anchors.centerIn: parent; text: queueBar.queueExpanded ? "\u25BC" : "\u25B2"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
                             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: queueBar.queueExpanded = !queueBar.queueExpanded }
                         }
                     }
@@ -960,22 +960,22 @@ Item {
                                     if (modelData.type === "qr_code") return "QR CODE"
                                     return modelData.type || ""
                                 }
-                                font.pixelSize: 8; font.weight: Font.Bold; color: "#5B4FDB"
+                                font.pixelSize: 10; font.weight: Font.Bold; color: "#5B4FDB"
                             }
                             Label {
                                 text: modelData.name || modelData.text || modelData.url || ""
-                                font.pixelSize: 10; font.weight: Font.DemiBold; color: window.darkMode ? "white" : "#1A1A1A"
+                                font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "white" : "#1A1A1A"
                                 elide: Text.ElideRight; Layout.fillWidth: true
                             }
                             Label {
                                 text: modelData.role || ""
-                                font.pixelSize: 9; color: window.darkMode ? "#888" : "#666"
+                                font.pixelSize: 11; color: window.darkMode ? "#888" : "#666"
                                 visible: modelData.role !== undefined && modelData.role !== ""
                             }
                             Item { Layout.fillHeight: true }
                             Label {
                                 text: graphicsQueue.currentIndex === index ? "ON AIR" : (index < graphicsQueue.currentIndex ? "DONE" : "READY")
-                                font.pixelSize: 8; font.weight: Font.Bold
+                                font.pixelSize: 10; font.weight: Font.Bold
                                 color: graphicsQueue.currentIndex === index ? "#CC0000" : (index < graphicsQueue.currentIndex ? "#1DB954" : (window.darkMode ? "#666" : "#999"))
                             }
                         }
@@ -986,14 +986,14 @@ Item {
             }
         }
 
-        // ── Technical bar ──────────────────────────────────
+        // ── Broadcast Status Bar ──────────────────────────
         Rectangle {
-            Layout.fillWidth: true; Layout.preferredHeight: 42
-            color: window.darkMode ? Qt.rgba(0, 0, 0, 0.3) : Qt.rgba(0, 0, 0, 0.06)
-            Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.06) }
+            Layout.fillWidth: true; Layout.preferredHeight: 38
+            color: window.darkMode ? "#08080C" : "#E0E0E6"
+            Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
 
             RowLayout {
-                anchors.fill: parent; anchors.leftMargin: 24; anchors.rightMargin: 24; spacing: 20
+                anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 16
 
                 // Output indicators with animated dots
                 Repeater {
@@ -1014,68 +1014,43 @@ Item {
                     }
                 }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
 
-                Label { text: "FPS " + liveController.fps + "/25"; font.pixelSize: 11; font.family: "Menlo"; color: liveController.fps >= 24 ? (window.darkMode ? "#888" : "#555") : "#FF6B35" }
-                Label { text: "LAT " + liveController.latencyMs + "ms"; font.pixelSize: 11; font.family: "Menlo"; color: liveController.latencyMs < 33 ? (window.darkMode ? "#888" : "#555") : "#FF6B35" }
-                Label { text: "CPU " + liveController.cpuPercent + "%"; font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#666" : "#999" }
-                Label { text: "GPU " + liveController.gpuPercent + "%"; font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#666" : "#999" }
+                // FPS with color coding
+                RowLayout { spacing: 4
+                    Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: liveController.fps >= 24 ? "#1DB954" : (liveController.fps >= 15 ? "#FFB800" : "#CC0000") }
+                    Label { text: "FPS " + liveController.fps; font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#AAA" : "#555" }
+                }
 
-                // VU Meter (Feature 4)
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
-                Row {
-                    spacing: 2
-                    Layout.alignment: Qt.AlignVCenter
+                // Latency with color coding
+                RowLayout { spacing: 4
+                    Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: liveController.latencyMs < 50 ? "#1DB954" : (liveController.latencyMs < 100 ? "#FFB800" : "#CC0000") }
+                    Label { text: liveController.latencyMs + "ms"; font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#AAA" : "#555" }
+                }
 
-                    // Left channel
-                    Rectangle {
-                        width: 4; height: 24; color: "transparent"
-                        anchors.verticalCenter: parent.verticalCenter
-                        Rectangle {
-                            width: parent.width; anchors.bottom: parent.bottom
-                            height: parent.height * audioMeter.levelL
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: "#FF3333" }
-                                GradientStop { position: 0.3; color: "#FFAA00" }
-                                GradientStop { position: 0.6; color: "#1DB954" }
-                                GradientStop { position: 1.0; color: "#1DB954" }
-                            }
-                        }
-                        // Peak indicator
-                        Rectangle {
-                            width: parent.width; height: 1; color: "#FF3333"
-                            y: parent.height * (1.0 - audioMeter.peakL)
-                            visible: audioMeter.active
-                        }
-                    }
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
 
-                    // Right channel
-                    Rectangle {
-                        width: 4; height: 24; color: "transparent"
-                        anchors.verticalCenter: parent.verticalCenter
-                        Rectangle {
-                            width: parent.width; anchors.bottom: parent.bottom
-                            height: parent.height * audioMeter.levelR
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: "#FF3333" }
-                                GradientStop { position: 0.3; color: "#FFAA00" }
-                                GradientStop { position: 0.6; color: "#1DB954" }
-                                GradientStop { position: 1.0; color: "#1DB954" }
-                            }
-                        }
-                        Rectangle {
-                            width: parent.width; height: 1; color: "#FF3333"
-                            y: parent.height * (1.0 - audioMeter.peakR)
-                            visible: audioMeter.active
-                        }
-                    }
+                // AI status
+                RowLayout { spacing: 4
+                    Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: "#1DB954" }
+                    Label { text: "IA"; font.pixelSize: 11; font.weight: Font.Bold; color: window.darkMode ? "#AAA" : "#555" }
+                }
 
-                    Label { text: "VU"; font.pixelSize: 8; color: audioMeter.active ? (window.darkMode ? "#888" : "#555") : (window.darkMode ? "#444" : "#AAA"); anchors.verticalCenter: parent.verticalCenter }
+                // Source
+                Label { text: setupController.inputType || "\u2014"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
+
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
+
+                // VU meter bars (simplified)
+                RowLayout { spacing: 2
+                    Label { text: "VU"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
+                    Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: audioMeter.levelL * 18; Layout.maximumHeight: 18; radius: 1; color: audioMeter.levelL > 0.8 ? "#CC0000" : "#1DB954"; Layout.alignment: Qt.AlignBottom }
+                    Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: audioMeter.levelR * 18; Layout.maximumHeight: 18; radius: 1; color: audioMeter.levelR > 0.8 ? "#CC0000" : "#1DB954"; Layout.alignment: Qt.AlignBottom }
                 }
 
                 Item { Layout.fillWidth: true }
 
-                // REC button (Feature 2)
+                // REC
                 Rectangle {
                     Layout.preferredWidth: recRow.implicitWidth + 16; Layout.preferredHeight: 28; radius: 6
                     color: liveController.isRecording
@@ -1084,31 +1059,30 @@ Item {
                     border.color: liveController.isRecording ? "#CC0000" : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
 
-                    Row {
+                    RowLayout {
                         id: recRow; anchors.centerIn: parent; spacing: 6
-
-                        // Red dot (pulses when recording)
                         Rectangle {
-                            width: 8; height: 8; radius: 4; anchors.verticalCenter: parent.verticalCenter
-                            color: liveController.isRecording ? "#FF0000" : (window.darkMode ? "#666" : "#999")
+                            visible: liveController.isRecording; Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: "#CC0000"
                             SequentialAnimation on opacity {
                                 loops: Animation.Infinite; running: liveController.isRecording
-                                NumberAnimation { to: 0.3; duration: 600; easing.type: Easing.InOutSine }
-                                NumberAnimation { to: 1.0; duration: 600; easing.type: Easing.InOutSine }
+                                NumberAnimation { to: 0.3; duration: 500 }
+                                NumberAnimation { to: 1.0; duration: 500 }
                             }
                         }
-
-                        Label {
-                            text: liveController.isRecording ? ("REC " + liveController.recordingDuration) : "REC"
-                            color: liveController.isRecording ? "#FF3333" : (window.darkMode ? "#666" : "#999")
-                            font.pixelSize: 11; font.weight: liveController.isRecording ? Font.Bold : Font.Normal
-                            font.family: liveController.isRecording ? "Menlo" : "Helvetica Neue"
+                        Rectangle {
+                            visible: !liveController.isRecording; Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: window.darkMode ? "#555" : "#AAA"
                         }
+                        Label { text: liveController.isRecording ? ("REC " + liveController.recordingDuration) : "REC"; font.pixelSize: 11; font.family: "Menlo"; color: liveController.isRecording ? "#CC0000" : (window.darkMode ? "#555" : "#AAA") }
                     }
                     MouseArea { id: msRecBtn; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: liveController.toggleRecording() }
                 }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
+
+                // Elapsed
+                Label { text: liveController.formattedDuration(liveView.elapsedSeconds); font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#888" : "#666" }
+
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
 
                 // Stop button (subtle)
                 Rectangle {

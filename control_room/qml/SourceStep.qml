@@ -81,7 +81,7 @@ Item {
         // ── Detected Devices Section ─────────────────────────
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 12; Layout.rightMargin: 12 }
         Label { text: "Appareils détectés"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
-        Label { text: hardwareScanner.devices.length + " appareil(s) trouvé(s)"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
+        Label { text: hardwareScanner.devices.length + " appareil(s) trouvé(s)"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
 
         ListView {
             Layout.fillWidth: true; Layout.preferredHeight: Math.min(200, hardwareScanner.devices.length * 52); clip: true
@@ -120,7 +120,7 @@ Item {
                         }
                         Label {
                             text: modelData.driver + (modelData.mixerBrand ? (" \u2014 " + modelData.mixerBrand) : "")
-                            font.pixelSize: 9; color: window.darkMode ? "#888" : "#666"
+                            font.pixelSize: 11; color: window.darkMode ? "#888" : "#666"
                         }
                     }
 
@@ -159,7 +159,7 @@ Item {
         Rectangle {
             Layout.preferredWidth: 140; Layout.preferredHeight: 32; Layout.leftMargin: 12; radius: 6
             color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-            Label { anchors.centerIn: parent; text: "\u21BB Scanner le matériel"; font.pixelSize: 10; color: "#5B4FDB" }
+            Label { anchors.centerIn: parent; text: "\u21BB Scanner le matériel"; font.pixelSize: 11; color: "#5B4FDB" }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: hardwareScanner.scan() }
         }
 

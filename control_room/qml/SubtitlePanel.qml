@@ -22,7 +22,7 @@ Item {
                 Label {
                     id: statusLbl; anchors.centerIn: parent
                     text: subtitleController.whisperReady ? "Whisper OK" : "Whisper..."
-                    font.pixelSize: 8; color: subtitleController.whisperReady ? "#1DB954" : "#666"
+                    font.pixelSize: 10; color: subtitleController.whisperReady ? "#1DB954" : "#666"
                 }
             }
         }
@@ -40,7 +40,7 @@ Item {
         Label { text: "Moteur Whisper"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
 
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Modele:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Modele:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             ComboBox {
                 id: modelCombo
                 model: ["tiny", "base", "small", "medium"]
@@ -59,11 +59,11 @@ Item {
                 var sizes = {"tiny": "39 Mo, rapide", "base": "74 Mo, equilibre", "small": "244 Mo, precis", "medium": "769 Mo, tres precis"}
                 return "  " + (sizes[modelCombo.currentText] || "")
             }
-            font.pixelSize: 9; color: window.darkMode ? "#555" : "#999"; leftPadding: 8
+            font.pixelSize: 11; color: window.darkMode ? "#555" : "#999"; leftPadding: 8
         }
 
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Langue:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Langue:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             ComboBox {
                 id: langCombo
                 model: ["Auto", "Francais", "English", "Espanol", "Deutsch", "Arabic", "Chinese"]
@@ -85,17 +85,17 @@ Item {
         Label { text: "Apparence"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
 
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Slider {
                 from: 12; to: 36; stepSize: 1
                 value: subtitleController.fontSize
                 Layout.fillWidth: true
                 onMoved: subtitleController.fontSize = value
             }
-            Label { text: subtitleController.fontSize + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10 }
+            Label { text: subtitleController.fontSize + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Position:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Position:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             ComboBox {
                 model: ["Bas", "Haut"]; Layout.fillWidth: true
                 currentIndex: subtitleController.position === "top" ? 1 : 0
@@ -104,17 +104,17 @@ Item {
             }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Opacite fond:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Opacite fond:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Slider {
                 from: 0.2; to: 1.0
                 value: subtitleController.bgOpacity
                 Layout.fillWidth: true
                 onMoved: subtitleController.bgOpacity = value
             }
-            Label { text: Math.round(subtitleController.bgOpacity * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10 }
+            Label { text: Math.round(subtitleController.bgOpacity * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Texte:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Texte:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Repeater {
                 model: ["#FFFFFF", "#FFFF00", "#00FF00"]
                 Rectangle {
@@ -145,7 +145,7 @@ Item {
 
         // ── Confidence badge ──────────────────────────────────
         RowLayout { spacing: 6; Layout.leftMargin: 8
-            Label { text: "Confiance:"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 9 }
+            Label { text: "Confiance:"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 11 }
             Rectangle {
                 Layout.preferredWidth: 40; Layout.preferredHeight: 14; radius: 3
                 color: subtitleController.confidence > 0.8 ? Qt.rgba(29/255,185/255,84/255,0.2) :
@@ -153,11 +153,11 @@ Item {
                 Label {
                     anchors.centerIn: parent
                     text: Math.round(subtitleController.confidence * 100) + "%"
-                    font.pixelSize: 8; color: window.darkMode ? "#AAA" : "#444"
+                    font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#444"
                 }
             }
             Item { Layout.fillWidth: true }
-            Label { text: "Moteur: Whisper IA (local)"; font.pixelSize: 9; color: window.darkMode ? "#555" : "#999" }
+            Label { text: "Moteur: Whisper IA (local)"; font.pixelSize: 11; color: window.darkMode ? "#555" : "#999" }
         }
         Item { implicitHeight: 10 }
     }

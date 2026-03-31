@@ -28,7 +28,7 @@ Item {
                 Label {
                     id: feedBadge; anchors.centerIn: parent
                     text: rssFetcher.feedCount > 0 ? rssFetcher.feedCount + " titres" : "Aucun flux"
-                    font.pixelSize: 8; color: rssFetcher.feedCount > 0 ? "#1DB954" : "#666"
+                    font.pixelSize: 10; color: rssFetcher.feedCount > 0 ? "#1DB954" : "#666"
                 }
             }
         }
@@ -68,14 +68,14 @@ Item {
 
         // ── Feed Status ───────────────────────────────────────
         RowLayout { spacing: 6; Layout.leftMargin: 8
-            Label { text: "Derniere MAJ:"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 9 }
-            Label { text: rssFetcher.lastFetchTime; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 9 }
+            Label { text: "Derniere MAJ:"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 11 }
+            Label { text: rssFetcher.lastFetchTime; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
             Item { Layout.fillWidth: true }
-            Label { text: rssFetcher.feedCount + " titres"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 9 }
+            Label { text: rssFetcher.feedCount + " titres"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
         }
 
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Refresh:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Refresh:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             ComboBox {
                 id: refreshCombo
                 model: ["30s", "1 min", "5 min", "15 min"]
@@ -94,7 +94,7 @@ Item {
         Label {
             visible: rssFetcher.errorString !== ""
             text: "Erreur: " + rssFetcher.errorString
-            font.pixelSize: 9; color: "#CC3333"; leftPadding: 8
+            font.pixelSize: 11; color: "#CC3333"; leftPadding: 8
             Layout.fillWidth: true; wrapMode: Text.WordWrap
         }
 
@@ -103,7 +103,7 @@ Item {
         Label { text: "Apparence"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
 
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Fond:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Fond:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Repeater {
                 model: ["#CC0000", "#0066CC", "#000000", "#1DB954", "#FF6B00", "#5B4FDB"]
                 Rectangle {
@@ -114,14 +114,14 @@ Item {
             }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Vitesse:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Vitesse:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Slider { from: 1; to: 5; stepSize: 1; value: setupController.tickerSpeed; Layout.fillWidth: true; onMoved: { tk.scrollSpeed = value; setupController.tickerSpeed = value } }
-            Label { text: tk.scrollSpeed + "x"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10 }
+            Label { text: tk.scrollSpeed + "x"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Slider { from: 10; to: 24; stepSize: 1; value: setupController.tickerFontSize; Layout.fillWidth: true; onMoved: { tk.fontSize = value; setupController.tickerFontSize = value } }
-            Label { text: tk.fontSize + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10 }
+            Label { text: tk.fontSize + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
         }
 
         // ── Preview ───────────────────────────────────────────

@@ -369,9 +369,9 @@ ApplicationWindow {
     RowLayout {
         anchors.fill: parent; spacing: 0
 
-        // ── LEFT NAVIGATION BAR (60px, always visible) ──
+        // ── LEFT NAVIGATION BAR (68px, always visible) ──
         Rectangle {
-            Layout.preferredWidth: 60; Layout.fillHeight: true
+            Layout.preferredWidth: 68; Layout.fillHeight: true
             color: window.darkMode ? "#08080C" : "#E0E0E6"
 
             ColumnLayout {
@@ -379,42 +379,51 @@ ApplicationWindow {
 
                 // Nav buttons - each opens a drawer
                 Repeater {
-                    model: ListModel {
-                        ListElement { icon: "\uD83D\uDCFA"; tooltip: "Entrees"; panel: 0 }
-                        ListElement { icon: "\uD83D\uDCE1"; tooltip: "Sorties"; panel: 1 }
-                        ListElement { icon: "\uD83D\uDC64"; tooltip: "Talents"; panel: 2 }
-                        ListElement { icon: "\uD83C\uDFA8"; tooltip: "Style"; panel: 3 }
-                        ListElement { icon: "\uD83D\uDD27"; tooltip: "Outils"; panel: 4 }
-                        ListElement { icon: "\u2699"; tooltip: "Parametres"; panel: 5 }
-                    }
+                    model: [
+                        { icon: "\u25B6", label: "IN", tooltip: "Entrees", panel: 0 },
+                        { icon: "\u25C0", label: "OUT", tooltip: "Sorties", panel: 1 },
+                        { icon: "\u2B22", label: "IA", tooltip: "Talents", panel: 2 },
+                        { icon: "\u25A0", label: "STYLE", tooltip: "Style", panel: 3 },
+                        { icon: "\u2699", label: "TOOLS", tooltip: "Outils", panel: 4 },
+                        { icon: "\u2630", label: "SET", tooltip: "Parametres", panel: 5 }
+                    ]
 
                     Rectangle {
-                        Layout.preferredWidth: 48; Layout.preferredHeight: 48; Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: 52; Layout.preferredHeight: 52; Layout.alignment: Qt.AlignHCenter
                         radius: 10
-                        color: navPanelDrawer.visible && navPanelDrawer.activePanel === model.panel
+                        color: navPanelDrawer.visible && navPanelDrawer.activePanel === modelData.panel
                             ? (window.darkMode ? Qt.rgba(91/255,79/255,219/255,0.2) : Qt.rgba(91/255,79/255,219/255,0.15))
                             : (navBtnMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : "transparent")
-                        border.color: navPanelDrawer.visible && navPanelDrawer.activePanel === model.panel ? "#5B4FDB" : "transparent"
+                        border.color: navPanelDrawer.visible && navPanelDrawer.activePanel === modelData.panel ? "#5B4FDB" : "transparent"
 
-                        Label {
-                            anchors.centerIn: parent
-                            text: model.icon
-                            font.pixelSize: 20
+                        ColumnLayout {
+                            anchors.centerIn: parent; spacing: 1
+                            Label {
+                                text: modelData.icon
+                                font.pixelSize: 16; color: navPanelDrawer.visible && navPanelDrawer.activePanel === modelData.panel ? "#5B4FDB" : (window.darkMode ? "#AAA" : "#555")
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                            Label {
+                                text: modelData.label
+                                font.pixelSize: 7; font.weight: Font.Bold; font.letterSpacing: 0.5
+                                color: navPanelDrawer.visible && navPanelDrawer.activePanel === modelData.panel ? "#5B4FDB" : (window.darkMode ? "#AAA" : "#555")
+                                Layout.alignment: Qt.AlignHCenter
+                            }
                         }
 
                         ToolTip {
                             visible: navBtnMa.containsMouse && !navPanelDrawer.visible
-                            text: model.tooltip
+                            text: modelData.tooltip
                             delay: 500
                         }
 
                         MouseArea {
                             id: navBtnMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                if (navPanelDrawer.visible && navPanelDrawer.activePanel === model.panel) {
+                                if (navPanelDrawer.visible && navPanelDrawer.activePanel === modelData.panel) {
                                     navPanelDrawer.close()
                                 } else {
-                                    navPanelDrawer.activePanel = model.panel
+                                    navPanelDrawer.activePanel = modelData.panel
                                     navPanelDrawer.open()
                                 }
                             }
@@ -464,13 +473,13 @@ ApplicationWindow {
 
                     // Overlay status indicator
                     Rectangle {
-                        Layout.preferredWidth: statusRow.implicitWidth + 16; Layout.preferredHeight: 26; radius: 13
+                        Layout.preferredWidth: statusRow.implicitWidth + 16; Layout.preferredHeight: 32; radius: 16
                         color: mainWindow.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.15) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04))
                         border.color: mainWindow.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.3) : "transparent"
                         RowLayout {
                             id: statusRow; anchors.centerIn: parent; spacing: 6
                             Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#555" : "#999") }
-                            Label { text: mainWindow.overlaysActive ? window.t("overlays_active") : window.t("passthrough"); font.pixelSize: 10; font.weight: Font.DemiBold; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#888" : "#666") }
+                            Label { text: mainWindow.overlaysActive ? window.t("overlays_active") : window.t("passthrough"); font.pixelSize: 11; font.weight: Font.DemiBold; color: mainWindow.overlaysActive ? "#1DB954" : (window.darkMode ? "#888" : "#666") }
                         }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.toggleOverlays() }
                     }
@@ -478,11 +487,11 @@ ApplicationWindow {
                     Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 20; color: window.darkMode ? "#333" : "#CCC" }
 
                     // Program selector (compact ComboBox-like)
-                    Label { text: window.t("programs") + ":"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                    Label { text: window.t("programs") + ":"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
 
                     // Program buttons (horizontal, compact)
                     Flickable {
-                        Layout.fillWidth: true; Layout.preferredHeight: 28
+                        Layout.fillWidth: true; Layout.preferredHeight: 34
                         contentWidth: progRow.implicitWidth; clip: true
                         flickableDirection: Flickable.HorizontalFlick
 
@@ -491,9 +500,9 @@ ApplicationWindow {
                             Repeater {
                                 model: mainWindow.programList
                                 Rectangle {
-                                    width: progLabel.implicitWidth + 16; height: 26; radius: 13
+                                    width: progLabel.implicitWidth + 16; height: 32; radius: 16
                                     color: mainWindow.activeProgram === index ? "#5B4FDB" : (progMa.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : (window.darkMode ? Qt.rgba(1,1,1,0.03) : Qt.rgba(0,0,0,0.03)))
-                                    Label { id: progLabel; anchors.centerIn: parent; text: modelData; font.pixelSize: 10; color: mainWindow.activeProgram === index ? "white" : (window.darkMode ? "#CCC" : "#333") }
+                                    Label { id: progLabel; anchors.centerIn: parent; text: modelData; font.pixelSize: 11; color: mainWindow.activeProgram === index ? "white" : (window.darkMode ? "#CCC" : "#333") }
                                     MouseArea { id: progMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.switchProgram(index) }
                                 }
                             }
@@ -601,12 +610,12 @@ ApplicationWindow {
                                 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelLogoOffsetX; Layout.fillWidth: true; onMoved: setupController.channelLogoOffsetX = value }
                                 Label { text: setupController.channelLogoOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelLogoOffsetY; Layout.fillWidth: true; onMoved: setupController.channelLogoOffsetY = value }
                                 Label { text: setupController.channelLogoOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
@@ -699,12 +708,12 @@ ApplicationWindow {
                                 Label { text: Math.round(nameFontSlider.value) + "pt"; color: window.darkMode ? "#999" : "#666" }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetX; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetX = value }
                                 Label { text: setupController.channelNameOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.channelNameOffsetY; Layout.fillWidth: true; onMoved: setupController.channelNameOffsetY = value }
                                 Label { text: setupController.channelNameOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
@@ -735,12 +744,12 @@ ApplicationWindow {
                                 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Decalage X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.showTitleOffsetX; Layout.fillWidth: true; onMoved: setupController.showTitleOffsetX = value }
                                 Label { text: setupController.showTitleOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Decalage Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.showTitleOffsetY; Layout.fillWidth: true; onMoved: setupController.showTitleOffsetY = value }
                                 Label { text: setupController.showTitleOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
@@ -750,28 +759,28 @@ ApplicationWindow {
                             Label { text: "Positions des overlays"; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
 
                             // Ticker Y offset
-                            Label { text: "Ticker"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            Label { text: "Ticker"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.tickerOffsetY; Layout.fillWidth: true; onMoved: setupController.tickerOffsetY = value }
                                 Label { text: setupController.tickerOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
 
                             // Sous-titres
-                            Label { text: "Sous-titres"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            Label { text: "Sous-titres"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.subtitleOffsetX; Layout.fillWidth: true; onMoved: setupController.subtitleOffsetX = value }
                                 Label { text: setupController.subtitleOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.subtitleOffsetY; Layout.fillWidth: true; onMoved: setupController.subtitleOffsetY = value }
                                 Label { text: setupController.subtitleOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
 
                             // Compteur
-                            Label { text: "Compteur"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                            Label { text: "Compteur"; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
                             RowLayout { spacing: 6; Layout.leftMargin: 8
                                 TextField {
                                     id: cdMinField; Layout.preferredWidth: 50
@@ -791,7 +800,7 @@ ApplicationWindow {
                                 Rectangle {
                                     Layout.preferredWidth: 50; Layout.preferredHeight: 28; radius: 6
                                     color: liveController.countdownActive ? "#CC0000" : "#1DB954"
-                                    Label { anchors.centerIn: parent; text: liveController.countdownActive ? "STOP" : "GO"; color: "white"; font.pixelSize: 10; font.bold: true }
+                                    Label { anchors.centerIn: parent; text: liveController.countdownActive ? "STOP" : "GO"; color: "white"; font.pixelSize: 11; font.bold: true }
                                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                         onClicked: {
                                             if (liveController.countdownActive) { liveController.stopCountdown() }
@@ -812,55 +821,55 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.preferredWidth: 36; Layout.preferredHeight: 24; radius: 4
                                         color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                                        Label { anchors.centerIn: parent; text: modelData.label; font.pixelSize: 9; color: window.darkMode ? "#888" : "#666" }
+                                        Label { anchors.centerIn: parent; text: modelData.label; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: liveController.startCountdown(modelData.secs, "") }
                                     }
                                 }
                             }
                             TextField {
                                 id: cdLabelField; Layout.fillWidth: true; Layout.leftMargin: 8; Layout.rightMargin: 8
-                                placeholderText: "Label (ex: LIVE IN, RETOUR...)"; font.pixelSize: 10; color: window.darkMode ? "white" : "#1A1A1A"
+                                placeholderText: "Label (ex: LIVE IN, RETOUR...)"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
                                 background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                             }
                             // Offset sliders
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.countdownOffsetX; Layout.fillWidth: true; onMoved: setupController.countdownOffsetX = value }
                                 Label { text: setupController.countdownOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.countdownOffsetY; Layout.fillWidth: true; onMoved: setupController.countdownOffsetY = value }
                                 Label { text: setupController.countdownOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
 
                             // Horloge
-                            Label { text: "Horloge"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            Label { text: "Horloge"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.clockOffsetX; Layout.fillWidth: true; onMoved: setupController.clockOffsetX = value }
                                 Label { text: setupController.clockOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.clockOffsetY; Layout.fillWidth: true; onMoved: setupController.clockOffsetY = value }
                                 Label { text: setupController.clockOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
 
                             // QR Code
-                            Label { text: "QR Code"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+                            Label { text: "QR Code"; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
                             Switch { text: "Afficher QR Code"; checked: liveController.qrCodeVisible; onToggled: liveController.setQrCode(liveController.qrCodeUrl, checked, liveController.qrCodePosition); leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8; Layout.rightMargin: 8
-                                Label { text: "URL:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "URL:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 TextField {
                                     Layout.fillWidth: true; text: liveController.qrCodeUrl
                                     onTextChanged: liveController.setQrCode(text, liveController.qrCodeVisible, liveController.qrCodePosition)
-                                    placeholderText: "https://example.com"; font.pixelSize: 10; color: window.darkMode ? "white" : "#1A1A1A"
+                                    placeholderText: "https://example.com"; font.pixelSize: 11; color: window.darkMode ? "white" : "#1A1A1A"
                                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                                 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Position:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Position:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 ComboBox {
                                     model: ["Bas droite", "Bas gauche", "Haut droite", "Haut gauche"]; Layout.fillWidth: true
                                     onActivated: { var pos = ["bottom_right","bottom_left","top_right","top_left"]; liveController.setQrCode(liveController.qrCodeUrl, liveController.qrCodeVisible, pos[currentIndex]) }
@@ -869,38 +878,38 @@ ApplicationWindow {
                             }
                             // Offset sliders
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.qrCodeOffsetX; Layout.fillWidth: true; onMoved: setupController.qrCodeOffsetX = value }
                                 Label { text: setupController.qrCodeOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.qrCodeOffsetY; Layout.fillWidth: true; onMoved: setupController.qrCodeOffsetY = value }
                                 Label { text: setupController.qrCodeOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
 
                             // Scoreboard
-                            Label { text: "Scoreboard"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            Label { text: "Scoreboard"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.scoreboardOffsetX; Layout.fillWidth: true; onMoved: setupController.scoreboardOffsetX = value }
                                 Label { text: setupController.scoreboardOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.scoreboardOffsetY; Layout.fillWidth: true; onMoved: setupController.scoreboardOffsetY = value }
                                 Label { text: setupController.scoreboardOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
 
                             // Météo
-                            Label { text: "Météo"; font.pixelSize: 10; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            Label { text: "Météo"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "X:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.weatherOffsetX; Layout.fillWidth: true; onMoved: setupController.weatherOffsetX = value }
                                 Label { text: setupController.weatherOffsetX + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
-                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Y:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: -200; to: 200; stepSize: 1; value: setupController.weatherOffsetY; Layout.fillWidth: true; onMoved: setupController.weatherOffsetY = value }
                                 Label { text: setupController.weatherOffsetY + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 10; Layout.preferredWidth: 40 }
                             }
@@ -939,7 +948,7 @@ ApplicationWindow {
                                 Rectangle {
                                     Layout.fillWidth: true; Layout.preferredHeight: 36
                                     color: toolsStack.currentIndex === index ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : "transparent"
-                                    Label { anchors.centerIn: parent; text: modelData; font.pixelSize: 9; color: toolsStack.currentIndex === index ? (window.darkMode ? "white" : "#1A1A1A") : (window.darkMode ? "#666" : "#999") }
+                                    Label { anchors.centerIn: parent; text: modelData; font.pixelSize: 11; color: toolsStack.currentIndex === index ? (window.darkMode ? "white" : "#1A1A1A") : (window.darkMode ? "#666" : "#999") }
                                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: toolsStack.currentIndex = index }
                                 }
                             }
@@ -967,7 +976,7 @@ ApplicationWindow {
 
                                         // Status
                                         Label { text: "Graphics Queue"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
-                                        Label { text: graphicsQueue.count + " element(s) — " + (graphicsQueue.currentIndex >= 0 ? "ON AIR: #" + (graphicsQueue.currentIndex + 1) : "Aucun a l'antenne"); font.pixelSize: 10; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
+                                        Label { text: graphicsQueue.count + " element(s) — " + (graphicsQueue.currentIndex >= 0 ? "ON AIR: #" + (graphicsQueue.currentIndex + 1) : "Aucun a l'antenne"); font.pixelSize: 11; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
 
                                         // Add Lower Third
                                         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#DDD"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
@@ -1065,7 +1074,7 @@ ApplicationWindow {
                                             Rectangle {
                                                 Layout.preferredWidth: 100; Layout.preferredHeight: 32; radius: 6
                                                 color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                                                Label { anchors.centerIn: parent; text: "Vider queue"; color: window.darkMode ? "#666" : "#888"; font.pixelSize: 10 }
+                                                Label { anchors.centerIn: parent; text: "Vider queue"; color: window.darkMode ? "#666" : "#888"; font.pixelSize: 11 }
                                                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: graphicsQueue.clearQueue() }
                                             }
                                         }
@@ -1108,7 +1117,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.preferredWidth: 40; Layout.preferredHeight: 28; radius: 6
                                         color: window.lang === modelData.toLowerCase() ? "#5B4FDB" : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04))
-                                        Label { anchors.centerIn: parent; text: modelData; font.pixelSize: 10; font.weight: Font.Bold; color: window.lang === modelData.toLowerCase() ? "white" : (window.darkMode ? "#888" : "#666") }
+                                        Label { anchors.centerIn: parent; text: modelData; font.pixelSize: 11; font.weight: Font.Bold; color: window.lang === modelData.toLowerCase() ? "white" : (window.darkMode ? "#888" : "#666") }
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: mainWindow.language = modelData.toLowerCase() }
                                     }
                                 }
@@ -1122,7 +1131,7 @@ ApplicationWindow {
                             Label { text: "Horloge"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
                             Switch { text: "Afficher l'horloge"; checked: setupController.clockVisible; onToggled: setupController.clockVisible = checked; leftPadding: 12 }
                             RowLayout { spacing: 4; Layout.leftMargin: 12
-                                Label { text: "Format:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                                Label { text: "Format:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 ComboBox {
                                     model: ["HH:mm:ss", "HH:mm", "hh:mm AP"]
                                     currentIndex: {
@@ -1161,7 +1170,7 @@ ApplicationWindow {
 
                             // Multi-ecran
                             Label { text: "Multi-ecran"; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 12 }
-                            Label { text: Qt.application.screens.length + " ecran(s) detecte(s)"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
+                            Label { text: Qt.application.screens.length + " ecran(s) detecte(s)"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666"; leftPadding: 12 }
                             Switch { text: "Ouvrir sortie sur 2e ecran"; checked: outputWindow.visible; onToggled: outputWindow.visible = checked; leftPadding: 12 }
 
                             // SDKs
@@ -1180,20 +1189,20 @@ ApplicationWindow {
                                 Rectangle {
                                     Layout.preferredWidth: 120; Layout.preferredHeight: 32; radius: 6
                                     color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                                    Label { anchors.centerIn: parent; text: "Exporter profil"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                                    Label { anchors.centerIn: parent; text: "Exporter profil"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
                                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: exportProfileDialog.open() }
                                 }
                                 Rectangle {
                                     Layout.preferredWidth: 120; Layout.preferredHeight: 32; radius: 6
                                     color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-                                    Label { anchors.centerIn: parent; text: "Importer profil"; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                                    Label { anchors.centerIn: parent; text: "Importer profil"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
                                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: importProfileDialog.open() }
                                 }
                             }
 
                             // Copyright
                             Item { implicitHeight: 16 }
-                            Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 9; color: window.darkMode ? "#444" : "#AAA"; leftPadding: 12 }
+                            Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 11; color: window.darkMode ? "#444" : "#AAA"; leftPadding: 12 }
                             Item { implicitHeight: 12 }
                         }
                     }
@@ -1482,34 +1491,34 @@ ApplicationWindow {
                 Item { Layout.preferredHeight: 4 }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
                 Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 12; font.weight: Font.DemiBold; color: window.darkMode ? "#CCC" : "#333"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Tous droits r\u00E9serv\u00E9s"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "Tous droits r\u00E9serv\u00E9s"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
 
                 // Features
                 Label { text: "Fonctionnalit\u00E9s"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#AAA" : "#444"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "20 styles \u2022 8 animations \u2022 5 langues \u2022 4K"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "IA: InsightFace + Whisper (100% offline)"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Sorties: RTMP \u2022 SRT \u2022 NDI \u2022 SDI \u2022 Fichier"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "SDKs: DeckLink \u2022 AJA \u2022 NDI \u2022 Magewell"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "API REST: 20+ endpoints \u2022 Web Remote"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "20 styles \u2022 8 animations \u2022 5 langues \u2022 4K"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "IA: InsightFace + Whisper (100% offline)"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "Sorties: RTMP \u2022 SRT \u2022 NDI \u2022 SDI \u2022 Fichier"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "SDKs: DeckLink \u2022 AJA \u2022 NDI \u2022 Magewell"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "API REST: 20+ endpoints \u2022 Web Remote"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
 
                 // System requirements
                 Label { text: "Configuration requise"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#AAA" : "#444"; Layout.alignment: Qt.AlignHCenter }
                 GridLayout {
                     columns: 2; columnSpacing: 8; rowSpacing: 3; Layout.alignment: Qt.AlignHCenter
-                    Label { text: "Minimum:"; font.pixelSize: 9; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
-                    Label { text: "i5-8400 (3.0 GHz) \u2022 8 GB \u2022 10 GB SSD"; font.pixelSize: 9; color: window.darkMode ? "#666" : "#999" }
-                    Label { text: "Recommand\u00E9:"; font.pixelSize: 9; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
-                    Label { text: "i7-10700 (3.8 GHz) \u2022 16 GB \u2022 GTX 1650"; font.pixelSize: 9; color: window.darkMode ? "#666" : "#999" }
-                    Label { text: "Optimal:"; font.pixelSize: 9; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
-                    Label { text: "i9-12900K (3.9 GHz) \u2022 32 GB \u2022 RTX 3060"; font.pixelSize: 9; color: window.darkMode ? "#666" : "#999" }
+                    Label { text: "Minimum:"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
+                    Label { text: "i5-8400 (3.0 GHz) \u2022 8 GB \u2022 10 GB SSD"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
+                    Label { text: "Recommand\u00E9:"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
+                    Label { text: "i7-10700 (3.8 GHz) \u2022 16 GB \u2022 GTX 1650"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
+                    Label { text: "Optimal:"; font.pixelSize: 11; font.weight: Font.DemiBold; color: window.darkMode ? "#888" : "#666" }
+                    Label { text: "i9-12900K (3.9 GHz) \u2022 32 GB \u2022 RTX 3060"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
                 }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.08) }
 
                 // License
                 Label { text: "Licence: " + licenseManager.licenseType; font.pixelSize: 11; color: "#1DB954"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "Expire: " + licenseManager.expirationDate; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "Expire: " + licenseManager.expirationDate; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999"; Layout.alignment: Qt.AlignHCenter }
                 Item { Layout.preferredHeight: 4 }
                 Rectangle {
                     Layout.preferredWidth: 80; Layout.preferredHeight: 32; radius: 6; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
@@ -1742,7 +1751,7 @@ ApplicationWindow {
                 }
             }
 
-            Label { text: "Prestige Technologie Company"; font.pixelSize: 10; color: window.darkMode ? "#444" : "#AAA"; Layout.alignment: Qt.AlignHCenter }
+            Label { text: "Prestige Technologie Company"; font.pixelSize: 11; color: window.darkMode ? "#444" : "#AAA"; Layout.alignment: Qt.AlignHCenter }
 
             Item { Layout.preferredHeight: 12 }
         }
@@ -1810,7 +1819,7 @@ ApplicationWindow {
                     }
                 }
                 Item { Layout.preferredHeight: 8 }
-                Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 10; color: "#444"; Layout.alignment: Qt.AlignHCenter }
+                Label { text: "\u00A9 2024-2026 Prestige Technologie Company"; font.pixelSize: 11; color: "#444"; Layout.alignment: Qt.AlignHCenter }
                 Item { Layout.preferredHeight: 8 }
             }
     }
@@ -1958,7 +1967,7 @@ ApplicationWindow {
                         Label { text: modelData.icon; font.pixelSize: 24 }
                         ColumnLayout { Layout.fillWidth: true; spacing: 2
                             Label { text: modelData.title; font.pixelSize: 13; font.weight: Font.DemiBold; color: window.darkMode ? "white" : "#1A1A1A" }
-                            Label { text: modelData.desc; font.pixelSize: 10; color: window.darkMode ? "#888" : "#666" }
+                            Label { text: modelData.desc; font.pixelSize: 11; color: window.darkMode ? "#888" : "#666" }
                         }
                         Label { text: "\u203A"; font.pixelSize: 20; color: "#5B4FDB" }
                     }
@@ -1975,7 +1984,7 @@ ApplicationWindow {
             }
 
             Item { Layout.preferredHeight: 4 }
-            Label { text: "Vous pourrez changer ce réglage à tout moment\ndans le panneau Entrées"; font.pixelSize: 10; color: window.darkMode ? "#555" : "#999"; Layout.alignment: Qt.AlignHCenter; horizontalAlignment: Text.AlignHCenter }
+            Label { text: "Vous pourrez changer ce réglage à tout moment\ndans le panneau Entrées"; font.pixelSize: 11; color: window.darkMode ? "#555" : "#999"; Layout.alignment: Qt.AlignHCenter; horizontalAlignment: Text.AlignHCenter }
             Item { Layout.preferredHeight: 8 }
         }
     }

@@ -30,7 +30,7 @@ Item {
         Item { implicitHeight: 4 }
         Label { text: "Score Board"; font.pixelSize: 14; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; leftPadding: 8 }
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Label { text: "Sport:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Sport:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             ComboBox { model: ["Football","Basketball","Tennis","Rugby","Handball"]; Layout.fillWidth: true; background: Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"} }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8

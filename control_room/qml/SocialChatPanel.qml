@@ -95,9 +95,9 @@ Item {
                     RowLayout {
                         spacing: 4
                         Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: modelData.platform === "twitch" ? "#9147FF" : "#FF0000" }
-                        Label { text: modelData.author; font.pixelSize: 10; font.weight: Font.Bold; color: modelData.color || "#AAA" }
+                        Label { text: modelData.author; font.pixelSize: 11; font.weight: Font.Bold; color: modelData.color || "#AAA" }
                     }
-                    Label { text: modelData.message; font.pixelSize: 10; color: window.darkMode ? "#CCC" : "#333"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    Label { text: modelData.message; font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                 }
             }
 

@@ -124,7 +124,7 @@ Item {
                                         text: modelData.has_embeddings
                                               ? modelData.embedding_count + " " + window.t("embedding_count")
                                               : window.t("no_embedding")
-                                        font.pixelSize: 10
+                                        font.pixelSize: 11
                                         color: modelData.has_embeddings ? "#1DB954" : "#CC8833" }
                                 }
                             }

@@ -95,8 +95,8 @@ Item {
                             RowLayout {
                                 Layout.fillWidth: true
                                 Label { text: modelData.name; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A"; Layout.fillWidth: true }
-                                Label { text: modelData.detections + " det."; font.pixelSize: 9; color: "#888" }
-                                Label { text: modelData.avgConfidence.toFixed(0) + "%"; font.pixelSize: 9; color: "#1DB954"; font.bold: true }
+                                Label { text: modelData.detections + " det."; font.pixelSize: 11; color: "#888" }
+                                Label { text: modelData.avgConfidence.toFixed(0) + "%"; font.pixelSize: 11; color: "#1DB954"; font.bold: true }
                             }
 
                             // Screen time bar
@@ -114,7 +114,7 @@ Item {
                                 Label {
                                     anchors.centerIn: parent
                                     text: modelData.screenTimePercent.toFixed(0) + "% (" + formatTime(modelData.screenTime) + ")"
-                                    font.pixelSize: 8; font.family: "Menlo"
+                                    font.pixelSize: 10; font.family: "Menlo"
                                     color: "white"
                                 }
                             }

@@ -24,7 +24,7 @@ Item {
                 }
                 Label { text: "Macro en cours..."; font.pixelSize: 11; color: "#8B80E0" }
                 Rectangle { Layout.preferredWidth: 50; Layout.preferredHeight: 22; radius: 4; color: "#CC0000"
-                    Label { anchors.centerIn: parent; text: "STOP"; color: "white"; font.pixelSize: 9; font.bold: true }
+                    Label { anchors.centerIn: parent; text: "STOP"; color: "white"; font.pixelSize: 11; font.bold: true }
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: macroEngine.stopMacro() }
                 }
             }
@@ -54,14 +54,14 @@ Item {
 
                     ColumnLayout { Layout.fillWidth: true; spacing: 2
                         Label { text: modelData.name; font.pixelSize: 13; font.bold: true; color: window.darkMode ? "white" : "#1A1A1A" }
-                        Label { text: modelData.actionCount + " action(s)"; font.pixelSize: 10; color: window.darkMode ? "#777" : "#888" }
+                        Label { text: modelData.actionCount + " action(s)"; font.pixelSize: 11; color: window.darkMode ? "#777" : "#888" }
                     }
 
                     Rectangle {
                         Layout.preferredWidth: 50; Layout.preferredHeight: 24; radius: 4
                         color: goMouse.containsMouse ? "#6B5FEB" : "#5B4FDB"
                         Behavior on color { ColorAnimation { duration: 150 } }
-                        Label { anchors.centerIn: parent; text: "\u25B6 GO"; color: "white"; font.pixelSize: 9; font.bold: true }
+                        Label { anchors.centerIn: parent; text: "\u25B6 GO"; color: "white"; font.pixelSize: 11; font.bold: true }
                         MouseArea {
                             id: goMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                             onClicked: macroEngine.executeMacro(index)

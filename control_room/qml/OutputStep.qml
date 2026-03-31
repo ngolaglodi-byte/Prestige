@@ -159,7 +159,7 @@ Item {
                             Label {
                                 visible: model.platform !== "custom"
                                 text: "URL: " + model.rtmpBase + "..."
-                                font.pixelSize: 10; color: window.darkMode ? "#555" : "#999"
+                                font.pixelSize: 11; color: window.darkMode ? "#555" : "#999"
                             }
                         }
                     }

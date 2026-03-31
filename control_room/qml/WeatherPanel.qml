@@ -23,7 +23,7 @@ Item {
                 Label {
                     id: wBadge; anchors.centerIn: parent
                     text: weatherFetcher.autoMode ? "Auto" : "Manuel"
-                    font.pixelSize: 8; color: weatherFetcher.autoMode ? "#1DB954" : "#666"
+                    font.pixelSize: 10; color: weatherFetcher.autoMode ? "#1DB954" : "#666"
                 }
             }
         }
@@ -34,17 +34,17 @@ Item {
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
 
         RowLayout { spacing: 8; Layout.leftMargin: 8
-            Label { text: "Mode:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+            Label { text: "Mode:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Rectangle {
                 Layout.preferredWidth: 70; Layout.preferredHeight: 24; radius: 4
                 color: !weatherFetcher.autoMode ? "#5B4FDB" : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06))
-                Label { anchors.centerIn: parent; text: "Manuel"; font.pixelSize: 9; color: !weatherFetcher.autoMode ? "white" : (window.darkMode ? "#888" : "#555") }
+                Label { anchors.centerIn: parent; text: "Manuel"; font.pixelSize: 11; color: !weatherFetcher.autoMode ? "white" : (window.darkMode ? "#888" : "#555") }
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: weatherFetcher.autoMode = false }
             }
             Rectangle {
                 Layout.preferredWidth: 70; Layout.preferredHeight: 24; radius: 4
                 color: weatherFetcher.autoMode ? "#5B4FDB" : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06))
-                Label { anchors.centerIn: parent; text: "Auto API"; font.pixelSize: 9; color: weatherFetcher.autoMode ? "white" : (window.darkMode ? "#888" : "#555") }
+                Label { anchors.centerIn: parent; text: "Auto API"; font.pixelSize: 11; color: weatherFetcher.autoMode ? "white" : (window.darkMode ? "#888" : "#555") }
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: weatherFetcher.autoMode = true }
             }
         }
@@ -62,23 +62,23 @@ Item {
                 border.color: Qt.rgba(91/255, 79/255, 219/255, 0.15)
                 ColumnLayout {
                     id: instrCol; anchors.fill: parent; anchors.margins: 8; spacing: 4
-                    Label { text: "Comment obtenir une cle API (gratuit) :"; font.pixelSize: 10; font.bold: true; color: window.darkMode ? "#AAA" : "#444" }
-                    Label { text: "1. Allez sur  openweathermap.org/appid"; font.pixelSize: 9; color: window.darkMode ? "#888" : "#555" }
-                    Label { text: "2. Creez un compte gratuit (email + mot de passe)"; font.pixelSize: 9; color: window.darkMode ? "#888" : "#555" }
-                    Label { text: "3. Dans 'API Keys', copiez votre cle"; font.pixelSize: 9; color: window.darkMode ? "#888" : "#555" }
-                    Label { text: "4. Collez-la ci-dessous — la meteo sera automatique"; font.pixelSize: 9; color: window.darkMode ? "#888" : "#555" }
-                    Label { text: "Gratuit : 1 000 appels/jour — largement suffisant"; font.pixelSize: 8; color: "#5B4FDB" }
+                    Label { text: "Comment obtenir une cle API (gratuit) :"; font.pixelSize: 11; font.bold: true; color: window.darkMode ? "#AAA" : "#444" }
+                    Label { text: "1. Allez sur  openweathermap.org/appid"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#555" }
+                    Label { text: "2. Creez un compte gratuit (email + mot de passe)"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#555" }
+                    Label { text: "3. Dans 'API Keys', copiez votre cle"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#555" }
+                    Label { text: "4. Collez-la ci-dessous — la meteo sera automatique"; font.pixelSize: 11; color: window.darkMode ? "#888" : "#555" }
+                    Label { text: "Gratuit : 1 000 appels/jour — largement suffisant"; font.pixelSize: 10; color: "#5B4FDB" }
                 }
             }
 
             RowLayout { spacing: 4; Layout.leftMargin: 8; Layout.rightMargin: 8
-                Label { text: "Cle API:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                Label { text: "Cle API:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                 TextField {
                     Layout.fillWidth: true
                     text: weatherFetcher.apiKey
                     onTextChanged: weatherFetcher.apiKey = text
                     placeholderText: "Collez votre cle API ici"
-                    font.pixelSize: 10; color: window.darkMode ? "#CCC" : "#333"
+                    font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333"
                     background: Rectangle {
                         color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4
                         border.color: weatherFetcher.apiKey.length > 0 ? "#1DB954" : (window.darkMode ? "#333" : "#CCC")
@@ -98,19 +98,19 @@ Item {
                         if (weatherFetcher.apiKey.length < 20) return "Cle incomplete — une cle valide fait 32 caracteres"
                         return "Cle configuree — prete a utiliser"
                     }
-                    font.pixelSize: 9
+                    font.pixelSize: 11
                     color: weatherFetcher.apiKey.length > 20 ? "#1DB954" : "#888"
                 }
             }
 
             RowLayout { spacing: 4; Layout.leftMargin: 8
-                Label { text: "Ville:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                Label { text: "Ville:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                 TextField {
                     Layout.fillWidth: true
                     text: weatherFetcher.city
                     onTextChanged: weatherFetcher.city = text
                     placeholderText: "Paris"
-                    font.pixelSize: 10; color: window.darkMode ? "#CCC" : "#333"
+                    font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333"
                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                 }
                 Rectangle {
@@ -122,7 +122,7 @@ Item {
             }
 
             RowLayout { spacing: 4; Layout.leftMargin: 8
-                Label { text: "Refresh:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                Label { text: "Refresh:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                 ComboBox {
                     model: ["5 min", "15 min", "30 min", "60 min"]
                     currentIndex: 1
@@ -133,7 +133,7 @@ Item {
                     Layout.preferredWidth: 80
                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                 }
-                Label { text: "Unite:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10; Layout.leftMargin: 8 }
+                Label { text: "Unite:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11; Layout.leftMargin: 8 }
                 ComboBox {
                     model: ["\u00B0C", "\u00B0F"]
                     currentIndex: weatherFetcher.unit.indexOf("F") >= 0 ? 1 : 0
@@ -145,17 +145,17 @@ Item {
 
             // Status
             RowLayout { spacing: 6; Layout.leftMargin: 8
-                Label { text: "MAJ:"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 9 }
-                Label { text: weatherFetcher.lastUpdate; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 9 }
+                Label { text: "MAJ:"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 11 }
+                Label { text: weatherFetcher.lastUpdate; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
                 Item { Layout.fillWidth: true }
-                Label { visible: weatherFetcher.country !== ""; text: weatherFetcher.country; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 9 }
+                Label { visible: weatherFetcher.country !== ""; text: weatherFetcher.country; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
             }
 
             // Error
             Label {
                 visible: weatherFetcher.errorString !== ""
                 text: "Erreur: " + weatherFetcher.errorString
-                font.pixelSize: 9; color: "#CC3333"; leftPadding: 8
+                font.pixelSize: 11; color: "#CC3333"; leftPadding: 8
                 Layout.fillWidth: true; wrapMode: Text.WordWrap
             }
         }
@@ -166,18 +166,18 @@ Item {
             Layout.fillWidth: true
 
             RowLayout { spacing: 4; Layout.leftMargin: 8
-                Label { text: "Ville:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                Label { text: "Ville:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                 TextField {
                     Layout.fillWidth: true
                     text: weatherFetcher.city
                     onTextChanged: weatherFetcher.city = text
-                    font.pixelSize: 10; color: window.darkMode ? "#CCC" : "#333"
+                    font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333"
                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                 }
             }
 
             RowLayout { spacing: 4; Layout.leftMargin: 8
-                Label { text: "Temperature:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                Label { text: "Temperature:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                 SpinBox {
                     id: tempSpin; from: -40; to: 50
                     value: Math.round(weatherFetcher.temperature)
@@ -199,7 +199,7 @@ Item {
             }
 
             RowLayout { spacing: 4; Layout.leftMargin: 8
-                Label { text: "Conditions:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 10 }
+                Label { text: "Conditions:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                 ComboBox {
                     Layout.fillWidth: true
                     model: ["Ensoleille", "Nuageux", "Pluie", "Neige", "Orage", "Brouillard"]
@@ -241,9 +241,9 @@ Item {
                     RowLayout {
                         visible: weatherFetcher.autoMode && weatherFetcher.humidity > 0
                         spacing: 8
-                        Label { text: "Ressenti " + Math.round(weatherFetcher.feelsLike) + weatherFetcher.unit; font.pixelSize: 9; color: "#888" }
-                        Label { text: "Humidite " + weatherFetcher.humidity + "%"; font.pixelSize: 9; color: "#888" }
-                        Label { text: "Vent " + weatherFetcher.windSpeed + " km/h " + weatherFetcher.windDir; font.pixelSize: 9; color: "#888" }
+                        Label { text: "Ressenti " + Math.round(weatherFetcher.feelsLike) + weatherFetcher.unit; font.pixelSize: 11; color: "#888" }
+                        Label { text: "Humidite " + weatherFetcher.humidity + "%"; font.pixelSize: 11; color: "#888" }
+                        Label { text: "Vent " + weatherFetcher.windSpeed + " km/h " + weatherFetcher.windDir; font.pixelSize: 11; color: "#888" }
                     }
                 }
             }
