@@ -30,7 +30,11 @@ FaceDetector::~FaceDetector() { delete m_impl; }
 bool FaceDetector::loadModel(const QString& path) {
     try {
         m_impl->session = std::make_unique<Ort::Session>(
+#ifdef _WIN32
+            m_impl->env, path.toStdWString().c_str(), m_impl->options);
+#else
             m_impl->env, path.toStdString().c_str(), m_impl->options);
+#endif
         m_loaded = true;
         qInfo() << "[AI] Face detector model loaded:" << path;
         return true;
