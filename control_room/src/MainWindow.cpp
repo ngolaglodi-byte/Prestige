@@ -578,6 +578,13 @@ void MainWindow::publishConfig()
     obj["chroma_key_color"] = m_setupController->chromaKeyColor();
     obj["chroma_key_tolerance"] = m_setupController->chromaKeyTolerance();
     obj["chroma_key_smooth"] = m_setupController->chromaKeySmooth();
+    obj["vs_primary_color"] = m_setupController->vsPrimaryColor().isValid() ? m_setupController->vsPrimaryColor().name() : "";
+    obj["vs_secondary_color"] = m_setupController->vsSecondaryColor().isValid() ? m_setupController->vsSecondaryColor().name() : "";
+    obj["vs_accent_color"] = m_setupController->vsAccentColor().isValid() ? m_setupController->vsAccentColor().name() : "";
+    obj["vs_floor_color"] = m_setupController->vsFloorColor().isValid() ? m_setupController->vsFloorColor().name() : "";
+    obj["vs_light_intensity"] = m_setupController->vsLightIntensity();
+    obj["vs_animations_enabled"] = m_setupController->vsAnimationsEnabled();
+    obj["vs_custom_background"] = m_setupController->vsCustomBackground();
 
     // Visibility states — gated behind overlays_active
     // Channel branding (logo, name) is sent unconditionally above

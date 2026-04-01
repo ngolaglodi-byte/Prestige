@@ -66,6 +66,13 @@ class SetupController : public QObject {
     Q_PROPERTY(QString chromaKeyColor READ chromaKeyColor WRITE setChromaKeyColor NOTIFY virtualStudioChanged)
     Q_PROPERTY(double chromaKeyTolerance READ chromaKeyTolerance WRITE setChromaKeyTolerance NOTIFY virtualStudioChanged)
     Q_PROPERTY(double chromaKeySmooth READ chromaKeySmooth WRITE setChromaKeySmooth NOTIFY virtualStudioChanged)
+    Q_PROPERTY(QColor vsPrimaryColor READ vsPrimaryColor WRITE setVsPrimaryColor NOTIFY virtualStudioChanged)
+    Q_PROPERTY(QColor vsSecondaryColor READ vsSecondaryColor WRITE setVsSecondaryColor NOTIFY virtualStudioChanged)
+    Q_PROPERTY(QColor vsAccentColor READ vsAccentColor WRITE setVsAccentColor NOTIFY virtualStudioChanged)
+    Q_PROPERTY(QColor vsFloorColor READ vsFloorColor WRITE setVsFloorColor NOTIFY virtualStudioChanged)
+    Q_PROPERTY(double vsLightIntensity READ vsLightIntensity WRITE setVsLightIntensity NOTIFY virtualStudioChanged)
+    Q_PROPERTY(bool vsAnimationsEnabled READ vsAnimationsEnabled WRITE setVsAnimationsEnabled NOTIFY virtualStudioChanged)
+    Q_PROPERTY(QString vsCustomBackground READ vsCustomBackground WRITE setVsCustomBackground NOTIFY virtualStudioChanged)
 
     // Channel branding
     Q_PROPERTY(QString channelLogoPath READ channelLogoPath WRITE setChannelLogoPath NOTIFY brandingChanged)
@@ -273,6 +280,20 @@ public:
     void setChromaKeyTolerance(double v) { if (m_vsChromaTol != v) { m_vsChromaTol = v; emit virtualStudioChanged(); } }
     double chromaKeySmooth() const { return m_vsChromaSmooth; }
     void setChromaKeySmooth(double v) { if (m_vsChromaSmooth != v) { m_vsChromaSmooth = v; emit virtualStudioChanged(); } }
+    QColor vsPrimaryColor() const { return m_vsPrimary; }
+    void setVsPrimaryColor(const QColor& c) { if (m_vsPrimary != c) { m_vsPrimary = c; emit virtualStudioChanged(); } }
+    QColor vsSecondaryColor() const { return m_vsSecondary; }
+    void setVsSecondaryColor(const QColor& c) { if (m_vsSecondary != c) { m_vsSecondary = c; emit virtualStudioChanged(); } }
+    QColor vsAccentColor() const { return m_vsAccent; }
+    void setVsAccentColor(const QColor& c) { if (m_vsAccent != c) { m_vsAccent = c; emit virtualStudioChanged(); } }
+    QColor vsFloorColor() const { return m_vsFloor; }
+    void setVsFloorColor(const QColor& c) { if (m_vsFloor != c) { m_vsFloor = c; emit virtualStudioChanged(); } }
+    double vsLightIntensity() const { return m_vsLightIntensity; }
+    void setVsLightIntensity(double v) { if (m_vsLightIntensity != v) { m_vsLightIntensity = v; emit virtualStudioChanged(); } }
+    bool vsAnimationsEnabled() const { return m_vsAnimEnabled; }
+    void setVsAnimationsEnabled(bool v) { if (m_vsAnimEnabled != v) { m_vsAnimEnabled = v; emit virtualStudioChanged(); } }
+    QString vsCustomBackground() const { return m_vsCustomBg; }
+    void setVsCustomBackground(const QString& v) { if (m_vsCustomBg != v) { m_vsCustomBg = v; emit virtualStudioChanged(); } }
 
     // Channel branding
     QString channelLogoPath() const { return m_channelLogoPath; }
@@ -628,6 +649,13 @@ private:
     QString m_vsChromaColor = "green";
     double  m_vsChromaTol = 0.35;
     double  m_vsChromaSmooth = 0.05;
+    QColor  m_vsPrimary;       // Invalid = use template default
+    QColor  m_vsSecondary;
+    QColor  m_vsAccent;
+    QColor  m_vsFloor;
+    double  m_vsLightIntensity = 1.0;
+    bool    m_vsAnimEnabled = true;
+    QString m_vsCustomBg;
 };
 
 } // namespace prestige

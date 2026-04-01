@@ -13,6 +13,26 @@
 
 namespace prestige {
 
+void VirtualStudio::setCustomBackgroundPath(const QString& path)
+{
+    if (m_customBgPath == path) return;
+    m_customBgPath = path;
+    if (!path.isEmpty()) {
+        QImage img(path);
+        if (!img.isNull()) {
+            m_customBg = img;
+            m_bgDirty = true;
+            qInfo() << "[VirtualStudio] Custom background loaded:" << path;
+        } else {
+            m_customBg = QImage();
+            qWarning() << "[VirtualStudio] Failed to load custom background:" << path;
+        }
+    } else {
+        m_customBg = QImage();
+        m_bgDirty = true;
+    }
+}
+
 QImage VirtualStudio::process(const QImage& rawFrame)
 {
     if (!m_enabled || rawFrame.isNull())
@@ -32,11 +52,13 @@ QImage VirtualStudio::process(const QImage& rawFrame)
     }
     QImage studio = m_cachedBg.copy();
 
-    // Step 3: Animated elements on studio
-    QPainter bgPainter(&studio);
-    bgPainter.setRenderHint(QPainter::Antialiasing, true);
-    renderAnimatedElements(bgPainter, sz);
-    bgPainter.end();
+    // Step 3: Animated elements on studio (if enabled)
+    if (m_animEnabled) {
+        QPainter bgPainter(&studio);
+        bgPainter.setRenderHint(QPainter::Antialiasing, true);
+        renderAnimatedElements(bgPainter, sz);
+        bgPainter.end();
+    }
 
     // Step 4: Composite talent on studio
     QImage result = compositeTalentOnStudio(studio, keyedTalent);
@@ -103,6 +125,13 @@ QImage VirtualStudio::applyChromaKey(const QImage& frame)
 
 QImage VirtualStudio::renderStudioBackground(const QSize& size)
 {
+    // Priority 1: Custom background image (imported by user's graphist)
+    if (!m_customBg.isNull()) {
+        QImage bg = m_customBg.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        return bg.convertToFormat(QImage::Format_RGB32);
+    }
+
+    // Priority 2: Procedural studio with custom colors
     QImage bg(size, QImage::Format_RGB32);
     QPainter p(&bg);
     p.setRenderHint(QPainter::Antialiasing, true);
@@ -110,23 +139,47 @@ QImage VirtualStudio::renderStudioBackground(const QSize& size)
     int h = size.height();
     double scale = w / 1920.0;
 
+    // Resolve colors: user custom overrides template defaults
+    // Template defaults per studio (index into arrays below)
+    const QColor templatePrimary[] = {
+        QColor(10,15,35), QColor(255,200,140), QColor(8,8,15), QColor(45,42,40),
+        QColor(30,80,160), QColor(10,15,40), QColor(5,10,20), QColor(15,12,10)
+    };
+    const QColor templateSecondary[] = {
+        QColor(15,22,50), QColor(140,180,230), QColor(200,0,0), QColor(55,52,48),
+        QColor(20,100,80), QColor(20,50,180), QColor(0,229,255), QColor(20,18,15)
+    };
+    const QColor templateAccent[] = {
+        QColor(40,80,180), QColor(255,180,100), QColor(220,30,30), QColor(200,180,140),
+        QColor(60,160,220), QColor(200,200,220), QColor(0,229,255), QColor(212,175,55)
+    };
+    const QColor templateFloor[] = {
+        QColor(18,25,55), QColor(180,160,140), QColor(15,15,25), QColor(35,32,30),
+        QColor(20,60,50), QColor(15,18,45), QColor(8,12,20), QColor(10,8,6)
+    };
+
+    int sid = qBound(0, m_studioId, 7);
+    QColor cPrimary   = m_primaryColor.isValid()   ? m_primaryColor   : templatePrimary[sid];
+    QColor cSecondary = m_secondaryColor.isValid() ? m_secondaryColor : templateSecondary[sid];
+    QColor cAccent    = m_accentColor.isValid()    ? m_accentColor    : templateAccent[sid];
+    QColor cFloor     = m_floorColor.isValid()     ? m_floorColor     : templateFloor[sid];
+
     switch (m_studioId) {
     case 0: { // ── News Desk ──────────────────────────────
-        // Dark blue gradient background
         QLinearGradient grad(0, 0, 0, h);
-        grad.setColorAt(0, QColor(10, 15, 35));
-        grad.setColorAt(0.6, QColor(15, 22, 50));
-        grad.setColorAt(1.0, QColor(8, 12, 28));
+        grad.setColorAt(0, cPrimary);
+        grad.setColorAt(0.6, cSecondary);
+        grad.setColorAt(1.0, cPrimary.darker(120));
         p.fillRect(0, 0, w, h, grad);
 
         // Floor with subtle reflection
         QLinearGradient floor(0, h * 0.65, 0, h);
-        floor.setColorAt(0, QColor(18, 25, 55));
-        floor.setColorAt(1.0, QColor(10, 14, 32));
+        floor.setColorAt(0, cFloor);
+        floor.setColorAt(1.0, cFloor.darker(130));
         p.fillRect(0, h * 0.65, w, h * 0.35, floor);
 
         // Horizontal LED grid lines
-        p.setPen(QPen(QColor(40, 70, 140, 25), 1));
+        p.setPen(QPen(QColor(cAccent.red(), cAccent.green(), cAccent.blue(), 25), 1));
         for (int i = 0; i < 20; ++i)
             p.drawLine(0, h * 0.05 * i, w, h * 0.05 * i);
         for (int i = 0; i < 30; ++i)
@@ -139,8 +192,8 @@ QImage VirtualStudio::renderStudioBackground(const QSize& size)
         p.fillRect(w * 0.15, h * 0.78, w * 0.7, h * 0.04, desk);
 
         // Side accent columns
-        p.fillRect(0, 0, w * 0.02, h * 0.65, QColor(30, 50, 120, 60));
-        p.fillRect(w * 0.98, 0, w * 0.02, h * 0.65, QColor(30, 50, 120, 60));
+        p.fillRect(0, 0, w * 0.02, h * 0.65, QColor(cAccent.red(), cAccent.green(), cAccent.blue(), 60));
+        p.fillRect(w * 0.98, 0, w * 0.02, h * 0.65, QColor(cAccent.red(), cAccent.green(), cAccent.blue(), 60));
         break;
     }
     case 1: { // ── Morning Show ───────────────────────────
@@ -347,19 +400,17 @@ void VirtualStudio::renderAnimatedElements(QPainter& painter, const QSize& size)
     double phase = std::sin(m_frameCounter * 0.04);       // slow pulse ~0.6Hz
     double phaseFast = std::sin(m_frameCounter * 0.08);   // faster pulse ~1.2Hz
 
-    // Studio-specific accent color
-    QColor accent;
-    switch (m_studioId) {
-    case 0: accent = QColor(40, 80, 180); break;   // News: blue
-    case 1: accent = QColor(255, 180, 100); break;  // Morning: warm
-    case 2: accent = QColor(220, 30, 30); break;    // Sports: red
-    case 3: accent = QColor(200, 180, 140); break;  // Interview: warm neutral
-    case 4: accent = QColor(60, 160, 220); break;   // Weather: sky blue
-    case 5: accent = QColor(200, 200, 220); break;  // Election: white-ish
-    case 6: accent = QColor(0, 229, 255); break;    // Tech: cyan
-    case 7: accent = QColor(212, 175, 55); break;   // Luxury: gold
-    default: accent = QColor(91, 79, 219); break;
-    }
+    // Accent color — uses user's custom or template default
+    const QColor templateAccents[] = {
+        QColor(40,80,180), QColor(255,180,100), QColor(220,30,30), QColor(200,180,140),
+        QColor(60,160,220), QColor(200,200,220), QColor(0,229,255), QColor(212,175,55)
+    };
+    int sid = qBound(0, m_studioId, 7);
+    QColor accent = m_accentColor.isValid() ? m_accentColor : templateAccents[sid];
+
+    // Apply light intensity
+    int intensityAlpha = static_cast<int>(m_lightIntensity * 255);
+    Q_UNUSED(intensityAlpha)
 
     // 1. Pulsing glow lines (horizontal accent bars)
     int glowAlpha = static_cast<int>(15 + 12 * phase);

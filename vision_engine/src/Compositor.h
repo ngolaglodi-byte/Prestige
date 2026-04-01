@@ -130,6 +130,14 @@ public:
     void setChromaKeyColor(const QString& c) { m_virtualStudio.setChromaKeyColor(c); }
     void setChromaKeyTolerance(double v) { m_virtualStudio.setChromaKeyTolerance(v); }
     void setChromaKeySmooth(double v) { m_virtualStudio.setChromaKeySmooth(v); }
+    void setVsPrimaryColor(const QColor& c) { m_virtualStudio.setPrimaryColor(c); }
+    void setVsSecondaryColor(const QColor& c) { m_virtualStudio.setSecondaryColor(c); }
+    void setVsAccentColor(const QColor& c) { m_virtualStudio.setAccentColor(c); }
+    void setVsFloorColor(const QColor& c) { m_virtualStudio.setFloorColor(c); }
+    void setVsLightColor(const QColor& c) { m_virtualStudio.setLightColor(c); }
+    void setVsLightIntensity(double v) { m_virtualStudio.setLightIntensity(v); }
+    void setVsAnimationsEnabled(bool v) { m_virtualStudio.setAnimationsEnabled(v); }
+    void setVsCustomBackground(const QString& path) { m_virtualStudio.setCustomBackgroundPath(path); }
 
     // ── Overlay scale factors ─────────────────────────────
     void setNameplateScale(double s) { m_nameplateScale = s; }

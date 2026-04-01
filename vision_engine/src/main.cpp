@@ -383,13 +383,31 @@ int main(int argc, char* argv[])
             QString vsChromaColor = obj["chroma_key_color"].toString("green");
             double vsChromaTol = obj["chroma_key_tolerance"].toDouble(0.35);
             double vsChromaSmooth = obj["chroma_key_smooth"].toDouble(0.05);
-            QMetaObject::invokeMethod(&compositor, [&compositor, vsEnabled, vsStudioId, vsChromaKey, vsChromaColor, vsChromaTol, vsChromaSmooth]() {
+            // Virtual Studio customization
+            QString vsPrimary = obj["vs_primary_color"].toString();
+            QString vsSecondary = obj["vs_secondary_color"].toString();
+            QString vsAccent = obj["vs_accent_color"].toString();
+            QString vsFloor = obj["vs_floor_color"].toString();
+            double vsLightInt = obj["vs_light_intensity"].toDouble(1.0);
+            bool vsAnimEnabled = obj["vs_animations_enabled"].toBool(true);
+            QString vsCustomBg = obj["vs_custom_background"].toString();
+
+            QMetaObject::invokeMethod(&compositor, [&compositor, vsEnabled, vsStudioId, vsChromaKey, vsChromaColor, vsChromaTol, vsChromaSmooth,
+                                       vsPrimary, vsSecondary, vsAccent, vsFloor, vsLightInt, vsAnimEnabled, vsCustomBg]() {
                 compositor.setVirtualStudioEnabled(vsEnabled);
                 compositor.setVirtualStudioId(vsStudioId);
                 compositor.setChromaKeyEnabled(vsChromaKey);
                 compositor.setChromaKeyColor(vsChromaColor);
                 compositor.setChromaKeyTolerance(vsChromaTol);
                 compositor.setChromaKeySmooth(vsChromaSmooth);
+                // Customization
+                compositor.setVsPrimaryColor(vsPrimary.isEmpty() ? QColor() : QColor(vsPrimary));
+                compositor.setVsSecondaryColor(vsSecondary.isEmpty() ? QColor() : QColor(vsSecondary));
+                compositor.setVsAccentColor(vsAccent.isEmpty() ? QColor() : QColor(vsAccent));
+                compositor.setVsFloorColor(vsFloor.isEmpty() ? QColor() : QColor(vsFloor));
+                compositor.setVsLightIntensity(vsLightInt);
+                compositor.setVsAnimationsEnabled(vsAnimEnabled);
+                compositor.setVsCustomBackground(vsCustomBg);
             }, Qt::QueuedConnection);
 
             // Overlay scale factors

@@ -105,6 +105,85 @@ Item {
             }
         }
 
+        // ── Customization ─────────────────────────────────────
+        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+        Label { text: "Personnalisation"; font.pixelSize: 12; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+        Label { text: "Changez les couleurs pour votre identite visuelle"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; leftPadding: 8 }
+
+        // Color rows
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label { text: "Fond:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11; Layout.preferredWidth: 70 }
+            Repeater {
+                model: ["#0A0F23", "#1A1A2E", "#0D0D0D", "#2D2A28", "#1E3A5F", "#CC0000", "#00264D", "#1DB954"]
+                Rectangle { width: 22; height: 22; radius: 4; color: modelData; border.color: modelData === (setupController.vsPrimaryColor ? setupController.vsPrimaryColor.toString() : "") ? "white" : "transparent"; border.width: 2
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.vsPrimaryColor = modelData } }
+            }
+        }
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label { text: "Accent:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11; Layout.preferredWidth: 70 }
+            Repeater {
+                model: ["#E30613", "#5B4FDB", "#0066CC", "#1DB954", "#FF6B00", "#D4AF37", "#00E5FF", "#FFFFFF"]
+                Rectangle { width: 22; height: 22; radius: 4; color: modelData; border.color: modelData === (setupController.vsAccentColor ? setupController.vsAccentColor.toString() : "") ? "white" : "transparent"; border.width: 2
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.vsAccentColor = modelData } }
+            }
+        }
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label { text: "Sol:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11; Layout.preferredWidth: 70 }
+            Repeater {
+                model: ["#121830", "#B4A08C", "#0F0F19", "#231E1E", "#143228", "#0F1230", "#080C14", "#0A0806"]
+                Rectangle { width: 22; height: 22; radius: 4; color: modelData; border.color: modelData === (setupController.vsFloorColor ? setupController.vsFloorColor.toString() : "") ? "white" : "transparent"; border.width: 2
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.vsFloorColor = modelData } }
+            }
+        }
+
+        // Reset colors button
+        Rectangle {
+            Layout.preferredWidth: resetLbl.implicitWidth + 16; Layout.preferredHeight: 28; radius: 6; Layout.leftMargin: 8
+            color: resetMa.containsMouse ? Qt.rgba(91/255,79/255,219/255,0.15) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06))
+            Label { id: resetLbl; anchors.centerIn: parent; text: "Reinitialiser les couleurs"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555" }
+            MouseArea { id: resetMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                onClicked: { setupController.vsPrimaryColor = ""; setupController.vsSecondaryColor = ""; setupController.vsAccentColor = ""; setupController.vsFloorColor = "" }
+            }
+        }
+
+        // Light intensity
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label { text: "Eclairage:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+            Slider { from: 0.2; to: 2.0; stepSize: 0.1; value: setupController.vsLightIntensity; Layout.fillWidth: true; onMoved: setupController.vsLightIntensity = value }
+            Label { text: Math.round(setupController.vsLightIntensity * 100) + "%"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11; Layout.preferredWidth: 40 }
+        }
+
+        // Animations toggle
+        Switch { text: "Animations du plateau"; checked: setupController.vsAnimationsEnabled; onToggled: setupController.vsAnimationsEnabled = checked; leftPadding: 8 }
+
+        // ── Custom Background Import ─────────────────────────
+        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
+        Label { text: "Image personnalisee"; font.pixelSize: 12; font.bold: true; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
+        Label { text: "Importez une image 4K de votre graphiste (remplace le template)"; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999"; leftPadding: 8; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+
+        RowLayout { spacing: 6; Layout.leftMargin: 8; Layout.rightMargin: 8
+            TextField {
+                Layout.fillWidth: true
+                text: setupController.vsCustomBackground
+                placeholderText: "Chemin vers l'image (PNG, JPG, 4K recommande)"
+                onTextEdited: setupController.vsCustomBackground = text
+                font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333"
+                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+            }
+            Rectangle {
+                Layout.preferredWidth: clearLbl.implicitWidth + 14; Layout.preferredHeight: 28; radius: 6
+                color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06)
+                visible: setupController.vsCustomBackground !== ""
+                Label { id: clearLbl; anchors.centerIn: parent; text: "Effacer"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555" }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.vsCustomBackground = "" }
+            }
+        }
+        Label {
+            visible: setupController.vsCustomBackground !== ""
+            text: "Image active — le template est ignore"
+            font.pixelSize: 10; color: "#1DB954"; leftPadding: 8
+        }
+
         Item { implicitHeight: 10 }
     }
     }
