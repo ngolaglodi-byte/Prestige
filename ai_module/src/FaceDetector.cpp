@@ -89,11 +89,14 @@ QList<DetectedFace> FaceDetector::detect(const QImage& frame, float threshold) {
         inputShape.data(), inputShape.size());
 
     const char* inputName = "input.1";
-    // SCRFD outputs: 9 tensors (3 strides x 3 outputs each)
+    // SCRFD outputs: 9 tensors (3 strides x 3 outputs)
+    // Stride 8:  score=448(12800,1) bbox=451(12800,4) kps=454(12800,10)
+    // Stride 16: score=471(3200,1)  bbox=474(3200,4)  kps=477(3200,10)
+    // Stride 32: score=494(800,1)   bbox=497(800,4)   kps=500(800,10)
     std::vector<const char*> outputNames = {
-        "score_8", "score_16", "score_32",
-        "bbox_8", "bbox_16", "bbox_32",
-        "kps_8", "kps_16", "kps_32"
+        "448", "471", "494",
+        "451", "474", "497",
+        "454", "477", "500"
     };
 
     std::vector<Ort::Value> outputs;
