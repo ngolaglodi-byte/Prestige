@@ -43,6 +43,8 @@
 #include "OutputRouter.h"
 #include "PreviewSender.h"
 #include "AiPipeline.h"
+#include "WhisperEngine.h"
+#include "TwitchChat.h"
 #include <QDir>
 
 // ── Live output image provider (QML displays composited frame) ──
@@ -133,6 +135,23 @@ int main(int argc, char* argv[])
 
     // ── 4. Compositor (video + overlay → output frame) ───────
     prestige::Compositor compositor;
+
+    // ── Whisper Subtitles (C++) ──────────────────────────────
+    prestige::ai::WhisperEngine whisperEngine;
+    QString whisperModel = modelsDir + "/../whisper/ggml-base.bin";
+    whisperEngine.initialize(whisperModel);
+
+    QObject::connect(&whisperEngine, &prestige::ai::WhisperEngine::subtitleReady,
+        [&compositor](const QString& text, const QString&, double) {
+            compositor.setSubtitleText(text);
+        });
+
+    // ── Social Chat (C++) ─────────────────────────────────────
+    prestige::ai::TwitchChat twitchChat;
+    QObject::connect(&twitchChat, &prestige::ai::TwitchChat::messageReceived,
+        [](const QString& author, const QString& msg, const QString&) {
+            qInfo() << "[Chat]" << author << ":" << msg;
+        });
 
     // ── 5. Output Router (RTMP/SRT/File) ─────────────────────
     // (Moved before config receiver so it can be captured by the lambda)

@@ -11,6 +11,8 @@ set(AI_SOURCES
     src/FaceTracker.cpp
     src/TalentDatabase.cpp
     src/AiPipeline.cpp
+    src/WhisperEngine.cpp
+    src/TwitchChat.cpp
 )
 
 set(AI_HEADERS
@@ -19,6 +21,8 @@ set(AI_HEADERS
     src/FaceTracker.h
     src/TalentDatabase.h
     src/AiPipeline.h
+    src/WhisperEngine.h
+    src/TwitchChat.h
 )
 
 add_library(prestige_ai_module STATIC ${AI_SOURCES} ${AI_HEADERS})
@@ -28,6 +32,8 @@ target_include_directories(prestige_ai_module PUBLIC src)
 target_link_libraries(prestige_ai_module PRIVATE
     Qt6::Core
     Qt6::Gui
+    Qt6::Multimedia
+    Qt6::Network
 )
 
 # ONNX Runtime detection (accepts -DONNXRUNTIME_LIB and -DONNXRUNTIME_INC from parent)
