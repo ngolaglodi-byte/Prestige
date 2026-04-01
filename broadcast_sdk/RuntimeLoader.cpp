@@ -92,6 +92,16 @@ bool RuntimeLoader::loadDeckLink()
     return false;
 }
 
+void* RuntimeLoader::magewellSymbol(const char* name) const
+{
+    if (!m_magewellHandle) return nullptr;
+#ifdef Q_OS_WIN
+    return reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(m_magewellHandle), name));
+#else
+    return dlsym(m_magewellHandle, name);
+#endif
+}
+
 void* RuntimeLoader::deckLinkCreateIterator() const
 {
     if (!m_fnDeckLinkCreateIterator) return nullptr;

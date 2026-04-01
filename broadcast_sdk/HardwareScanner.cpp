@@ -163,6 +163,18 @@ void HardwareScanner::scanMagewell()
 {
     if (!s_loader->isMagewellAvailable()) return;
 
+    // SDK is loaded — check if actual hardware is connected
+    // by calling MWGetChannelCount (returns 0 if no device)
+    typedef int (*MWGetChannelCountFunc)();
+    auto getCount = reinterpret_cast<MWGetChannelCountFunc>(s_loader->magewellSymbol("MWGetChannelCount"));
+    if (getCount) {
+        int count = getCount();
+        if (count <= 0) {
+            qInfo() << "[HardwareScanner]   Magewell: SDK loaded but no device connected";
+            return;
+        }
+    }
+
     QVariantMap dev;
     dev["type"] = "magewell";
     dev["name"] = "Magewell Pro Capture";

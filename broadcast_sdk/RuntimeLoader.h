@@ -34,6 +34,9 @@ public:
     // Status for UI
     Q_INVOKABLE QVariantList sdkStatus() const;
 
+    // Symbol lookup for hardware verification
+    void* magewellSymbol(const char* name) const;
+
     // Function pointers loaded at runtime
     // DeckLink
     void* deckLinkCreateIterator() const;

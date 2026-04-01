@@ -376,7 +376,21 @@ int main(int argc, char* argv[])
     engine.load(mainQml);
 
     // ── 10. Start capture ────────────────────────────────────
-    capture.openWebcam(0);
+    // Don't auto-open webcam — wait for config from Control Room
+    // The Control Room will send the input source via ZMQ :5559
+    // For now, only open if explicitly requested via command line
+    bool autoCapture = false;
+    for (int i = 1; i < argc; ++i) {
+        if (QString(argv[i]) == "--webcam") {
+            autoCapture = true;
+        }
+    }
+    if (autoCapture) {
+        capture.openWebcam(0);
+        qInfo() << "[VisionEngine] Webcam auto-opened (--webcam flag)";
+    } else {
+        qInfo() << "[VisionEngine] Waiting for input source from Control Room...";
+    }
 
     // ── 11. Stats ────────────────────────────────────────────
     QTimer statsTimer;
