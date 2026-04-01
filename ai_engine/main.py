@@ -264,30 +264,34 @@ def tracking_thread(
 def main() -> None:
     args = parse_args()
 
-    # Auto-detect mode
+    # Auto-detect mode — wait for Vision Engine, NEVER open webcam automatically
     if not args.dev and not args.prod:
-        # Try to connect to C++ first
-        try:
-            import zmq
-            ctx = zmq.Context()
-            sock = ctx.socket(zmq.SUB)
-            sock.subscribe(b"")
-            sock.setsockopt(zmq.RCVTIMEO, 1000)
-            sock.setsockopt(zmq.CONFLATE, 1)
-            sock.connect(args.zmq_frames)
+        import zmq
+        logger.info("Waiting for Vision Engine on %s...", args.zmq_frames)
+        while not _shutdown.is_set():
             try:
-                sock.recv()
-                args.prod = True
-                logger.info("C++ Vision Engine detected — production mode")
-            except zmq.Again:
-                args.dev = True
-                logger.info("No C++ Vision Engine — dev mode (webcam)")
-            finally:
-                sock.close()
-                ctx.term()
-        except Exception:
-            args.dev = True
-            logger.info("Defaulting to dev mode (webcam)")
+                ctx = zmq.Context()
+                sock = ctx.socket(zmq.SUB)
+                sock.subscribe(b"")
+                sock.setsockopt(zmq.RCVTIMEO, 2000)
+                sock.setsockopt(zmq.CONFLATE, 1)
+                sock.connect(args.zmq_frames)
+                try:
+                    sock.recv()
+                    args.prod = True
+                    logger.info("Vision Engine detected — production mode")
+                    break
+                except zmq.Again:
+                    pass  # Keep waiting
+                finally:
+                    sock.close()
+                    ctx.term()
+            except Exception:
+                pass
+            time.sleep(1)
+
+        if _shutdown.is_set():
+            return
 
     # Initialize
     detector = FaceDetector(args.talents_db, threshold=args.threshold)
