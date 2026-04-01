@@ -62,6 +62,6 @@ begin
     'Ce programme va installer Prestige AI v' + '{#MyAppVersion}' + ' sur votre ordinateur.' + #13#10 + #13#10 +
     'Prestige AI est un logiciel professionnel de broadcast avec reconnaissance faciale IA.' + #13#10 +
     'Il lance automatiquement tous ses composants (IA, Vidéo, Interface).' + #13#10 + #13#10 +
-    #169 + ' 2024-2026 Prestige Technologie Company' + #13#10 +
+    Chr(169) + ' 2024-2026 Prestige Technologie Company' + #13#10 +
     'Tous droits réservés.';
 end;
