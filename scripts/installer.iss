@@ -1,5 +1,5 @@
 ; ============================================================
-; Prestige AI — Inno Setup Installer Script
+; Prestige AI — Professional Installer (Inno Setup)
 ; Copyright (c) 2024-2026 Prestige Technologie Company
 ; All rights reserved.
 ; ============================================================
@@ -39,18 +39,17 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
-Name: "startmenu"; Description: "Créer un raccourci dans le menu Démarrer"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkedonce
 
 [Files]
 Source: "..\dist\PrestigeAI\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\resources\prestige.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\PrestigeAI.exe"; IconFilename: "{app}\prestige.ico"; Comment: "Prestige AI — Broadcast Overlay System"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\PrestigeAI.exe"; IconFilename: "{app}\prestige.ico"; Tasks: desktopicon; Comment: "Prestige AI — Broadcast Overlay System"
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\prestige.ico"; Comment: "Prestige AI — Professional Broadcast Overlay System"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\prestige.ico"; Tasks: desktopicon; Comment: "Prestige AI — Professional Broadcast Overlay System"
 
 [Run]
-Filename: "{app}\PrestigeAI.exe"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent shellexec
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
@@ -61,7 +60,8 @@ begin
   WizardForm.WelcomeLabel1.Caption := 'Bienvenue dans l''installation de Prestige AI';
   WizardForm.WelcomeLabel2.Caption :=
     'Ce programme va installer Prestige AI v' + '{#MyAppVersion}' + ' sur votre ordinateur.' + #13#10 + #13#10 +
-    'Prestige AI est un logiciel professionnel de broadcast avec reconnaissance faciale IA.' + #13#10 + #13#10 +
-    '© 2024-2026 Prestige Technologie Company' + #13#10 +
+    'Prestige AI est un logiciel professionnel de broadcast avec reconnaissance faciale IA.' + #13#10 +
+    'Il lance automatiquement tous ses composants (IA, Vidéo, Interface).' + #13#10 + #13#10 +
+    #169 + ' 2024-2026 Prestige Technologie Company' + #13#10 +
     'Tous droits réservés.';
 end;

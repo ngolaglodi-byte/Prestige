@@ -52,16 +52,14 @@ jobs:
         APP="dist/Prestige AI.app"
         mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-        # Binaries
-        cp build/control_room/prestige_control "$APP/Contents/MacOS/"
-        cp build/vision_engine/prestige_vision "$APP/Contents/MacOS/"
+        # Binaries — prestige_control IS the main executable (auto-launches AI + Vision)
+        cp build/control_room/prestige_control "$APP/Contents/MacOS/prestige_control"
+        cp build/vision_engine/prestige_vision "$APP/Contents/MacOS/prestige_vision"
 
-        # Launcher
-        cp scripts/launcher.sh "$APP/Contents/MacOS/PrestigeAI"
-        chmod +x "$APP/Contents/MacOS/PrestigeAI"
-
-        # Info.plist and icon
+        # Info.plist — executable is prestige_control directly (no launcher script)
         cp scripts/Info.plist "$APP/Contents/Info.plist"
+        # Set CFBundleExecutable to prestige_control
+        sed -i '' 's|<string>PrestigeAI</string>|<string>prestige_control</string>|' "$APP/Contents/Info.plist"
         [ -f resources/prestige.icns ] && cp resources/prestige.icns "$APP/Contents/Resources/AppIcon.icns"
 
         # AI Engine
@@ -77,13 +75,11 @@ jobs:
         APP="dist/Prestige AI.app"
         MACDEPLOYQT=$(find "${QT_ROOT_DIR}" -name macdeployqt -type f 2>/dev/null | head -1)
         if [ -n "$MACDEPLOYQT" ]; then
-          sed -i '' 's|<string>PrestigeAI</string>|<string>prestige_control</string>|' "$APP/Contents/Info.plist"
           "$MACDEPLOYQT" "$APP" \
             -executable="$APP/Contents/MacOS/prestige_vision" \
             -qmldir=control_room/qml \
             -qmldir=vision_engine/qml \
             -always-overwrite 2>&1 || true
-          sed -i '' 's|<string>prestige_control</string>|<string>PrestigeAI</string>|' "$APP/Contents/Info.plist"
         fi
         codesign --force --deep --sign - "$APP" 2>/dev/null || true
 
