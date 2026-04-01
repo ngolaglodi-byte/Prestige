@@ -173,9 +173,24 @@ void MainWindow::startSubProcesses()
     if (QFileInfo(mainPy).exists()) {
         m_aiProcess = new QProcess(this);
         m_aiProcess->setWorkingDirectory(aiDir);
+
+        // Redirect output to null — no terminal window
         m_aiProcess->setProcessChannelMode(QProcess::MergedChannels);
         m_aiProcess->setStandardOutputFile(QProcess::nullDevice());
 
+        // On Windows, ensure no console window by using pythonw.exe
+        // and setting the process to not create a window
+#ifdef Q_OS_WIN
+        // pythonw.exe = no console window (this is the standard Windows approach)
+        if (!python.contains("pythonw")) {
+            QString pythonw = python;
+            pythonw.replace("python.exe", "pythonw.exe");
+            if (QFileInfo(pythonw).exists())
+                python = pythonw;
+        }
+#endif
+
+        qInfo() << "[Prestige AI] Starting AI with:" << python << mainPy;
         m_aiProcess->start(python, {mainPy});
         if (m_aiProcess->waitForStarted(5000)) {
             qInfo() << "[Prestige AI] AI Engine started (PID:" << m_aiProcess->processId() << ")";
