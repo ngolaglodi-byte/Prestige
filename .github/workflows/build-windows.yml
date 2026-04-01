@@ -1,4 +1,4 @@
-# Prestige AI — Windows Build + Installer
+# Prestige AI — Windows Professional Installer
 # Copyright (c) 2024-2026 Prestige Technologie Company
 
 name: Build Windows Installer
@@ -30,13 +30,25 @@ jobs:
     - name: Install ZeroMQ
       run: vcpkg install zeromq:x64-windows
 
+    - name: Install ONNX Runtime
+      shell: pwsh
+      run: |
+        $version = "1.17.0"
+        $url = "https://github.com/microsoft/onnxruntime/releases/download/v$version/onnxruntime-win-x64-$version.zip"
+        Invoke-WebRequest -Uri $url -OutFile onnxruntime.zip
+        Expand-Archive onnxruntime.zip -DestinationPath onnxruntime
+        $dir = Get-ChildItem onnxruntime -Directory | Select-Object -First 1
+        echo "ONNXRUNTIME_DIR=$($dir.FullName)" >> $env:GITHUB_ENV
+
     - name: Configure CMake
       shell: pwsh
       run: |
         cmake -B build -G "Visual Studio 17 2022" -A x64 `
           -DCMAKE_BUILD_TYPE=Release `
           -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
-          -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR"
+          -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" `
+          -DONNXRUNTIME_LIB="$env:ONNXRUNTIME_DIR\lib\onnxruntime.lib" `
+          -DONNXRUNTIME_INC="$env:ONNXRUNTIME_DIR\include"
 
     - name: Build
       run: cmake --build build --config Release --parallel
@@ -50,46 +62,30 @@ jobs:
         echo "CTRL=$($ctrl.FullName)" >> $env:GITHUB_OUTPUT
         echo "VIS=$($vis.FullName)" >> $env:GITHUB_OUTPUT
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: Install Python deps
-      shell: pwsh
-      run: |
-        python -m venv ai_engine\venv
-        ai_engine\venv\Scripts\pip install --upgrade pip
-        ai_engine\venv\Scripts\pip install insightface onnxruntime opencv-python-headless pyzmq numpy
-        ai_engine\venv\Scripts\pip install faster-whisper sounddevice
-
     - name: Package application
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path dist\PrestigeAI | Out-Null
+
+        # Core executables
         Copy-Item "${{ steps.find-exe.outputs.CTRL }}" dist\PrestigeAI\prestige_control.exe
         Copy-Item "${{ steps.find-exe.outputs.VIS }}" dist\PrestigeAI\prestige_vision.exe
+
+        # Qt dependencies
         $env:Path = "$env:QT_ROOT_DIR\bin;$env:Path"
         & windeployqt --qmldir control_room\qml --qmldir vision_engine\qml dist\PrestigeAI\prestige_control.exe
         & windeployqt dist\PrestigeAI\prestige_vision.exe
-        Copy-Item -Recurse ai_engine dist\PrestigeAI\ai_engine -Force
-        # Make venv relocatable: fix pyvenv.cfg to use relative paths
-        $cfg = "dist\PrestigeAI\ai_engine\venv\pyvenv.cfg"
-        if (Test-Path $cfg) {
-            $content = Get-Content $cfg
-            $content = $content -replace 'home = .*', 'home = Scripts'
-            Set-Content $cfg $content
+
+        # ONNX Runtime DLL
+        Copy-Item "$env:ONNXRUNTIME_DIR\lib\onnxruntime.dll" dist\PrestigeAI\
+
+        # AI Models
+        New-Item -ItemType Directory -Force -Path dist\PrestigeAI\models\buffalo_l | Out-Null
+        if (Test-Path "ai_engine\models\buffalo_l") {
+            Copy-Item ai_engine\models\buffalo_l\*.onnx dist\PrestigeAI\models\buffalo_l\ -ErrorAction SilentlyContinue
         }
-        # Copy Python runtime into the venv (so it works without system Python)
-        $pyDir = (Get-Command python).Source | Split-Path
-        Copy-Item "$pyDir\python.exe" "dist\PrestigeAI\ai_engine\venv\Scripts\" -Force
-        Copy-Item "$pyDir\pythonw.exe" "dist\PrestigeAI\ai_engine\venv\Scripts\" -Force
-        Copy-Item "$pyDir\python312.dll" "dist\PrestigeAI\ai_engine\venv\Scripts\" -Force -ErrorAction SilentlyContinue
-        Copy-Item "$pyDir\python3.dll" "dist\PrestigeAI\ai_engine\venv\Scripts\" -Force -ErrorAction SilentlyContinue
-        # Copy the entire Lib from the Python installation for full stdlib
-        if (Test-Path "$pyDir\..\Lib") {
-            Copy-Item -Recurse "$pyDir\..\Lib" "dist\PrestigeAI\ai_engine\venv\" -Force -ErrorAction SilentlyContinue
-        }
+
+        # Icon
         Copy-Item resources\prestige.ico dist\PrestigeAI\
 
     - name: Create Inno Setup installer
@@ -103,13 +99,3 @@ jobs:
       with:
         name: PrestigeAI-Windows-Setup
         path: dist/PrestigeAI-*-Setup-Windows-x64.exe
-
-    - name: Upload ZIP
-      uses: actions/upload-artifact@v4
-      with:
-        name: PrestigeAI-Windows-ZIP
-        path: dist/PrestigeAI-Windows-x64.zip
-
-    - name: Create ZIP backup
-      shell: pwsh
-      run: Compress-Archive -Path dist\PrestigeAI -DestinationPath dist\PrestigeAI-Windows-x64.zip

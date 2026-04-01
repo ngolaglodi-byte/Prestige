@@ -63,6 +63,20 @@ else()
     message(WARNING "FFmpeg not found — encoder/output will be stubbed")
 endif()
 
+# ── ONNX Runtime (AI detection) ───────────────────────────
+# Downloaded automatically if not found
+set(ONNXRUNTIME_VERSION "1.17.0")
+find_library(ONNXRUNTIME_LIB NAMES onnxruntime PATHS /opt/homebrew/lib /usr/local/lib)
+find_path(ONNXRUNTIME_INC onnxruntime_cxx_api.h PATH_SUFFIXES onnxruntime/core/session PATHS /opt/homebrew/include /usr/local/include)
+
+if(ONNXRUNTIME_LIB AND ONNXRUNTIME_INC)
+    set(ONNXRUNTIME_FOUND TRUE)
+    message(STATUS "ONNX Runtime found: ${ONNXRUNTIME_LIB}")
+else()
+    set(ONNXRUNTIME_FOUND FALSE)
+    message(STATUS "ONNX Runtime not found — AI detection will use stubs")
+endif()
+
 # ── Platform detection ──────────────────────────────────────
 if(WIN32)
     add_compile_definitions(PRESTIGE_PLATFORM_WINDOWS)
