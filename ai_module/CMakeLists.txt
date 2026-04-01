@@ -30,19 +30,27 @@ target_link_libraries(prestige_ai_module PRIVATE
     Qt6::Gui
 )
 
-# ONNX Runtime (optional — stubs used when not available)
-find_path(ONNXRUNTIME_INCLUDE_DIR onnxruntime_cxx_api.h
-    PATHS /usr/local/include/onnxruntime /opt/homebrew/include/onnxruntime
-    PATH_SUFFIXES onnxruntime/core/session
-)
-find_library(ONNXRUNTIME_LIBRARY onnxruntime
-    PATHS /usr/local/lib /opt/homebrew/lib
-)
-if(ONNXRUNTIME_INCLUDE_DIR AND ONNXRUNTIME_LIBRARY)
-    target_include_directories(prestige_ai_module PRIVATE ${ONNXRUNTIME_INCLUDE_DIR})
-    target_link_libraries(prestige_ai_module PRIVATE ${ONNXRUNTIME_LIBRARY})
-    target_compile_definitions(prestige_ai_module PUBLIC PRESTIGE_HAVE_ONNXRT)
-    message(STATUS "ONNX Runtime found — AI detection enabled")
+# ONNX Runtime detection (accepts -DONNXRUNTIME_LIB and -DONNXRUNTIME_INC from parent)
+if(ONNXRUNTIME_LIB AND ONNXRUNTIME_INC)
+    # Passed from root CMake or CI
+    if(EXISTS "${ONNXRUNTIME_LIB}")
+        target_include_directories(prestige_ai_module PRIVATE ${ONNXRUNTIME_INC})
+        target_link_libraries(prestige_ai_module PRIVATE ${ONNXRUNTIME_LIB})
+        target_compile_definitions(prestige_ai_module PUBLIC PRESTIGE_HAVE_ONNXRT)
+        message(STATUS "ONNX Runtime found — AI detection ENABLED")
+    else()
+        message(STATUS "ONNX Runtime path invalid — AI module uses stubs")
+    endif()
 else()
-    message(STATUS "ONNX Runtime not found — AI module uses stubs (detection disabled)")
+    # Try system paths
+    find_library(ONNXRT_SYS_LIB onnxruntime PATHS /opt/homebrew/lib /usr/local/lib)
+    find_path(ONNXRT_SYS_INC onnxruntime_cxx_api.h PATHS /opt/homebrew/include /usr/local/include PATH_SUFFIXES onnxruntime/core/session)
+    if(ONNXRT_SYS_LIB AND ONNXRT_SYS_INC)
+        target_include_directories(prestige_ai_module PRIVATE ${ONNXRT_SYS_INC})
+        target_link_libraries(prestige_ai_module PRIVATE ${ONNXRT_SYS_LIB})
+        target_compile_definitions(prestige_ai_module PUBLIC PRESTIGE_HAVE_ONNXRT)
+        message(STATUS "ONNX Runtime (system) found — AI detection ENABLED")
+    else()
+        message(STATUS "ONNX Runtime not found — AI module uses stubs (detection disabled)")
+    endif()
 endif()

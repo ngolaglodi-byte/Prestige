@@ -42,6 +42,8 @@
 #include "VideoEncoder.h"
 #include "OutputRouter.h"
 #include "PreviewSender.h"
+#include "AiPipeline.h"
+#include <QDir>
 
 // ── Live output image provider (QML displays composited frame) ──
 
@@ -81,26 +83,56 @@ int main(int argc, char* argv[])
     // ── 1. Video Capture ─────────────────────────────────────
     prestige::VideoCapture capture;
 
-    // ── 2. Frame Sender → Python ─────────────────────────────
-    prestige::FrameSender frameSender;
-    frameSender.start();
-
-    QObject::connect(&capture, &prestige::VideoCapture::frameCaptured,
-                     &frameSender, &prestige::FrameSender::sendFrame);
-
-    // ── 3. ZMQ Subscriber ← Python ──────────────────────────
+    // ── 2. AI Pipeline (C++ ONNX Runtime — replaces Python) ──
     prestige::TalentStore talentStore;
+    prestige::ai::AiPipeline aiPipeline;
+
+    // Find models directory
+    QString modelsDir = QCoreApplication::applicationDirPath() + "/models/buffalo_l";
+    if (!QDir(modelsDir).exists())
+        modelsDir = QCoreApplication::applicationDirPath() + "/../Resources/models/buffalo_l";
+    if (!QDir(modelsDir).exists())
+        modelsDir = QCoreApplication::applicationDirPath() + "/../../ai_engine/models/buffalo_l"; // dev layout
+
+    QString talentsDb = QDir::homePath() + "/.prestige-ai/talents.json";
+
+    if (aiPipeline.initialize(modelsDir, talentsDb)) {
+        qInfo() << "[VisionEngine] AI Pipeline initialized — detection ACTIVE";
+    } else {
+        qInfo() << "[VisionEngine] AI Pipeline not available — overlay-only mode";
+    }
+
+    // Connect: capture → AI pipeline → talent store
+    QObject::connect(&capture, &prestige::VideoCapture::frameCaptured,
+        &aiPipeline, &prestige::ai::AiPipeline::processFrame);
+
+    QObject::connect(&aiPipeline, &prestige::ai::AiPipeline::detectionsUpdated,
+        [&talentStore](const QList<prestige::ai::TrackedFace>& faces, const QString&, int) {
+            QList<prestige::TalentOverlay> overlays;
+            for (const auto& f : faces) {
+                prestige::TalentOverlay ov;
+                ov.id = f.id;
+                ov.name = f.name;
+                ov.role = f.role;
+                ov.confidence = f.confidence;
+                ov.showOverlay = f.showOverlay;
+                ov.overlayStyle = f.overlayStyle;
+                ov.bbox = f.smoothedBbox.isValid() ? f.smoothedBbox : f.bbox;
+                overlays.append(ov);
+            }
+            talentStore.update(overlays);
+        });
+
+    // Keep ZMQ subscriber for backward compat (Control Room still subscribes :5555)
     prestige::ZmqSubscriber zmqSub(talentStore);
-    zmqSub.start();
+    // Don't start it — AI is now in-process
+    // zmqSub.start();
+
+    // Also keep FrameSender disabled
+    // prestige::FrameSender frameSender;
 
     // ── 4. Compositor (video + overlay → output frame) ───────
     prestige::Compositor compositor;
-
-    // Connect subtitle ZMQ → Compositor
-    QObject::connect(&zmqSub, &prestige::ZmqSubscriber::subtitleReceived,
-        [&compositor](const QString& text, const QString&, double) {
-            compositor.setSubtitleText(text);
-        });
 
     // ── 5. Output Router (RTMP/SRT/File) ─────────────────────
     // (Moved before config receiver so it can be captured by the lambda)
@@ -395,19 +427,18 @@ int main(int argc, char* argv[])
     // ── 11. Stats ────────────────────────────────────────────
     QTimer statsTimer;
     QObject::connect(&statsTimer, &QTimer::timeout,
-        [&capture, &frameSender, &zmqSub, &compositor, &outputRouter]() {
+        [&capture, &aiPipeline, &compositor, &outputRouter]() {
             qInfo().noquote() << QStringLiteral(
-                "[Pipeline] Cap:%1fps | Sent:%2 | Sync:%3ms | Composite:%4ms | Outputs:%5")
+                "[Pipeline] Cap:%1fps | AI:%2 | Composite:%3ms | Outputs:%4")
                 .arg(capture.currentFps(), 0, 'f', 1)
-                .arg(frameSender.framesSent())
-                .arg(zmqSub.syncOffsetMs(), 0, 'f', 0)
+                .arg(aiPipeline.isDetecting() ? "ACTIVE" : "IDLE")
                 .arg(compositor.lastCompositeMs(), 0, 'f', 1)
                 .arg(outputRouter.activeCount());
         });
     statsTimer.start(5000);
 
     qInfo() << "[VisionEngine] Complete pipeline started:";
-    qInfo() << "  Capture → FrameSender(:5557) → Python → ZMQ(:5555) → Compositor → Output";
+    qInfo() << "  Capture → AI Pipeline (C++ ONNX) → Compositor → Output";
 
     return app.exec();
 }
