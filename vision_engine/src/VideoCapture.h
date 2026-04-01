@@ -22,6 +22,10 @@
 #include <memory>
 
 #include "FrameMetadata.h"
+#include "DecklinkCapture.h"
+#include "AjaCapture.h"
+#include "MagewellCapture.h"
+#include "NdiCapture.h"
 
 namespace prestige {
 
@@ -36,7 +40,11 @@ public:
     ~VideoCapture() override;
 
     Q_INVOKABLE bool openWebcam(int index = 0);
+    Q_INVOKABLE bool openSource(const QString& type, const QString& source);
     Q_INVOKABLE void close();
+
+    QString currentType() const { return m_currentType; }
+    QString currentSource() const { return m_currentSource; }
 
     bool isActive() const { return m_active; }
     double currentFps() const { return m_currentFps; }
@@ -73,6 +81,16 @@ private:
     // FPS calculation
     int           m_fpsFrameCount = 0;
     QElapsedTimer m_fpsTimer;
+
+    // Current source tracking
+    QString m_currentType;
+    QString m_currentSource;
+
+    // Hardware capture cards (created on demand, destroyed on close)
+    DecklinkCapture* m_decklink = nullptr;
+    AjaCapture*      m_aja      = nullptr;
+    MagewellCapture* m_magewell = nullptr;
+    NdiCapture*      m_ndi      = nullptr;
 };
 
 } // namespace prestige

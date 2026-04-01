@@ -60,6 +60,18 @@ jobs:
 
         # ONNX Runtime dylib
         cp "${ONNXRUNTIME_DIR}/lib/libonnxruntime."*.dylib "$APP/Contents/Frameworks/"
+
+        # FFmpeg dylibs (for RTMP/SRT/File output)
+        for lib in avcodec avformat avutil swscale swresample; do
+          DYLIB=$(find /opt/homebrew/lib /usr/local/lib -name "lib${lib}.*.dylib" -not -name "*.dSYM" 2>/dev/null | head -1)
+          if [ -n "$DYLIB" ]; then
+            cp "$DYLIB" "$APP/Contents/Frameworks/"
+          fi
+        done
+
+        # ZeroMQ dylib
+        ZMQLIB=$(find /opt/homebrew/lib /usr/local/lib -name "libzmq.*.dylib" 2>/dev/null | head -1)
+        [ -n "$ZMQLIB" ] && cp "$ZMQLIB" "$APP/Contents/Frameworks/"
         # Fix rpath
         install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/prestige_vision" 2>/dev/null || true
         install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/prestige_control" 2>/dev/null || true

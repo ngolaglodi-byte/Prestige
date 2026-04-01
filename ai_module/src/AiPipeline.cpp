@@ -42,7 +42,17 @@ bool AiPipeline::initialize(const QString& modelsDir, const QString& talentsDbPa
     emit aiReadyChanged();
 
     if (m_ready) {
-        qInfo() << "[AI] Pipeline initialized — models loaded from:" << modelsDir;
+        // Start the detection thread
+        m_running = true;
+        QObject* worker = new QObject;
+        worker->moveToThread(&m_detThread);
+        connect(&m_detThread, &QThread::started, worker, [this, worker]() {
+            detectionLoop();
+            worker->deleteLater();
+        });
+        connect(&m_detThread, &QThread::finished, worker, &QObject::deleteLater);
+        m_detThread.start();
+        qInfo() << "[AI] Pipeline initialized — detection thread STARTED, models from:" << modelsDir;
     } else {
         qInfo() << "[AI] Pipeline initialized in stub mode (ONNX models not available)";
     }

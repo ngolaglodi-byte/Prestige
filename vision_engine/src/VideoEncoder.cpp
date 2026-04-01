@@ -98,6 +98,12 @@ bool VideoEncoder::initialize(const EncoderConfig& config)
     ctx->gop_size  = config.gopSize;
     ctx->pix_fmt   = AV_PIX_FMT_YUV420P;
 
+    // Broadcast standard: ITU-R BT.709 color space (HD/4K)
+    ctx->colorspace      = AVCOL_SPC_BT709;
+    ctx->color_primaries = AVCOL_PRI_BT709;
+    ctx->color_trc       = AVCOL_TRC_BT709;
+    ctx->color_range     = AVCOL_RANGE_MPEG; // Limited range (16-235) — broadcast standard
+
     if (config.lowLatency) {
         ctx->max_b_frames = 0;
         ctx->flags |= AV_CODEC_FLAG_LOW_DELAY;

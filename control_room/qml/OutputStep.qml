@@ -127,8 +127,8 @@ Item {
                                 TextField {
                                     Layout.fillWidth: true
                                     placeholderText: "rtmp://votre-serveur.com/live/"
-                                    text: getSocialUrl(model.platform)
-                                    onTextChanged: setSocialUrl(model.platform, text)
+                                    Component.onCompleted: text = getSocialUrl(model.platform)
+                                    onTextEdited: setSocialUrl(model.platform, text)
                                     font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333"
                                     background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                                 }
@@ -140,8 +140,8 @@ Item {
                                 TextField {
                                     Layout.fillWidth: true
                                     placeholderText: "Collez votre clé de stream ici"
-                                    text: getSocialKey(model.platform)
-                                    onTextChanged: setSocialKey(model.platform, text)
+                                    Component.onCompleted: text = getSocialKey(model.platform)
+                                    onTextEdited: setSocialKey(model.platform, text)
                                     echoMode: TextInput.Password
                                     font.pixelSize: 11; color: window.darkMode ? "#CCC" : "#333"
                                     background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
@@ -164,6 +164,43 @@ Item {
                         }
                     }
                 }
+            }
+
+            // ═══════════════════════════════════════════════════
+            // SECTION 3: Qualité de sortie (FPS / Bitrate)
+            // ═══════════════════════════════════════════════════
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.topMargin: 8 }
+
+            Label { text: "Qualité de sortie"; font.pixelSize: 16; color: window.darkMode ? "white" : "#1A1A1A" }
+
+            RowLayout { spacing: 8; Layout.leftMargin: 8
+                Label { text: "Fréquence:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 12 }
+                Repeater {
+                    model: [{"label": "24", "fps": 24}, {"label": "25 PAL", "fps": 25}, {"label": "30 NTSC", "fps": 30}, {"label": "50", "fps": 50}, {"label": "60", "fps": 60}]
+                    Rectangle {
+                        Layout.preferredWidth: fpsLbl.implicitWidth + 16; Layout.preferredHeight: 28; radius: 6
+                        color: setupController.outputFps === modelData.fps ? "#5B4FDB" : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06))
+                        Label { id: fpsLbl; anchors.centerIn: parent; text: modelData.label + " fps"; font.pixelSize: 11; color: setupController.outputFps === modelData.fps ? "white" : (window.darkMode ? "#888" : "#555") }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.outputFps = modelData.fps }
+                    }
+                }
+            }
+
+            RowLayout { spacing: 8; Layout.leftMargin: 8
+                Label { text: "Débit vidéo:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 12 }
+                Slider { id: brSlider; from: 2; to: 50; stepSize: 1; value: setupController.outputBitrate; Layout.preferredWidth: 180; onMoved: setupController.outputBitrate = value }
+                Label { text: setupController.outputBitrate + " Mbps"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 12; Layout.preferredWidth: 60 }
+            }
+            Label {
+                text: {
+                    var br = setupController.outputBitrate
+                    if (br <= 4) return "  SD / réseaux mobiles"
+                    if (br <= 8) return "  1080p standard (YouTube, Twitch)"
+                    if (br <= 15) return "  1080p haute qualité"
+                    if (br <= 30) return "  4K standard"
+                    return "  4K haute qualité / broadcast"
+                }
+                font.pixelSize: 11; color: "#5B4FDB"; leftPadding: 8
             }
 
             // Summary
@@ -223,17 +260,34 @@ Item {
     function setSocialEnabled(p, v) {
         if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: "" }
         socialConfigs[p].enabled = v
-        socialConfigs = socialConfigs // trigger re-evaluation
+        socialConfigs = socialConfigs
+        publishSocialToController()
     }
     function setSocialKey(p, v) {
         if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: "" }
         socialConfigs[p].key = v
-        socialConfigs = socialConfigs // trigger re-evaluation
+        socialConfigs = socialConfigs
+        publishSocialToController()
     }
     function setSocialUrl(p, v) {
         if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: "" }
         socialConfigs[p].url = v
-        socialConfigs = socialConfigs // trigger re-evaluation
+        socialConfigs = socialConfigs
+        publishSocialToController()
+    }
+
+    // Serialize active social RTMP outputs to SetupController for Vision Engine
+    function publishSocialToController() {
+        var outputs = []
+        var platforms = ["youtube","twitch","facebook","instagram","tiktok","x","custom"]
+        for (var i = 0; i < platforms.length; i++) {
+            var p = platforms[i]
+            var cfg = socialConfigs[p]
+            if (cfg && cfg.enabled && cfg.key) {
+                outputs.push({ platform: p, url: cfg.url + cfg.key })
+            }
+        }
+        setupController.socialOutputsJson = JSON.stringify(outputs)
     }
 
 }

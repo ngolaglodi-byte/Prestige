@@ -33,6 +33,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QTimer>
 
 
 
@@ -108,6 +109,9 @@ MainWindow::MainWindow(QObject* parent)
     connect(m_setupController, &SetupController::brandingChanged, this, &MainWindow::publishConfig);
     connect(m_setupController, &SetupController::showTitleChanged, this, &MainWindow::publishConfig);
     connect(m_setupController, &SetupController::timingChanged, this, &MainWindow::publishConfig);
+    connect(m_setupController, &SetupController::sourceChanged, this, &MainWindow::publishConfig);
+    connect(m_setupController, &SetupController::outputsChanged, this, &MainWindow::publishConfig);
+    connect(m_setupController, &SetupController::overlayTimingChanged, this, &MainWindow::publishConfig);
 
     // Publish config when broadcast overlay cycle state changes
     connect(m_liveController, &LiveController::showTitleVisibleChanged, this, &MainWindow::publishConfig);
@@ -133,6 +137,12 @@ MainWindow::MainWindow(QObject* parent)
     m_liveController->startLive();
     m_audioMeter->start();
     qInfo() << "[ControlRoom] Always-On Passthrough: pipeline running from startup";
+
+    // Publish initial config after short delay to ensure Vision Engine is ready
+    QTimer::singleShot(1500, this, &MainWindow::publishConfig);
+    // Also re-publish periodically during first 10s for reliability
+    QTimer::singleShot(3000, this, &MainWindow::publishConfig);
+    QTimer::singleShot(6000, this, &MainWindow::publishConfig);
 }
 
 MainWindow::~MainWindow()
@@ -401,8 +411,11 @@ void MainWindow::publishConfig()
     obj["input_source"] = m_setupController->inputSource();
 
     // Ticker config
-    obj["ticker_visible"] = !m_rssFetcher->headlines().isEmpty();
-    obj["ticker_text"] = m_rssFetcher->headlines();
+    QString tickerContent = m_rssFetcher->headlines();
+    if (tickerContent.isEmpty())
+        tickerContent = m_setupController->tickerManualText();
+    obj["ticker_visible"] = m_setupController->tickerVisible() && !tickerContent.isEmpty();
+    obj["ticker_text"] = tickerContent;
 
     // Subtitle config
     obj["subtitle_visible"] = m_subtitleCtrl->isEnabled();
@@ -442,6 +455,7 @@ void MainWindow::publishConfig()
     obj["layout_rtl"] = (m_language == "ar");
 
     // Channel branding
+    obj["channel_logo_path"] = m_setupController->channelLogoPath();
     obj["channel_logo_position"] = m_setupController->channelLogoPosition();
     obj["channel_logo_size"] = m_setupController->channelLogoSize();
     obj["channel_logo_offset_x"] = m_setupController->channelLogoOffsetX();
@@ -499,6 +513,62 @@ void MainWindow::publishConfig()
     obj["scoreboard_offset_y"] = m_setupController->scoreboardOffsetY();
     obj["weather_offset_x"] = m_setupController->weatherOffsetX();
     obj["weather_offset_y"] = m_setupController->weatherOffsetY();
+
+    // Overlay scale factors (0.5 – 2.0)
+    obj["nameplate_scale"] = m_setupController->nameplateScale();
+    obj["scoreboard_scale"] = m_setupController->scoreboardScale();
+    obj["weather_scale"] = m_setupController->weatherScale();
+    obj["clock_scale"] = m_setupController->clockScale();
+    obj["countdown_scale"] = m_setupController->countdownScale();
+    obj["qr_code_scale"] = m_setupController->qrCodeScale();
+
+    // Ticker appearance (font, color, speed)
+    obj["ticker_font_size"] = m_setupController->tickerFontSize();
+    obj["ticker_bg_color"] = m_setupController->tickerBgColor();
+    obj["ticker_text_color"] = m_setupController->tickerTextColor();
+    obj["ticker_speed"] = m_setupController->tickerSpeed();
+    obj["ticker_manual_text"] = m_setupController->tickerManualText();
+
+    // Clock config
+    obj["clock_visible"] = m_setupController->clockVisible();
+    obj["clock_format"] = m_setupController->clockFormat();
+
+    // Scoreboard data
+    obj["scoreboard_visible"] = m_setupController->scoreboardVisible();
+    obj["scoreboard_team_a"] = m_setupController->scoreboardTeamA();
+    obj["scoreboard_team_b"] = m_setupController->scoreboardTeamB();
+    obj["scoreboard_score_a"] = m_setupController->scoreboardScoreA();
+    obj["scoreboard_score_b"] = m_setupController->scoreboardScoreB();
+    obj["scoreboard_color_a"] = m_setupController->scoreboardColorA();
+    obj["scoreboard_color_b"] = m_setupController->scoreboardColorB();
+    obj["scoreboard_position"] = m_setupController->scoreboardPosition();
+    obj["scoreboard_match_time"] = m_setupController->scoreboardMatchTime();
+    obj["scoreboard_period"] = m_setupController->scoreboardPeriod();
+
+    // Weather data
+    obj["weather_visible"] = m_setupController->weatherVisible();
+    obj["weather_city"] = m_weatherFetcher->city();
+    obj["weather_temperature"] = m_weatherFetcher->temperature();
+    obj["weather_unit"] = m_weatherFetcher->unit();
+    obj["weather_condition_icon"] = m_weatherFetcher->conditionIcon();
+
+    // Output destinations
+    obj["output_sdi"] = m_setupController->outputSDI();
+    obj["output_ndi"] = m_setupController->outputNDI();
+    obj["output_fps"] = m_setupController->outputFps();
+    obj["output_bitrate"] = m_setupController->outputBitrate();
+    obj["output_rtmp"] = m_setupController->outputRTMP();
+    obj["output_srt"] = m_setupController->outputSRT();
+    obj["rtmp_url"] = m_setupController->rtmpUrl();
+    obj["rtmp_key"] = m_setupController->rtmpKey();
+    obj["srt_url"] = m_setupController->srtUrl();
+
+    // Social media RTMP outputs (JSON array of {platform, url})
+    QString socialJson = m_setupController->socialOutputsJson();
+    if (!socialJson.isEmpty()) {
+        auto socialArr = QJsonDocument::fromJson(socialJson.toUtf8()).array();
+        obj["social_outputs"] = socialArr;
+    }
 
     // Visibility states — gated behind overlays_active
     // Channel branding (logo, name) is sent unconditionally above

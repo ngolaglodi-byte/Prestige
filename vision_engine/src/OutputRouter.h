@@ -111,4 +111,49 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
+// ── NDI Output (runtime SDK loading) ──────────────────────
+
+class NdiOutputStream : public IOutputStream {
+    Q_OBJECT
+public:
+    explicit NdiOutputStream(QObject* parent = nullptr);
+    ~NdiOutputStream() override;
+
+    bool open(const OutputConfig& config, int width, int height, int fps) override;
+    void close() override;
+    bool writePacket(const QByteArray& data, qint64 pts, qint64 dts, bool isKeyframe) override;
+    bool isOpen() const override;
+    OutputStats stats() const override;
+
+    static bool isAvailable(); // Check if NDI SDK is loadable
+
+    // Send raw BGRA frame (NDI doesn't use encoded packets)
+    void sendRawFrame(const QImage& bgraFrame, int fps);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
+};
+
+// ── DeckLink SDI Output (runtime SDK loading) ─────────────
+
+class DeckLinkOutputStream : public IOutputStream {
+    Q_OBJECT
+public:
+    explicit DeckLinkOutputStream(QObject* parent = nullptr);
+    ~DeckLinkOutputStream() override;
+
+    bool open(const OutputConfig& config, int width, int height, int fps) override;
+    void close() override;
+    bool writePacket(const QByteArray& data, qint64 pts, qint64 dts, bool isKeyframe) override;
+    bool isOpen() const override;
+    OutputStats stats() const override;
+
+    static bool isAvailable(); // Check if DeckLink SDK is loadable
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
+};
+
 } // namespace prestige

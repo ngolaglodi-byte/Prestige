@@ -27,8 +27,8 @@ jobs:
         modules: qtmultimedia qtshadertools
         cache: true
 
-    - name: Install ZeroMQ
-      run: vcpkg install zeromq:x64-windows
+    - name: Install dependencies (ZeroMQ + FFmpeg)
+      run: vcpkg install zeromq:x64-windows ffmpeg[core,avcodec,avformat,swscale]:x64-windows
 
     - name: Install ONNX Runtime
       shell: pwsh
@@ -78,6 +78,17 @@ jobs:
 
         # ONNX Runtime DLL
         Copy-Item "$env:ONNXRUNTIME_DIR\lib\onnxruntime.dll" dist\PrestigeAI\
+
+        # FFmpeg DLLs (for RTMP/SRT/File output)
+        $vcpkgBin = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin"
+        Get-ChildItem "$vcpkgBin\av*.dll","$vcpkgBin\sw*.dll","$vcpkgBin\postproc*.dll" -ErrorAction SilentlyContinue | ForEach-Object {
+            Copy-Item $_.FullName dist\PrestigeAI\
+        }
+
+        # ZeroMQ DLL
+        Get-ChildItem "$vcpkgBin\libzmq*.dll" -ErrorAction SilentlyContinue | ForEach-Object {
+            Copy-Item $_.FullName dist\PrestigeAI\
+        }
 
         # AI Models
         New-Item -ItemType Directory -Force -Path dist\PrestigeAI\models\buffalo_l | Out-Null

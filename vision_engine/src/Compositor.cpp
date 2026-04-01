@@ -280,24 +280,26 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Ticker (scrolling text at very bottom)
     if (m_tickerVisible && !m_tickerText.isEmpty()) {
         int tkH = static_cast<int>(36 * scale);
-        int tkY = fh - tkH;
+        int tkOffY = static_cast<int>(m_tickerOffY * scale);
+        int tkY = fh - tkH - tkOffY;
         QRectF tkRect(0, tkY, fw, tkH);
 
         painter.setPen(Qt::NoPen);
-        painter.setBrush(m_accentColor);
+        painter.setBrush(m_tickerBgColor);
         painter.drawRect(tkRect);
 
-        QFont tkF("Helvetica Neue", static_cast<int>(14 * scale), QFont::Bold);
+        QFont tkF("Helvetica Neue", static_cast<int>(m_tickerFontSize * scale), QFont::Bold);
         painter.setFont(tkF);
-        painter.setPen(Qt::white);
+        painter.setPen(m_tickerTextColor);
 
-        // Scrolling: offset advances each frame (RTL reverses direction)
+        // Scrolling: offset advances each frame (speed configurable)
+        int scrollPx = qMax(1, m_tickerSpeed);
         int textW = QFontMetrics(tkF).horizontalAdvance(m_tickerText);
         if (m_layoutRtl || m_tickerText.isRightToLeft()) {
-            m_tickerOffset += 2;
+            m_tickerOffset += scrollPx;
             if (m_tickerOffset > fw) m_tickerOffset = -textW;
         } else {
-            m_tickerOffset -= 2;
+            m_tickerOffset -= scrollPx;
             if (m_tickerOffset < -textW) m_tickerOffset = fw;
         }
         painter.drawText(m_tickerOffset, tkY + static_cast<int>(24 * scale), m_tickerText);
@@ -326,12 +328,15 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int subX = (fw - subW) / 2;
         int subY;
 
+        int subOffXPx = static_cast<int>(m_subtitleOffX * scale);
+        int subOffYPx = static_cast<int>(m_subtitleOffY * scale);
+        subX += subOffXPx;
         if (m_subtitlePosition == "top") {
-            subY = static_cast<int>(60 * scale);
+            subY = static_cast<int>(60 * scale) + subOffYPx;
         } else {
             // Bottom — above ticker if ticker is visible
             int tickerH = (m_tickerVisible && !m_tickerText.isEmpty()) ? static_cast<int>(36 * scale) : 0;
-            subY = fh - tickerH - subH - static_cast<int>(16 * scale);
+            subY = fh - tickerH - subH - static_cast<int>(16 * scale) + subOffYPx;
         }
 
         QRectF subRect(subX, subY, subW, subH);
@@ -418,8 +423,8 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
             painter.save();
             painter.setOpacity(logoOpacity);
-            int drawX = logoX + logoOffX;
-            int drawY = logoY + logoOffY;
+            int drawX = logoX + logoOffX + static_cast<int>(m_logoOffX * scale);
+            int drawY = logoY + logoOffY + static_cast<int>(m_logoOffY * scale);
 
             if (logoScale != 1.0) {
                 double cx = drawX + scaledLogo.width() / 2.0;
@@ -519,8 +524,8 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                     }
                 }
 
-                int drawNX = nameBaseX + nameOffX;
-                int drawNY = nameBaseY + nameOffY;
+                int drawNX = nameBaseX + nameOffX + static_cast<int>(m_nameOffX * scale);
+                int drawNY = nameBaseY + nameOffY + static_cast<int>(m_nameOffY * scale);
 
                 painter.save();
                 painter.setOpacity(nameOpacity);
@@ -692,8 +697,8 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             }
         }
 
-        int drawBX = boxX + titleOffX;
-        int drawBY = boxY + titleOffY;
+        int drawBX = boxX + titleOffX + static_cast<int>(m_showTitleOffX * scale);
+        int drawBY = boxY + titleOffY + static_cast<int>(m_showTitleOffY * scale);
 
         painter.save();
         painter.setOpacity(titleOpacity);
@@ -792,55 +797,66 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         painter.restore();
     }
 
-    // Clock (top-right or top-left)
+    // Clock (top-right) — broadcast: text + drop shadow, no box
     if (m_clockVisible) {
-        QString timeStr = QTime::currentTime().toString("HH:mm:ss");
-        QFont clockF("Menlo", static_cast<int>(16 * scale), QFont::Bold);
+        double ckS = m_clockScale;
+        QString timeStr = QTime::currentTime().toString(m_clockFormat);
+        QFont clockF("Menlo", static_cast<int>(16 * scale * ckS), QFont::Bold);
         painter.setFont(clockF);
 
-        int clockW = QFontMetrics(clockF).horizontalAdvance(timeStr) + static_cast<int>(16 * scale);
-        int clockH = static_cast<int>(28 * scale);
-        int clockX = fw - clockW - static_cast<int>(16 * scale);
-        int clockY = m_logoVisible ? static_cast<int>(72 * scale) : static_cast<int>(16 * scale);
+        int clockW = QFontMetrics(clockF).horizontalAdvance(timeStr);
+        int clockX = fw - clockW - static_cast<int>(24 * scale) + static_cast<int>(m_clockOffX * scale);
+        int clockY = (m_logoVisible ? static_cast<int>(72 * scale) : static_cast<int>(16 * scale)) + static_cast<int>(m_clockOffY * scale);
+        int textY = clockY + QFontMetrics(clockF).ascent();
 
-        QRectF clockRect(clockX, clockY, clockW, clockH);
-        drawGlassRect(painter, clockRect, static_cast<int>(4 * scale), QColor(0, 0, 0), 0.6);
+        // Drop shadow
+        painter.setPen(QColor(0, 0, 0, 180));
+        painter.drawText(clockX + 1, textY + 1, timeStr);
+        // Main text
         painter.setPen(Qt::white);
-        painter.drawText(clockRect, Qt::AlignCenter, timeStr);
+        painter.drawText(clockX, textY, timeStr);
     }
 
-    // Countdown pill (top-left, below logo area)
+    // Countdown pill (top-left) — broadcast: subtle glass pill
     if (m_countdownVisible && !m_countdownText.isEmpty()) {
-        QFont cdFont("Menlo", static_cast<int>(18 * scale), QFont::Bold);
+        double cdS = m_countdownScale;
+        QFont cdFont("Menlo", static_cast<int>(15 * scale * cdS), QFont::Bold);
         painter.setFont(cdFont);
-        int cdW = QFontMetrics(cdFont).horizontalAdvance(m_countdownText) + static_cast<int>(32 * scale);
-        int cdH = static_cast<int>(36 * scale);
-        int cdX = static_cast<int>(16 * scale);
-        int cdY = static_cast<int>(72 * scale);  // Below typical logo area
+        int cdW = QFontMetrics(cdFont).horizontalAdvance(m_countdownText) + static_cast<int>(24 * scale * cdS);
+        int cdH = static_cast<int>(30 * scale * cdS);
+        int cdX = static_cast<int>(16 * scale) + static_cast<int>(m_countdownOffX * scale);
+        int cdY = static_cast<int>(72 * scale) + static_cast<int>(m_countdownOffY * scale);
         QRectF cdRect(cdX, cdY, cdW, cdH);
-        drawGlassRect(painter, cdRect, cdH / 2.0, QColor(200, 0, 0), 0.85);
+        drawGlassRect(painter, cdRect, cdH / 2.0, QColor(200, 0, 0), 0.55);
+        // Subtle border
+        painter.setPen(QPen(QColor(255, 80, 80, 65), 1));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRoundedRect(cdRect, cdH / 2.0, cdH / 2.0);
         painter.setPen(Qt::white);
         painter.drawText(cdRect, Qt::AlignCenter, m_countdownText);
     }
 
     // QR Code overlay (styled box with URL)
     if (m_qrVisible && !m_qrUrl.isEmpty()) {
-        int qrBoxSize = static_cast<int>(120 * scale);
+        double qrS = m_qrCodeScale;
+        int qrBoxSize = static_cast<int>(120 * scale * qrS);
         int qrPad = static_cast<int>(16 * scale);
+        int qrOffXPx = static_cast<int>(m_qrOffX * scale);
+        int qrOffYPx = static_cast<int>(m_qrOffY * scale);
         int qrX, qrY;
 
         if (m_qrPosition == "top_left") {
-            qrX = qrPad; qrY = qrPad;
+            qrX = qrPad + qrOffXPx; qrY = qrPad + qrOffYPx;
         } else if (m_qrPosition == "top_right") {
-            qrX = fw - qrBoxSize - qrPad;
-            qrY = m_logoVisible ? static_cast<int>(72 * scale) : qrPad;
+            qrX = fw - qrBoxSize - qrPad + qrOffXPx;
+            qrY = (m_logoVisible ? static_cast<int>(72 * scale) : qrPad) + qrOffYPx;
         } else if (m_qrPosition == "bottom_left") {
             int tickerH = (m_tickerVisible && !m_tickerText.isEmpty()) ? static_cast<int>(36 * scale) : 0;
-            qrX = qrPad; qrY = fh - qrBoxSize - qrPad - tickerH;
+            qrX = qrPad + qrOffXPx; qrY = fh - qrBoxSize - qrPad - tickerH + qrOffYPx;
         } else { // bottom_right (default)
             int tickerH = (m_tickerVisible && !m_tickerText.isEmpty()) ? static_cast<int>(36 * scale) : 0;
-            qrX = fw - qrBoxSize - qrPad;
-            qrY = fh - qrBoxSize - qrPad - tickerH;
+            qrX = fw - qrBoxSize - qrPad + qrOffXPx;
+            qrY = fh - qrBoxSize - qrPad - tickerH + qrOffYPx;
         }
 
         QRectF qrRect(qrX, qrY, qrBoxSize, qrBoxSize);
@@ -919,6 +935,140 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         }
     }
 
+    // Scoreboard overlay — glass morphism (FIFA/UEFA broadcast style)
+    if (m_scoreboardVisible && !m_bypassActive) {
+        double sbS = m_scoreboardScale;
+        int sbW = static_cast<int>(320 * scale * sbS);
+        int sbH = static_cast<int>(70 * scale * sbS);
+        int sbPad = static_cast<int>(16 * scale);
+        int sbOffXPx = static_cast<int>(m_scoreboardOffX * scale);
+        int sbOffYPx = static_cast<int>(m_scoreboardOffY * scale);
+        int sbMarginY = static_cast<int>(60 * scale);
+        int sbX, sbY;
+
+        if (m_sbPosition == "top_left" || m_sbPosition == "bottom_left")
+            sbX = sbPad + sbOffXPx;
+        else
+            sbX = fw - sbW - sbPad + sbOffXPx;
+        if (m_sbPosition == "top_left" || m_sbPosition == "top_right")
+            sbY = sbMarginY + sbOffYPx;
+        else
+            sbY = fh - sbH - sbMarginY + sbOffYPx;
+
+        QRectF sbRect(sbX, sbY, sbW, sbH);
+        // Subtle glass background
+        drawGlassRect(painter, sbRect, static_cast<int>(6 * scale), QColor(0, 0, 0), 0.35);
+        // Top accent line
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(255, 255, 255, 30));
+        painter.drawRect(QRectF(sbX, sbY, sbW, 1));
+        // Subtle border
+        painter.setPen(QPen(QColor(255, 255, 255, 20), 1));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRoundedRect(sbRect, 6 * scale, 6 * scale);
+
+        int fntTeam = static_cast<int>(9 * scale * sbS);
+        int fntScore = static_cast<int>(24 * scale * sbS);
+        int fntTime = static_cast<int>(8 * scale * sbS);
+        int midY = sbY + sbH / 2;
+
+        QFont teamFont("Helvetica Neue", fntTeam, QFont::DemiBold);
+        QFont scoreFont("Helvetica Neue", fntScore, QFont::Bold);
+        QFont timeFont("Menlo", fntTime, QFont::Bold);
+
+        // Team A color accent bar
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(m_sbColorA);
+        painter.drawRect(QRectF(sbX + sbW * 0.12, sbY + sbH * 0.08, sbW * 0.18, 2 * scale));
+
+        // Team A name
+        painter.setFont(teamFont);
+        painter.setPen(QColor(255, 255, 255, 180));
+        painter.drawText(QRectF(sbX, sbY + sbH * 0.12, sbW / 2, sbH * 0.25), Qt::AlignHCenter, m_sbTeamA);
+        // Team A score
+        painter.setFont(scoreFont);
+        painter.setPen(Qt::white);
+        painter.drawText(QRectF(sbX, midY - fntScore * 0.4, sbW / 2, fntScore * 1.0), Qt::AlignHCenter, QString::number(m_sbScoreA));
+
+        // Center separator line
+        painter.setPen(QPen(QColor(255, 255, 255, 30), 1));
+        painter.drawLine(QPointF(sbX + sbW / 2.0, sbY + sbH * 0.15), QPointF(sbX + sbW / 2.0, sbY + sbH * 0.85));
+
+        // Team B color accent bar
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(m_sbColorB);
+        painter.drawRect(QRectF(sbX + sbW * 0.62, sbY + sbH * 0.08, sbW * 0.18, 2 * scale));
+
+        // Team B name
+        painter.setFont(teamFont);
+        painter.setPen(QColor(255, 255, 255, 180));
+        painter.drawText(QRectF(sbX + sbW / 2, sbY + sbH * 0.12, sbW / 2, sbH * 0.25), Qt::AlignHCenter, m_sbTeamB);
+        // Team B score
+        painter.setFont(scoreFont);
+        painter.setPen(Qt::white);
+        painter.drawText(QRectF(sbX + sbW / 2, midY - fntScore * 0.4, sbW / 2, fntScore * 1.0), Qt::AlignHCenter, QString::number(m_sbScoreB));
+
+        // Match time + period — subtle
+        painter.setFont(timeFont);
+        painter.setPen(QColor(0, 229, 255, 200));
+        QString timeLabel = m_sbMatchTime + "  P" + QString::number(m_sbPeriod);
+        painter.drawText(QRectF(sbX, sbY + sbH * 0.80, sbW, sbH * 0.18), Qt::AlignHCenter, timeLabel);
+    }
+
+    // Weather overlay — broadcast: text + drop shadow, no box
+    if (m_weatherVisible && !m_weatherCity.isEmpty() && !m_bypassActive) {
+        double wS = m_weatherScale;
+        int wOffXPx = static_cast<int>(m_weatherOffX * scale);
+        int wOffYPx = static_cast<int>(m_weatherOffY * scale);
+        int wMarginY = static_cast<int>(80 * scale);
+        int wPad = static_cast<int>(24 * scale);
+
+        // Icon
+        int iconSize = static_cast<int>(24 * scale * wS);
+        QFont iconFont("Helvetica Neue", iconSize);
+
+        // City
+        QFont cityFont("Helvetica Neue", static_cast<int>(13 * scale * wS), QFont::Bold);
+        QFontMetrics cityFm(cityFont);
+
+        // Temperature
+        QFont tempFont("Helvetica Neue", static_cast<int>(11 * scale * wS));
+        QFontMetrics tempFm(tempFont);
+        QString tempStr = QString::number(qRound(m_weatherTemp)) + m_weatherUnit;
+
+        int textBlockW = qMax(cityFm.horizontalAdvance(m_weatherCity), tempFm.horizontalAdvance(tempStr));
+        int iconW = static_cast<int>(30 * scale * wS);
+        int gap = static_cast<int>(6 * scale);
+        int totalW = iconW + gap + textBlockW;
+
+        int wX = fw - totalW - wPad + wOffXPx;
+        int wY = fh - wMarginY + wOffYPx;
+
+        // Drop shadow for icon
+        painter.setFont(iconFont);
+        painter.setPen(QColor(0, 0, 0, 150));
+        painter.drawText(wX + 1, wY + iconSize + 1, m_weatherIcon);
+        painter.setPen(QColor(255, 215, 0));
+        painter.drawText(wX, wY + iconSize, m_weatherIcon);
+
+        int textX = wX + iconW + gap;
+
+        // City — shadow then white
+        painter.setFont(cityFont);
+        painter.setPen(QColor(0, 0, 0, 170));
+        painter.drawText(textX + 1, wY + cityFm.ascent() + 1, m_weatherCity);
+        painter.setPen(Qt::white);
+        painter.drawText(textX, wY + cityFm.ascent(), m_weatherCity);
+
+        // Temperature — shadow then light gray
+        int tempY = wY + cityFm.height() + static_cast<int>(2 * scale);
+        painter.setFont(tempFont);
+        painter.setPen(QColor(0, 0, 0, 170));
+        painter.drawText(textX + 1, tempY + tempFm.ascent() + 1, tempStr);
+        painter.setPen(QColor(255, 255, 255, 200));
+        painter.drawText(textX, tempY + tempFm.ascent(), tempStr);
+    }
+
     painter.end();
     m_lastCompositeMs = m_perfTimer.nsecsElapsed() / 1000000.0;
     emit frameComposited(output);
@@ -985,6 +1135,9 @@ void Compositor::drawPill(QPainter& p, const QRectF& rect, const QColor& bg, con
 
 QRectF Compositor::calcPlate(const TalentOverlay& t, const QSize& fs, double w, double h)
 {
+    // Apply nameplate scale factor
+    w *= m_nameplateScale;
+    h *= m_nameplateScale;
     double x = t.bbox.x();
     double y = t.bbox.y() + t.bbox.height() + 12;
     x = qBound(8.0, x, fs.width()-w-8.0);

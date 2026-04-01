@@ -122,6 +122,53 @@ public:
     void setTalentNameplateVisible(bool visible);
     void setBypassActive(bool active);
 
+    // ── Overlay scale factors ─────────────────────────────
+    void setNameplateScale(double s) { m_nameplateScale = s; }
+    void setScoreboardScale(double s) { m_scoreboardScale = s; }
+    void setWeatherScale(double s) { m_weatherScale = s; }
+    void setClockScale(double s) { m_clockScale = s; }
+    void setCountdownScale(double s) { m_countdownScale = s; }
+    void setQrCodeScale(double s) { m_qrCodeScale = s; }
+
+    // ── Overlay offsets (from drag handles) ──────────────
+    void setShowTitleOffset(int x, int y) { m_showTitleOffX = x; m_showTitleOffY = y; }
+    void setTickerOffsetY(int y) { m_tickerOffY = y; }
+    void setSubtitleOffset(int x, int y) { m_subtitleOffX = x; m_subtitleOffY = y; }
+    void setCountdownOffset(int x, int y) { m_countdownOffX = x; m_countdownOffY = y; }
+    void setClockOffset(int x, int y) { m_clockOffX = x; m_clockOffY = y; }
+    void setQrCodeOffset(int x, int y) { m_qrOffX = x; m_qrOffY = y; }
+    void setScoreboardOffset(int x, int y) { m_scoreboardOffX = x; m_scoreboardOffY = y; }
+    void setWeatherOffset(int x, int y) { m_weatherOffX = x; m_weatherOffY = y; }
+    void setLogoOffset(int x, int y) { m_logoOffX = x; m_logoOffY = y; }
+    void setNameOffset(int x, int y) { m_nameOffX = x; m_nameOffY = y; }
+
+    // ── Ticker appearance ─────────────────────────────────
+    void setTickerFontSize(int s) { m_tickerFontSize = s; }
+    void setTickerBgColor(const QColor& c) { m_tickerBgColor = c; }
+    void setTickerTextColor(const QColor& c) { m_tickerTextColor = c; }
+    void setTickerSpeed(int s) { m_tickerSpeed = s; }
+
+    // ── Clock config ─────────────────────────────────────
+    void setClockFormat(const QString& f) { m_clockFormat = f; }
+
+    // ── Scoreboard overlay ────────────────────────────────
+    void setScoreboardVisible(bool v) { m_scoreboardVisible = v; }
+    void setScoreboardData(const QString& teamA, const QString& teamB,
+                           int scoreA, int scoreB,
+                           const QColor& colorA, const QColor& colorB,
+                           const QString& position, const QString& matchTime, int period) {
+        m_sbTeamA = teamA; m_sbTeamB = teamB;
+        m_sbScoreA = scoreA; m_sbScoreB = scoreB;
+        m_sbColorA = colorA; m_sbColorB = colorB;
+        m_sbPosition = position; m_sbMatchTime = matchTime; m_sbPeriod = period;
+    }
+
+    // ── Weather overlay ──────────────────────────────────
+    void setWeatherVisible(bool v) { m_weatherVisible = v; }
+    void setWeatherData(const QString& city, double temp, const QString& unit, const QString& icon) {
+        m_weatherCity = city; m_weatherTemp = temp; m_weatherUnit = unit; m_weatherIcon = icon;
+    }
+
     // ── RTL support ───────────────────────────────────────
     void setLayoutRtl(bool rtl);
 
@@ -270,6 +317,51 @@ private:
     double  m_showTitleEntryProgress = 0.0;
     bool    m_talentNameplateVisible = true;
     bool    m_bypassActive = false;
+
+    // Overlay scale factors
+    double m_nameplateScale = 1.0;
+    double m_scoreboardScale = 1.0;
+    double m_weatherScale = 1.0;
+    double m_clockScale = 1.0;
+    double m_countdownScale = 1.0;
+    double m_qrCodeScale = 1.0;
+
+    // Overlay offsets (pixels at 1920x1080 reference)
+    int m_showTitleOffX = 0, m_showTitleOffY = 0;
+    int m_tickerOffY = 0;
+    int m_subtitleOffX = 0, m_subtitleOffY = 0;
+    int m_countdownOffX = 0, m_countdownOffY = 0;
+    int m_clockOffX = 0, m_clockOffY = 0;
+    int m_qrOffX = 0, m_qrOffY = 0;
+    int m_scoreboardOffX = 0, m_scoreboardOffY = 0;
+    int m_weatherOffX = 0, m_weatherOffY = 0;
+    int m_logoOffX = 0, m_logoOffY = 0;
+    int m_nameOffX = 0, m_nameOffY = 0;
+
+    // Ticker appearance
+    int    m_tickerFontSize = 14;
+    QColor m_tickerBgColor = QColor("#CC0000");
+    QColor m_tickerTextColor = Qt::white;
+    int    m_tickerSpeed = 2;
+
+    // Clock format
+    QString m_clockFormat = "HH:mm:ss";
+
+    // Scoreboard
+    bool    m_scoreboardVisible = false;
+    QString m_sbTeamA = "HOME", m_sbTeamB = "AWAY";
+    int     m_sbScoreA = 0, m_sbScoreB = 0;
+    QColor  m_sbColorA = QColor("#CC0000"), m_sbColorB = QColor("#0066CC");
+    QString m_sbPosition = "top_left";
+    QString m_sbMatchTime = "00:00";
+    int     m_sbPeriod = 1;
+
+    // Weather
+    bool    m_weatherVisible = false;
+    QString m_weatherCity;
+    double  m_weatherTemp = 0;
+    QString m_weatherUnit = "\u00B0C";
+    QString m_weatherIcon;
 };
 
 } // namespace prestige

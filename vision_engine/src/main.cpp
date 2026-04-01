@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
     QObject* configWorker = new QObject;
     configWorker->moveToThread(&configThread);
 
-    QObject::connect(&configThread, &QThread::started, configWorker, [&compositor, &outputRouter, &configRunning, configWorker]() {
+    QObject::connect(&configThread, &QThread::started, configWorker, [&compositor, &outputRouter, &capture, &configRunning, configWorker]() {
         void* ctx = zmq_ctx_new();
         void* sock = zmq_socket(ctx, ZMQ_SUB);
         zmq_setsockopt(sock, ZMQ_SUBSCRIBE, "", 0);
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
         zmq_setsockopt(sock, ZMQ_RCVTIMEO, &timeout, sizeof(timeout));
         zmq_connect(sock, "tcp://127.0.0.1:5559");
 
-        char buf[4096];
+        char buf[8192];
         while (configRunning) {
             int n = zmq_recv(sock, buf, sizeof(buf) - 1, 0);
             if (n <= 0) continue;
@@ -199,6 +199,23 @@ int main(int argc, char* argv[])
                     compositor.setAnimationType(animType);
                     compositor.setAnimEnterFrames(enterFrames);
                     compositor.setAnimExitFrames(exitFrames);
+                }, Qt::QueuedConnection);
+            }
+
+            // Accent color + background opacity
+            QString accentColor = obj["accent_color"].toString("#E30613");
+            double bgOpacity = obj["bg_opacity"].toDouble(0.82);
+            QMetaObject::invokeMethod(&compositor, [&compositor, accentColor, bgOpacity]() {
+                compositor.setAccentColor(QColor(accentColor));
+                compositor.setBgOpacity(bgOpacity);
+            }, Qt::QueuedConnection);
+
+            // Input source — open/switch video source dynamically
+            QString inputType = obj["input_type"].toString();
+            QString inputSource = obj["input_source"].toString();
+            if (!inputType.isEmpty()) {
+                QMetaObject::invokeMethod(&capture, [&capture, inputType, inputSource]() {
+                    capture.openSource(inputType, inputSource);
                 }, Qt::QueuedConnection);
             }
 
@@ -228,12 +245,66 @@ int main(int argc, char* argv[])
             // Recording config
             bool recActive = obj["recording_active"].toBool(false);
             QString recPath = obj["recording_path"].toString();
-            QMetaObject::invokeMethod(&outputRouter, [&outputRouter, recActive, recPath]() {
-                if (recActive && !recPath.isEmpty()) {
-                    // OutputType::File = 6
-                    outputRouter.addOutput(6, recPath, 8, 25);
-                } else {
+
+            // Output destinations
+            bool outRtmp = obj["output_rtmp"].toBool(false);
+            QString rtmpUrl = obj["rtmp_url"].toString();
+            QString rtmpKey = obj["rtmp_key"].toString();
+            bool outSrt = obj["output_srt"].toBool(false);
+            QString srtUrl = obj["srt_url"].toString();
+            bool outNdi = obj["output_ndi"].toBool(false);
+            bool outSdi = obj["output_sdi"].toBool(false);
+            int outFps = obj["output_fps"].toInt(25);
+            int outBitrate = obj["output_bitrate"].toInt(8);
+
+            // Social media RTMP outputs
+            QStringList socialUrls;
+            auto socialArr = obj["social_outputs"].toArray();
+            for (const auto& v : socialArr) {
+                QString url = v.toObject()["url"].toString();
+                if (!url.isEmpty())
+                    socialUrls.append(url);
+            }
+
+            QMetaObject::invokeMethod(&outputRouter, [&outputRouter, recActive, recPath,
+                                       outRtmp, rtmpUrl, rtmpKey, outSrt, srtUrl,
+                                       outNdi, outSdi, outFps, outBitrate, socialUrls]() {
+                // File recording (OutputType::File = 6)
+                if (recActive && !recPath.isEmpty())
+                    outputRouter.addOutput(6, recPath, outBitrate, outFps);
+                else
                     outputRouter.removeOutput(6);
+
+                // Primary RTMP output (OutputType::RTMP = 3)
+                if (outRtmp && !rtmpUrl.isEmpty() && !rtmpKey.isEmpty())
+                    outputRouter.addOutput(3, rtmpUrl + rtmpKey, outBitrate, outFps);
+                else
+                    outputRouter.removeOutput(3);
+
+                // SRT output (OutputType::SRT = 4)
+                if (outSrt && !srtUrl.isEmpty())
+                    outputRouter.addOutput(4, srtUrl, outBitrate, outFps);
+                else
+                    outputRouter.removeOutput(4);
+
+                // NDI output (OutputType::NDI = 2)
+                if (outNdi)
+                    outputRouter.addOutput(2, "Prestige AI", 0, outFps);
+                else
+                    outputRouter.removeOutput(2);
+
+                // SDI output (OutputType::SDI = 0)
+                if (outSdi)
+                    outputRouter.addOutput(0, "DeckLink", 0, outFps);
+                else
+                    outputRouter.removeOutput(0);
+
+                // Social media RTMP outputs (100-106)
+                for (int i = 100; i <= 106; ++i)
+                    outputRouter.removeOutput(i);
+                int socialBitrate = qMax(4, outBitrate - 2); // slightly lower for social
+                for (int i = 0; i < socialUrls.size() && i < 7; ++i) {
+                    outputRouter.addOutput(100 + i, socialUrls[i], socialBitrate, outFps);
                 }
             }, Qt::QueuedConnection);
 
@@ -281,6 +352,130 @@ int main(int argc, char* argv[])
             QString channelName = obj["channel_name"].toString();
             QMetaObject::invokeMethod(&compositor, [&compositor, channelName]() {
                 compositor.setChannelName(channelName);
+            }, Qt::QueuedConnection);
+
+            // Channel logo — load image from path and set on compositor
+            QString logoPath = obj["channel_logo_path"].toString();
+            static QString lastLogoPath; // track to avoid reloading same image
+            if (!logoPath.isEmpty() && logoPath != lastLogoPath) {
+                lastLogoPath = logoPath;
+                QMetaObject::invokeMethod(&compositor, [&compositor, logoPath]() {
+                    QImage logoImg(logoPath);
+                    if (!logoImg.isNull()) {
+                        compositor.setLogoFrames({logoImg});
+                        compositor.setLogoVisible(true);
+                        qInfo() << "[VisionEngine] Channel logo loaded:" << logoPath;
+                    } else {
+                        compositor.setLogoVisible(false);
+                        qWarning() << "[VisionEngine] Failed to load logo:" << logoPath;
+                    }
+                }, Qt::QueuedConnection);
+            } else if (logoPath.isEmpty()) {
+                QMetaObject::invokeMethod(&compositor, [&compositor]() {
+                    compositor.setLogoVisible(false);
+                }, Qt::QueuedConnection);
+            }
+
+            // Overlay scale factors
+            double npScale = obj["nameplate_scale"].toDouble(1.0);
+            double sbScale = obj["scoreboard_scale"].toDouble(1.0);
+            double wScale = obj["weather_scale"].toDouble(1.0);
+            double ckScale = obj["clock_scale"].toDouble(1.0);
+            double cdScale = obj["countdown_scale"].toDouble(1.0);
+            double qrScale = obj["qr_code_scale"].toDouble(1.0);
+
+            // Ticker appearance
+            int tkFontSize = obj["ticker_font_size"].toInt(14);
+            QString tkBgColor = obj["ticker_bg_color"].toString("#CC0000");
+            QString tkTextColor = obj["ticker_text_color"].toString("#FFFFFF");
+            int tkSpeed = obj["ticker_speed"].toInt(2);
+
+            // Clock config
+            bool clockVis = obj["clock_visible"].toBool(false);
+            QString clockFmt = obj["clock_format"].toString("HH:mm:ss");
+
+            // Overlay offsets
+            int stOffX = obj["show_title_offset_x"].toInt(0);
+            int stOffY = obj["show_title_offset_y"].toInt(0);
+            int tkOffY = obj["ticker_offset_y"].toInt(0);
+            int subOffX = obj["subtitle_offset_x"].toInt(0);
+            int subOffY = obj["subtitle_offset_y"].toInt(0);
+            int cdOffX = obj["countdown_offset_x"].toInt(0);
+            int cdOffY = obj["countdown_offset_y"].toInt(0);
+            int ckOffX = obj["clock_offset_x"].toInt(0);
+            int ckOffY = obj["clock_offset_y"].toInt(0);
+            int qrOffX = obj["qr_offset_x"].toInt(0);
+            int qrOffY = obj["qr_offset_y"].toInt(0);
+            int sbOffX = obj["scoreboard_offset_x"].toInt(0);
+            int sbOffY = obj["scoreboard_offset_y"].toInt(0);
+            int wOffX = obj["weather_offset_x"].toInt(0);
+            int wOffY = obj["weather_offset_y"].toInt(0);
+            int logoOffX = obj["channel_logo_offset_x"].toInt(0);
+            int logoOffY = obj["channel_logo_offset_y"].toInt(0);
+            int nameOffX = obj["channel_name_offset_x"].toInt(0);
+            int nameOffY = obj["channel_name_offset_y"].toInt(0);
+
+            // Scoreboard data
+            bool scoreVis = obj["scoreboard_visible"].toBool(false);
+            QString sbTeamA = obj["scoreboard_team_a"].toString("HOME");
+            QString sbTeamB = obj["scoreboard_team_b"].toString("AWAY");
+            int sbScoreA = obj["scoreboard_score_a"].toInt(0);
+            int sbScoreB = obj["scoreboard_score_b"].toInt(0);
+            QString sbColA = obj["scoreboard_color_a"].toString("#CC0000");
+            QString sbColB = obj["scoreboard_color_b"].toString("#0066CC");
+            QString sbPos = obj["scoreboard_position"].toString("top_left");
+            QString sbTime = obj["scoreboard_match_time"].toString("00:00");
+            int sbPeriod = obj["scoreboard_period"].toInt(1);
+
+            // Weather data
+            bool weatherVis = obj["weather_visible"].toBool(false);
+            QString wCity = obj["weather_city"].toString();
+            double wTemp = obj["weather_temperature"].toDouble(0);
+            QString wUnit = obj["weather_unit"].toString("\u00B0C");
+            QString wIcon = obj["weather_condition_icon"].toString();
+
+            QMetaObject::invokeMethod(&compositor, [&compositor,
+                npScale, sbScale, wScale, ckScale, cdScale, qrScale,
+                tkFontSize, tkBgColor, tkTextColor, tkSpeed,
+                clockVis, clockFmt,
+                stOffX, stOffY, tkOffY, subOffX, subOffY,
+                cdOffX, cdOffY, ckOffX, ckOffY, qrOffX, qrOffY,
+                sbOffX, sbOffY, wOffX, wOffY, logoOffX, logoOffY, nameOffX, nameOffY,
+                scoreVis, sbTeamA, sbTeamB, sbScoreA, sbScoreB, sbColA, sbColB, sbPos, sbTime, sbPeriod,
+                weatherVis, wCity, wTemp, wUnit, wIcon]() {
+                // Scales
+                compositor.setNameplateScale(npScale);
+                compositor.setScoreboardScale(sbScale);
+                compositor.setWeatherScale(wScale);
+                compositor.setClockScale(ckScale);
+                compositor.setCountdownScale(cdScale);
+                compositor.setQrCodeScale(qrScale);
+                // Ticker
+                compositor.setTickerFontSize(tkFontSize);
+                compositor.setTickerBgColor(QColor(tkBgColor));
+                compositor.setTickerTextColor(QColor(tkTextColor));
+                compositor.setTickerSpeed(tkSpeed);
+                // Clock
+                compositor.setClockVisible(clockVis);
+                compositor.setClockFormat(clockFmt);
+                // Offsets
+                compositor.setShowTitleOffset(stOffX, stOffY);
+                compositor.setTickerOffsetY(tkOffY);
+                compositor.setSubtitleOffset(subOffX, subOffY);
+                compositor.setCountdownOffset(cdOffX, cdOffY);
+                compositor.setClockOffset(ckOffX, ckOffY);
+                compositor.setQrCodeOffset(qrOffX, qrOffY);
+                compositor.setScoreboardOffset(sbOffX, sbOffY);
+                compositor.setWeatherOffset(wOffX, wOffY);
+                compositor.setLogoOffset(logoOffX, logoOffY);
+                compositor.setNameOffset(nameOffX, nameOffY);
+                // Scoreboard
+                compositor.setScoreboardVisible(scoreVis);
+                compositor.setScoreboardData(sbTeamA, sbTeamB, sbScoreA, sbScoreB,
+                                             QColor(sbColA), QColor(sbColB), sbPos, sbTime, sbPeriod);
+                // Weather
+                compositor.setWeatherVisible(weatherVis);
+                compositor.setWeatherData(wCity, wTemp, wUnit, wIcon);
             }, Qt::QueuedConnection);
 
             // RTL layout

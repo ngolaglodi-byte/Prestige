@@ -143,8 +143,10 @@ Item {
                                 setupController.inputSource = modelData.name
                             } else if (modelData.type === "aja") {
                                 setupController.inputType = "aja"
+                                setupController.inputSource = modelData.name
                             } else if (modelData.type === "magewell") {
                                 setupController.inputType = "magewell"
+                                setupController.inputSource = modelData.name
                             } else {
                                 setupController.inputType = "webcam"
                                 setupController.inputSource = modelData.name

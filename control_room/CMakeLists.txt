@@ -45,7 +45,8 @@ set(CONTROL_HEADERS
     src/GraphicsQueue.h
 )
 
-qt_add_executable(prestige_control ${CONTROL_SOURCES} ${CONTROL_HEADERS}
+qt_add_executable(prestige_control WIN32 MACOSX_BUNDLE
+    ${CONTROL_SOURCES} ${CONTROL_HEADERS}
     resources/icons.qrc
 )
 

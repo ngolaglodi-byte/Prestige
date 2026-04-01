@@ -54,6 +54,10 @@ class SetupController : public QObject {
     Q_PROPERTY(bool outputSRT READ outputSRT WRITE setOutputSRT NOTIFY outputsChanged)
     Q_PROPERTY(QString rtmpUrl READ rtmpUrl WRITE setRtmpUrl NOTIFY outputsChanged)
     Q_PROPERTY(QString rtmpKey READ rtmpKey WRITE setRtmpKey NOTIFY outputsChanged)
+    Q_PROPERTY(QString srtUrl READ srtUrl WRITE setSrtUrl NOTIFY outputsChanged)
+    Q_PROPERTY(QString socialOutputsJson READ socialOutputsJson WRITE setSocialOutputsJson NOTIFY outputsChanged)
+    Q_PROPERTY(int outputFps READ outputFps WRITE setOutputFps NOTIFY outputsChanged)
+    Q_PROPERTY(int outputBitrate READ outputBitrate WRITE setOutputBitrate NOTIFY outputsChanged)
 
     // Channel branding
     Q_PROPERTY(QString channelLogoPath READ channelLogoPath WRITE setChannelLogoPath NOTIFY brandingChanged)
@@ -239,6 +243,14 @@ public:
     void setRtmpUrl(const QString& url);
     QString rtmpKey() const { return m_profile.rtmpKey; }
     void setRtmpKey(const QString& key);
+    QString srtUrl() const { return m_srtUrl; }
+    void setSrtUrl(const QString& url) { if (m_srtUrl != url) { m_srtUrl = url; emit outputsChanged(); } }
+    QString socialOutputsJson() const { return m_socialOutputsJson; }
+    void setSocialOutputsJson(const QString& json) { if (m_socialOutputsJson != json) { m_socialOutputsJson = json; emit outputsChanged(); } }
+    int outputFps() const { return m_outputFps; }
+    void setOutputFps(int v) { if (m_outputFps != v) { m_outputFps = qBound(24, v, 60); emit outputsChanged(); } }
+    int outputBitrate() const { return m_outputBitrate; }
+    void setOutputBitrate(int v) { if (m_outputBitrate != v) { m_outputBitrate = qBound(2, v, 50); emit outputsChanged(); } }
 
     // Channel branding
     QString channelLogoPath() const { return m_channelLogoPath; }
@@ -579,6 +591,12 @@ private:
     int     m_scoreboardYellowB = 0;
     int     m_scoreboardRedA = 0;
     int     m_scoreboardRedB = 0;
+
+    // Output extras
+    QString m_srtUrl;
+    QString m_socialOutputsJson;
+    int     m_outputFps = 25;       // 24, 25, 30, 50, 60
+    int     m_outputBitrate = 8;    // Mbps (2-50)
 };
 
 } // namespace prestige

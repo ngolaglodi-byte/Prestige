@@ -23,7 +23,7 @@ set(VISION_HEADERS
     src/PreviewSender.h
 )
 
-qt_add_executable(prestige_vision ${VISION_SOURCES} ${VISION_HEADERS})
+qt_add_executable(prestige_vision WIN32 ${VISION_SOURCES} ${VISION_HEADERS})
 
 # ── QML module ──────────────────────────────────────────────
 qt_add_qml_module(prestige_vision
