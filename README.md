@@ -15,7 +15,7 @@ Prestige AI is an enterprise-grade broadcast overlay system that sits between a 
 
 ## Key Features
 
-- **AI Face Recognition** — Real-time talent detection and identification using InsightFace (100% offline)
+- **AI Face Recognition** — Real-time talent detection (RetinaFace/SCRFD) and identification (ArcFace) via ONNX Runtime C++ (100% offline)
 - **20 Broadcast Styles** — Professional overlay designs (BFM, CNN, BBC, France 2, Al Jazeera, etc.)
 - **8 Animation Types** — Slide, fade, scale, wipe, iris, glitch and more
 - **Multi-Output** — RTMP, SRT, NDI, SDI/HDMI simultaneous output to 7+ destinations
