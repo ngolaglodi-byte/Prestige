@@ -34,6 +34,8 @@
 #include <QDir>
 #include <QFileInfo>
 
+
+
 namespace prestige {
 
 MainWindow::MainWindow(QObject* parent)
@@ -171,13 +173,8 @@ void MainWindow::startSubProcesses()
     if (QFileInfo(mainPy).exists()) {
         m_aiProcess = new QProcess(this);
         m_aiProcess->setWorkingDirectory(aiDir);
-        m_aiProcess->setProcessChannelMode(QProcess::ForwardedChannels);
-
-#ifdef Q_OS_WIN
-        m_aiProcess->setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
-            args->flags |= CREATE_NO_WINDOW;
-        });
-#endif
+        m_aiProcess->setProcessChannelMode(QProcess::MergedChannels);
+        m_aiProcess->setStandardOutputFile(QProcess::nullDevice());
 
         m_aiProcess->start(python, {mainPy});
         if (m_aiProcess->waitForStarted(5000)) {
@@ -202,13 +199,8 @@ void MainWindow::startSubProcesses()
 
     if (QFileInfo(visionExe).exists()) {
         m_visionProcess = new QProcess(this);
-        m_visionProcess->setProcessChannelMode(QProcess::ForwardedChannels);
-
-#ifdef Q_OS_WIN
-        m_visionProcess->setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
-            args->flags |= CREATE_NO_WINDOW;
-        });
-#endif
+        m_visionProcess->setProcessChannelMode(QProcess::MergedChannels);
+        m_visionProcess->setStandardOutputFile(QProcess::nullDevice());
 
         m_visionProcess->start(visionExe);
         if (m_visionProcess->waitForStarted(5000)) {
