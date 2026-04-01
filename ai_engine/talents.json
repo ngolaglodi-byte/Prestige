@@ -32,6 +32,14 @@
       "embeddings": [],
       "overlay_style": "default",
       "active": true
+    },
+    {
+      "id": "talent_005",
+      "name": "gldody",
+      "role": "dgdf",
+      "embeddings": [],
+      "overlay_style": "default",
+      "active": true
     }
   ]
 }

@@ -8,6 +8,7 @@
 #include <QQmlApplicationEngine>
 #include <QThread>
 #include <QString>
+#include <QProcess>
 
 #ifdef PRESTIGE_HAVE_ZMQ
 #include <zmq.h>
@@ -122,6 +123,12 @@ private:
 
     // i18n
     QString            m_language        = "fr";
+
+    // Sub-processes (auto-launched)
+    QProcess*          m_aiProcess      = nullptr;
+    QProcess*          m_visionProcess  = nullptr;
+    void startSubProcesses();
+    void stopSubProcesses();
 
     // Config publisher to Vision Engine (:5559)
     void*              m_configZmqCtx   = nullptr;

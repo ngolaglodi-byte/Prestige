@@ -30,6 +30,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
 
 namespace prestige {
 
@@ -130,7 +133,109 @@ MainWindow::MainWindow(QObject* parent)
     qInfo() << "[ControlRoom] Always-On Passthrough: pipeline running from startup";
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    stopSubProcesses();
+}
+
+void MainWindow::startSubProcesses()
+{
+    QString appDir = QCoreApplication::applicationDirPath();
+
+    // ── Find Python ──────────────────────────────────────
+    // Look for bundled venv first, then system Python
+    QString python;
+    QString aiDir;
+
+#ifdef Q_OS_MAC
+    // macOS .app bundle: Contents/MacOS/prestige_control → Contents/Resources/ai_engine
+    aiDir = appDir + "/../Resources/ai_engine";
+    if (!QDir(aiDir).exists())
+        aiDir = appDir + "/../../ai_engine"; // dev layout
+    python = aiDir + "/venv/bin/python3";
+    if (!QFileInfo(python).exists())
+        python = "python3"; // system fallback
+#else
+    // Windows: same directory
+    aiDir = appDir + "/ai_engine";
+    python = aiDir + "/venv/Scripts/pythonw.exe";
+    if (!QFileInfo(python).exists())
+        python = aiDir + "/venv/Scripts/python.exe";
+    if (!QFileInfo(python).exists())
+        python = "python"; // system fallback
+#endif
+
+    QString mainPy = aiDir + "/main.py";
+
+    // ── Start AI Engine (hidden, no terminal) ────────────
+    if (QFileInfo(mainPy).exists()) {
+        m_aiProcess = new QProcess(this);
+        m_aiProcess->setWorkingDirectory(aiDir);
+        m_aiProcess->setProcessChannelMode(QProcess::ForwardedChannels);
+
+#ifdef Q_OS_WIN
+        m_aiProcess->setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
+            args->flags |= CREATE_NO_WINDOW;
+        });
+#endif
+
+        m_aiProcess->start(python, {mainPy});
+        if (m_aiProcess->waitForStarted(5000)) {
+            qInfo() << "[Prestige AI] AI Engine started (PID:" << m_aiProcess->processId() << ")";
+        } else {
+            qWarning() << "[Prestige AI] Failed to start AI Engine:" << m_aiProcess->errorString();
+        }
+    } else {
+        qWarning() << "[Prestige AI] AI Engine not found at:" << mainPy;
+    }
+
+    // ── Start Vision Engine (hidden, no terminal) ────────
+    QString visionExe;
+#ifdef Q_OS_WIN
+    visionExe = appDir + "/prestige_vision.exe";
+#else
+    visionExe = appDir + "/prestige_vision";
+    // Dev layout: control_room/ and vision_engine/ are siblings
+    if (!QFileInfo(visionExe).exists())
+        visionExe = appDir + "/../vision_engine/prestige_vision";
+#endif
+
+    if (QFileInfo(visionExe).exists()) {
+        m_visionProcess = new QProcess(this);
+        m_visionProcess->setProcessChannelMode(QProcess::ForwardedChannels);
+
+#ifdef Q_OS_WIN
+        m_visionProcess->setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
+            args->flags |= CREATE_NO_WINDOW;
+        });
+#endif
+
+        m_visionProcess->start(visionExe);
+        if (m_visionProcess->waitForStarted(5000)) {
+            qInfo() << "[Prestige AI] Vision Engine started (PID:" << m_visionProcess->processId() << ")";
+        } else {
+            qWarning() << "[Prestige AI] Failed to start Vision Engine:" << m_visionProcess->errorString();
+        }
+    } else {
+        qInfo() << "[Prestige AI] Vision Engine not found at:" << visionExe << "(standalone mode)";
+    }
+}
+
+void MainWindow::stopSubProcesses()
+{
+    if (m_aiProcess) {
+        m_aiProcess->terminate();
+        if (!m_aiProcess->waitForFinished(3000))
+            m_aiProcess->kill();
+        qInfo() << "[Prestige AI] AI Engine stopped";
+    }
+    if (m_visionProcess) {
+        m_visionProcess->terminate();
+        if (!m_visionProcess->waitForFinished(3000))
+            m_visionProcess->kill();
+        qInfo() << "[Prestige AI] Vision Engine stopped";
+    }
+}
 
 bool MainWindow::initialize(QQmlApplicationEngine* engine)
 {
@@ -172,6 +277,9 @@ bool MainWindow::initialize(QQmlApplicationEngine* engine)
 
     // Auto-scan hardware at startup
     hwScanner->scan();
+
+    // Auto-start sub-processes (AI Engine + Vision Engine)
+    startSubProcesses();
 
     qInfo() << "[ControlRoom] MainWindow initialized (Always-On Passthrough)";
     return true;
