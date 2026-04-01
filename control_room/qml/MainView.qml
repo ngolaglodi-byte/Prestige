@@ -1138,7 +1138,7 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true; Layout.preferredHeight: 36; spacing: 0
                             Repeater {
-                                model: ["\u26BD Score", "\u2601 Meteo", "\uD83D\uDCAC Ticker", "\uD83C\uDF99 ST", "\uD83D\uDCF1 Chat", "\uD83D\uDCDD Prompt", "\uD83C\uDFAC Queue"]
+                                model: ["\u26BD Score", "\u2601 Meteo", "\uD83D\uDCAC Ticker", "\uD83C\uDF99 ST", "\uD83D\uDCF1 Chat", "\uD83D\uDCDD Prompt", "\uD83C\uDFAC Queue", "\uD83C\uDFA5 Studio"]
                                 Rectangle {
                                     Layout.fillWidth: true; Layout.preferredHeight: 36
                                     color: toolsStack.currentIndex === index ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : "transparent"
@@ -1277,6 +1277,9 @@ ApplicationWindow {
                                     }
                                 }
                             }
+
+                            // Virtual Studio panel
+                            VirtualStudioPanel {}
                         }
                     }
                 }
