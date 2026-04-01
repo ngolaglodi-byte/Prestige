@@ -376,6 +376,22 @@ int main(int argc, char* argv[])
                 }, Qt::QueuedConnection);
             }
 
+            // Virtual Studio config
+            bool vsEnabled = obj["virtual_studio_enabled"].toBool(false);
+            int vsStudioId = obj["virtual_studio_id"].toInt(0);
+            bool vsChromaKey = obj["chroma_key_enabled"].toBool(false);
+            QString vsChromaColor = obj["chroma_key_color"].toString("green");
+            double vsChromaTol = obj["chroma_key_tolerance"].toDouble(0.35);
+            double vsChromaSmooth = obj["chroma_key_smooth"].toDouble(0.05);
+            QMetaObject::invokeMethod(&compositor, [&compositor, vsEnabled, vsStudioId, vsChromaKey, vsChromaColor, vsChromaTol, vsChromaSmooth]() {
+                compositor.setVirtualStudioEnabled(vsEnabled);
+                compositor.setVirtualStudioId(vsStudioId);
+                compositor.setChromaKeyEnabled(vsChromaKey);
+                compositor.setChromaKeyColor(vsChromaColor);
+                compositor.setChromaKeyTolerance(vsChromaTol);
+                compositor.setChromaKeySmooth(vsChromaSmooth);
+            }, Qt::QueuedConnection);
+
             // Overlay scale factors
             double npScale = obj["nameplate_scale"].toDouble(1.0);
             double sbScale = obj["scoreboard_scale"].toDouble(1.0);

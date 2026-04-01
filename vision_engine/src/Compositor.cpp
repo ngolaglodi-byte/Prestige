@@ -189,7 +189,9 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Advance animation states
     updateAnimations(talents);
 
-    QImage output = videoFrame.copy();
+    // Virtual Studio: chroma key + studio background (before overlays)
+    QImage processedFrame = m_virtualStudio.process(videoFrame);
+    QImage output = processedFrame;
     QPainter painter(&output);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);

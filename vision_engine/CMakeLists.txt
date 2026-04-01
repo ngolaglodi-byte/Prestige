@@ -10,6 +10,7 @@ set(VISION_SOURCES
     src/VideoEncoder.cpp
     src/OutputRouter.cpp
     src/PreviewSender.cpp
+    src/VirtualStudio.cpp
 )
 
 set(VISION_HEADERS
@@ -21,6 +22,7 @@ set(VISION_HEADERS
     src/VideoEncoder.h
     src/OutputRouter.h
     src/PreviewSender.h
+    src/VirtualStudio.h
 )
 
 qt_add_executable(prestige_vision WIN32 ${VISION_SOURCES} ${VISION_HEADERS})

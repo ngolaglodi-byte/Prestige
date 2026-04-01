@@ -20,6 +20,7 @@
 #include <map>
 
 #include "TalentData.h"
+#include "VirtualStudio.h"
 
 namespace prestige {
 
@@ -121,6 +122,14 @@ public:
     void setShowTitleLoopAnim(const QString& anim);
     void setTalentNameplateVisible(bool visible);
     void setBypassActive(bool active);
+
+    // ── Virtual Studio ────────────────────────────────────
+    void setVirtualStudioEnabled(bool v) { m_virtualStudio.setEnabled(v); }
+    void setVirtualStudioId(int id) { m_virtualStudio.setStudioId(id); }
+    void setChromaKeyEnabled(bool v) { m_virtualStudio.setChromaKeyEnabled(v); }
+    void setChromaKeyColor(const QString& c) { m_virtualStudio.setChromaKeyColor(c); }
+    void setChromaKeyTolerance(double v) { m_virtualStudio.setChromaKeyTolerance(v); }
+    void setChromaKeySmooth(double v) { m_virtualStudio.setChromaKeySmooth(v); }
 
     // ── Overlay scale factors ─────────────────────────────
     void setNameplateScale(double s) { m_nameplateScale = s; }
@@ -317,6 +326,9 @@ private:
     double  m_showTitleEntryProgress = 0.0;
     bool    m_talentNameplateVisible = true;
     bool    m_bypassActive = false;
+
+    // Virtual Studio
+    VirtualStudio m_virtualStudio;
 
     // Overlay scale factors
     double m_nameplateScale = 1.0;

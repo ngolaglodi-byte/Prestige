@@ -59,6 +59,14 @@ class SetupController : public QObject {
     Q_PROPERTY(int outputFps READ outputFps WRITE setOutputFps NOTIFY outputsChanged)
     Q_PROPERTY(int outputBitrate READ outputBitrate WRITE setOutputBitrate NOTIFY outputsChanged)
 
+    // Virtual Studio
+    Q_PROPERTY(bool virtualStudioEnabled READ virtualStudioEnabled WRITE setVirtualStudioEnabled NOTIFY virtualStudioChanged)
+    Q_PROPERTY(int virtualStudioId READ virtualStudioId WRITE setVirtualStudioId NOTIFY virtualStudioChanged)
+    Q_PROPERTY(bool chromaKeyEnabled READ chromaKeyEnabled WRITE setChromaKeyEnabled NOTIFY virtualStudioChanged)
+    Q_PROPERTY(QString chromaKeyColor READ chromaKeyColor WRITE setChromaKeyColor NOTIFY virtualStudioChanged)
+    Q_PROPERTY(double chromaKeyTolerance READ chromaKeyTolerance WRITE setChromaKeyTolerance NOTIFY virtualStudioChanged)
+    Q_PROPERTY(double chromaKeySmooth READ chromaKeySmooth WRITE setChromaKeySmooth NOTIFY virtualStudioChanged)
+
     // Channel branding
     Q_PROPERTY(QString channelLogoPath READ channelLogoPath WRITE setChannelLogoPath NOTIFY brandingChanged)
     Q_PROPERTY(QString channelLogoPosition READ channelLogoPosition WRITE setChannelLogoPosition NOTIFY brandingChanged)
@@ -251,6 +259,20 @@ public:
     void setOutputFps(int v) { if (m_outputFps != v) { m_outputFps = qBound(24, v, 60); emit outputsChanged(); } }
     int outputBitrate() const { return m_outputBitrate; }
     void setOutputBitrate(int v) { if (m_outputBitrate != v) { m_outputBitrate = qBound(2, v, 50); emit outputsChanged(); } }
+
+    // Virtual Studio
+    bool virtualStudioEnabled() const { return m_vsEnabled; }
+    void setVirtualStudioEnabled(bool v) { if (m_vsEnabled != v) { m_vsEnabled = v; emit virtualStudioChanged(); } }
+    int virtualStudioId() const { return m_vsStudioId; }
+    void setVirtualStudioId(int v) { if (m_vsStudioId != v) { m_vsStudioId = v; emit virtualStudioChanged(); } }
+    bool chromaKeyEnabled() const { return m_vsChromaKey; }
+    void setChromaKeyEnabled(bool v) { if (m_vsChromaKey != v) { m_vsChromaKey = v; emit virtualStudioChanged(); } }
+    QString chromaKeyColor() const { return m_vsChromaColor; }
+    void setChromaKeyColor(const QString& v) { if (m_vsChromaColor != v) { m_vsChromaColor = v; emit virtualStudioChanged(); } }
+    double chromaKeyTolerance() const { return m_vsChromaTol; }
+    void setChromaKeyTolerance(double v) { if (m_vsChromaTol != v) { m_vsChromaTol = v; emit virtualStudioChanged(); } }
+    double chromaKeySmooth() const { return m_vsChromaSmooth; }
+    void setChromaKeySmooth(double v) { if (m_vsChromaSmooth != v) { m_vsChromaSmooth = v; emit virtualStudioChanged(); } }
 
     // Channel branding
     QString channelLogoPath() const { return m_channelLogoPath; }
@@ -468,6 +490,7 @@ signals:
     void brandingChanged();
     void showTitleChanged();
     void timingChanged();
+    void virtualStudioChanged();
 
 private:
     ProfileManager* m_profiles;
@@ -595,8 +618,16 @@ private:
     // Output extras
     QString m_srtUrl;
     QString m_socialOutputsJson;
-    int     m_outputFps = 25;       // 24, 25, 30, 50, 60
-    int     m_outputBitrate = 8;    // Mbps (2-50)
+    int     m_outputFps = 25;
+    int     m_outputBitrate = 8;
+
+    // Virtual Studio
+    bool    m_vsEnabled = false;
+    int     m_vsStudioId = 0;
+    bool    m_vsChromaKey = false;
+    QString m_vsChromaColor = "green";
+    double  m_vsChromaTol = 0.35;
+    double  m_vsChromaSmooth = 0.05;
 };
 
 } // namespace prestige

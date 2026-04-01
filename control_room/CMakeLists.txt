@@ -84,6 +84,7 @@ qt_add_qml_module(prestige_control
         qml/MacroPanel.qml
         qml/ThemeManager.qml
         qml/SocialChatPanel.qml
+        qml/VirtualStudioPanel.qml
 )
 
 target_link_libraries(prestige_control PRIVATE

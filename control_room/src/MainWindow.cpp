@@ -112,6 +112,7 @@ MainWindow::MainWindow(QObject* parent)
     connect(m_setupController, &SetupController::sourceChanged, this, &MainWindow::publishConfig);
     connect(m_setupController, &SetupController::outputsChanged, this, &MainWindow::publishConfig);
     connect(m_setupController, &SetupController::overlayTimingChanged, this, &MainWindow::publishConfig);
+    connect(m_setupController, &SetupController::virtualStudioChanged, this, &MainWindow::publishConfig);
 
     // Publish config when broadcast overlay cycle state changes
     connect(m_liveController, &LiveController::showTitleVisibleChanged, this, &MainWindow::publishConfig);
@@ -569,6 +570,14 @@ void MainWindow::publishConfig()
         auto socialArr = QJsonDocument::fromJson(socialJson.toUtf8()).array();
         obj["social_outputs"] = socialArr;
     }
+
+    // Virtual Studio
+    obj["virtual_studio_enabled"] = m_setupController->virtualStudioEnabled();
+    obj["virtual_studio_id"] = m_setupController->virtualStudioId();
+    obj["chroma_key_enabled"] = m_setupController->chromaKeyEnabled();
+    obj["chroma_key_color"] = m_setupController->chromaKeyColor();
+    obj["chroma_key_tolerance"] = m_setupController->chromaKeyTolerance();
+    obj["chroma_key_smooth"] = m_setupController->chromaKeySmooth();
 
     // Visibility states — gated behind overlays_active
     // Channel branding (logo, name) is sent unconditionally above
