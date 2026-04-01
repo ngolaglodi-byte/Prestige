@@ -67,6 +67,7 @@ target_link_libraries(prestige_vision PRIVATE
     Qt6::Network
     prestige_shared
     prestige_broadcast_sdk
+    prestige_ai_module
 )
 
 # ── ZeroMQ ──────────────────────────────────────────────────

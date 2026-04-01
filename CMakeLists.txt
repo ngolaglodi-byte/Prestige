@@ -82,5 +82,6 @@ target_include_directories(prestige_shared INTERFACE
 
 # ── Sub-projects ────────────────────────────────────────────
 add_subdirectory(broadcast_sdk)
+add_subdirectory(ai_module)
 add_subdirectory(vision_engine)
 add_subdirectory(control_room)

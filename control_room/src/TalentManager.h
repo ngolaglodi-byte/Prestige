@@ -2,7 +2,7 @@
 
 // ============================================================
 // Prestige AI — Talent Manager
-// C++ client for Python talent management server (ZMQ REQ/REP)
+// Direct JSON file operations (no Python/ZMQ dependency)
 // ============================================================
 
 #include <QObject>
@@ -45,13 +45,11 @@ signals:
     void errorOccurred(const QString& error);
 
 private:
-    QJsonObject sendRequest(const QJsonObject& request);
+    QJsonObject sendRequest(const QJsonObject& request); // Legacy — unused
     QString photosDir() const;
 
     QVariantList m_talents;
     bool         m_connected = false;
-    void*        m_zmqContext = nullptr;
-    void*        m_zmqSocket  = nullptr;
 };
 
 } // namespace prestige

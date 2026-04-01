@@ -144,62 +144,9 @@ void MainWindow::startSubProcesses()
 {
     QString appDir = QCoreApplication::applicationDirPath();
 
-    // ── Find Python ──────────────────────────────────────
-    // Look for bundled venv first, then system Python
-    QString python;
-    QString aiDir;
-
-#ifdef Q_OS_MAC
-    // macOS .app bundle: Contents/MacOS/prestige_control → Contents/Resources/ai_engine
-    aiDir = appDir + "/../Resources/ai_engine";
-    if (!QDir(aiDir).exists())
-        aiDir = appDir + "/../../ai_engine"; // dev layout
-    python = aiDir + "/venv/bin/python3";
-    if (!QFileInfo(python).exists())
-        python = "python3"; // system fallback
-#else
-    // Windows: same directory
-    aiDir = appDir + "/ai_engine";
-    python = aiDir + "/venv/Scripts/pythonw.exe";
-    if (!QFileInfo(python).exists())
-        python = aiDir + "/venv/Scripts/python.exe";
-    if (!QFileInfo(python).exists())
-        python = "python"; // system fallback
-#endif
-
-    QString mainPy = aiDir + "/main.py";
-
-    // ── Start AI Engine (hidden, no terminal) ────────────
-    if (QFileInfo(mainPy).exists()) {
-        m_aiProcess = new QProcess(this);
-        m_aiProcess->setWorkingDirectory(aiDir);
-
-        // Redirect output to null — no terminal window
-        m_aiProcess->setProcessChannelMode(QProcess::MergedChannels);
-        m_aiProcess->setStandardOutputFile(QProcess::nullDevice());
-
-        // On Windows, ensure no console window by using pythonw.exe
-        // and setting the process to not create a window
-#ifdef Q_OS_WIN
-        // pythonw.exe = no console window (this is the standard Windows approach)
-        if (!python.contains("pythonw")) {
-            QString pythonw = python;
-            pythonw.replace("python.exe", "pythonw.exe");
-            if (QFileInfo(pythonw).exists())
-                python = pythonw;
-        }
-#endif
-
-        qInfo() << "[Prestige AI] Starting AI with:" << python << mainPy;
-        m_aiProcess->start(python, {mainPy});
-        if (m_aiProcess->waitForStarted(5000)) {
-            qInfo() << "[Prestige AI] AI Engine started (PID:" << m_aiProcess->processId() << ")";
-        } else {
-            qWarning() << "[Prestige AI] Failed to start AI Engine:" << m_aiProcess->errorString();
-        }
-    } else {
-        qWarning() << "[Prestige AI] AI Engine not found at:" << mainPy;
-    }
+    // AI Engine is now integrated into the Vision Engine (C++ ONNX Runtime)
+    // No separate Python process needed
+    qInfo() << "[Prestige AI] AI Engine: integrated (C++ ONNX Runtime)";
 
     // ── Start Vision Engine (hidden, no terminal) ────────
     QString visionExe;
@@ -214,8 +161,8 @@ void MainWindow::startSubProcesses()
 
     if (QFileInfo(visionExe).exists()) {
         m_visionProcess = new QProcess(this);
-        m_visionProcess->setProcessChannelMode(QProcess::MergedChannels);
         m_visionProcess->setStandardOutputFile(QProcess::nullDevice());
+        m_visionProcess->setStandardErrorFile(QProcess::nullDevice());
 
         m_visionProcess->start(visionExe);
         if (m_visionProcess->waitForStarted(5000)) {
@@ -230,12 +177,7 @@ void MainWindow::startSubProcesses()
 
 void MainWindow::stopSubProcesses()
 {
-    if (m_aiProcess) {
-        m_aiProcess->terminate();
-        if (!m_aiProcess->waitForFinished(3000))
-            m_aiProcess->kill();
-        qInfo() << "[Prestige AI] AI Engine stopped";
-    }
+    // AI Engine is integrated (C++ ONNX Runtime) — no process to stop
     if (m_visionProcess) {
         m_visionProcess->terminate();
         if (!m_visionProcess->waitForFinished(3000))

@@ -264,6 +264,14 @@ def tracking_thread(
 def main() -> None:
     args = parse_args()
 
+    # ── Start Talent Manager FIRST (always available, even before Vision Engine) ──
+    from talent_manager import TalentDatabase, TalentManagerServer
+    talent_db = TalentDatabase(args.talents_db, "talent_photos")
+    talent_server = TalentManagerServer(talent_db, "tcp://127.0.0.1:5556")
+    talent_thread = threading.Thread(target=talent_server.run, name="talent-manager", daemon=True)
+    talent_thread.start()
+    logger.info("Talent Manager started on :5556 (ready for Control Room)")
+
     # Auto-detect mode — wait for Vision Engine, NEVER open webcam automatically
     if not args.dev and not args.prod:
         import zmq
@@ -357,16 +365,7 @@ def main() -> None:
         else:
             logger.info("Whisper model load failed — subtitles disabled")
 
-    # ── Talent Manager Server (ZMQ REP :5556) ───────────────
-    from talent_manager import TalentDatabase, TalentManagerServer
-
-    talent_db = TalentDatabase(args.talents_db, "talent_photos")
-    talent_server = TalentManagerServer(talent_db, "tcp://127.0.0.1:5556")
-    threads.append(threading.Thread(
-        target=talent_server.run,
-        name="talent-manager",
-        daemon=True,
-    ))
+    # Talent Manager already started above (before Vision Engine wait)
     logger.info("Talent Manager: started on :5556")
 
     for t in threads:
