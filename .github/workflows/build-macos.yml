@@ -50,9 +50,17 @@ jobs:
         APP="dist/Prestige AI.app"
         mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
 
-        # Core executables
-        cp build/control_room/prestige_control "$APP/Contents/MacOS/"
-        cp build/vision_engine/prestige_vision "$APP/Contents/MacOS/"
+        # Core executables (MACOSX_BUNDLE produces .app, extract binary from it)
+        if [ -f "build/control_room/prestige_control.app/Contents/MacOS/prestige_control" ]; then
+          cp build/control_room/prestige_control.app/Contents/MacOS/prestige_control "$APP/Contents/MacOS/"
+        else
+          cp build/control_room/prestige_control "$APP/Contents/MacOS/"
+        fi
+        if [ -f "build/vision_engine/prestige_vision.app/Contents/MacOS/prestige_vision" ]; then
+          cp build/vision_engine/prestige_vision.app/Contents/MacOS/prestige_vision "$APP/Contents/MacOS/"
+        else
+          cp build/vision_engine/prestige_vision "$APP/Contents/MacOS/"
+        fi
 
         # Info.plist and icon
         cp scripts/Info.plist "$APP/Contents/Info.plist"
