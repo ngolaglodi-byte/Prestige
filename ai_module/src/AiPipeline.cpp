@@ -65,18 +65,15 @@ void AiPipeline::processFrame(const QImage& frame, qint64 frameId, qint64 timest
 void AiPipeline::detectionLoop()
 {
     // This runs on m_detThread at ~5fps
-    // For each frame:
-    // 1. Detect faces
-    // 2. Extract embeddings for each face
-    // 3. Match against talent database
-    // 4. Update tracker
-    // 5. Emit results
-
     while (m_running) {
         QImage frame;
         {
             QMutexLocker locker(&m_frameMutex);
-            if (m_latestFrame.isNull()) continue;
+            if (m_latestFrame.isNull()) {
+                // No frame available yet, wait and retry
+                QThread::msleep(50);
+                continue;
+            }
             frame = m_latestFrame.copy();
         }
 
@@ -86,15 +83,33 @@ void AiPipeline::detectionLoop()
         // Step 1: Detect faces
         auto detections = m_detector.detect(frame, 0.5f);
 
-        // Step 2+3: For each detection, extract embedding and match
+        // Step 2+3: For each detection, align face, extract embedding, match talent
         QList<TrackedFace> faces;
         for (const auto& det : detections) {
             TrackedFace face;
             face.bbox = det.bbox;
             face.confidence = det.score;
 
-            // TODO: Align face using landmarks, extract embedding, match
-            // For now, just pass detection through
+            // Align face using detected landmarks
+            QImage aligned = FaceRecognizer::alignFace(frame, det.landmarks);
+
+            // Extract embedding
+            auto embedding = m_recognizer.extractEmbedding(aligned);
+
+            // Match against talent database
+            if (!embedding.empty()) {
+                auto match = m_talentDb.matchEmbedding(embedding, 0.4f);
+                if (match.confidence > 0.0f) {
+                    face.id = match.id;
+                    face.name = match.name;
+                    face.role = match.role;
+                    face.confidence = match.confidence;
+                    face.showOverlay = match.showOverlay;
+                    face.overlayStyle = match.overlayStyle;
+                    face.matched = true;
+                }
+            }
+
             faces.append(face);
         }
 

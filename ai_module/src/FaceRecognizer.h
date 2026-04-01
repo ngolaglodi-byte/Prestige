@@ -24,6 +24,9 @@ public:
     // Compare two embeddings (cosine similarity)
     static float cosineSimilarity(const std::vector<float>& a, const std::vector<float>& b);
 
+    // Align face using 5 landmarks -> 112x112 crop
+    static QImage alignFace(const QImage& frame, const std::vector<float>& landmarks);
+
 private:
     struct Impl;
     Impl* m_impl = nullptr;
