@@ -632,7 +632,7 @@ Item {
                             return parent.height - height - wysiwygOverlay.ph * 0.056 + setupController.scoreboardOffsetY * (wysiwygOverlay.ph / 1080.0)
                     }
 
-                    width: wysiwygOverlay.pw * 0.167 * sbScale; height: wysiwygOverlay.ph * 0.065 * sbScale
+                    width: wysiwygOverlay.pw * 0.188 * sbScale; height: wysiwygOverlay.ph * 0.079 * sbScale
                     radius: wysiwygOverlay.ph * 0.005
                     color: Qt.rgba(0, 0, 0, 0.35)
                     border.color: Qt.rgba(1, 1, 1, 0.08)

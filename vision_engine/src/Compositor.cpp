@@ -311,7 +311,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
         // GOAL text (centered, large)
         double textScale = easeOutCubic(entryProg) * (1.0 - exitProg * 0.3);
-        int goalFontSize = qMax(30, static_cast<int>(80 * scale * textScale));
+        int goalFontSize = qMax(40, static_cast<int>(100 * scale * textScale));
         QFont goalFont("Helvetica Neue", goalFontSize, QFont::Black);
         painter.setFont(goalFont);
 
@@ -334,7 +334,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
         // Player name (below goal text)
         if (!m_goalAnimPlayer.isEmpty()) {
-            int playerFontSize = qMax(14, static_cast<int>(28 * scale * textScale));
+            int playerFontSize = qMax(18, static_cast<int>(36 * scale * textScale));
             QFont playerFont("Helvetica Neue", playerFontSize, QFont::Bold);
             painter.setFont(playerFont);
             painter.setPen(QColor(teamColor.red(), teamColor.green(), teamColor.blue(), static_cast<int>(255 * entryProg * (1.0 - exitProg))));
@@ -345,10 +345,10 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         // Team logo (if available)
         const QImage& goalLogo = (m_goalAnimTeam == "a") ? m_teamLogoImgA : m_teamLogoImgB;
         if (!goalLogo.isNull()) {
-            int logoH = static_cast<int>(80 * scale * textScale);
+            int logoH = qMax(50, static_cast<int>(120 * scale * textScale));
             QImage scaledLogo = goalLogo.scaledToHeight(logoH, Qt::SmoothTransformation);
             int logoX = (fw - scaledLogo.width()) / 2;
-            int logoY = static_cast<int>(fh * 0.18);
+            int logoY = static_cast<int>(fh * 0.15);
             painter.setOpacity(entryProg * (1.0 - exitProg));
             painter.drawImage(logoX, logoY, scaledLogo);
         }
@@ -380,8 +380,8 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         else if (m_sportEvent == "var") { eventColor = QColor(0, 100, 200); eventIcon = "VAR"; }
         else { eventColor = m_accentColor; eventIcon = m_sportEvent; }
 
-        int evW = static_cast<int>(200 * scale * easeOutCubic(prog));
-        int evH = static_cast<int>(44 * scale);
+        int evW = static_cast<int>(280 * scale * easeOutCubic(prog));
+        int evH = static_cast<int>(56 * scale);
         int evX = (fw - evW) / 2;
         int evY = static_cast<int>(fh * 0.12);
 
@@ -390,7 +390,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         // Background pill
         drawGlassRect(painter, QRectF(evX, evY, evW, evH), evH / 2.0, eventColor, 0.75);
         // Icon + text
-        QFont evFont("Helvetica Neue", qMax(12, static_cast<int>(16 * scale)), QFont::Bold);
+        QFont evFont("Helvetica Neue", qMax(14, static_cast<int>(20 * scale)), QFont::Bold);
         painter.setFont(evFont);
         painter.setPen(Qt::white);
         painter.drawText(QRectF(evX, evY, evW, evH), Qt::AlignCenter, eventIcon);
@@ -1167,8 +1167,8 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Scoreboard overlay — glass morphism (FIFA/UEFA broadcast style)
     if (m_scoreboardVisible && !m_bypassActive) {
         double sbS = m_scoreboardScale;
-        int sbW = static_cast<int>(320 * scale * sbS);
-        int sbH = static_cast<int>(70 * scale * sbS);
+        int sbW = static_cast<int>(360 * scale * sbS);
+        int sbH = static_cast<int>(85 * scale * sbS);
         int sbPad = static_cast<int>(16 * scale);
         int sbOffXPx = static_cast<int>(m_scoreboardOffX * scale);
         int sbOffYPx = static_cast<int>(m_scoreboardOffY * scale);
@@ -1208,7 +1208,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
         // Team A logo (if available)
         if (!m_teamLogoImgA.isNull()) {
-            int tLogoH = static_cast<int>(sbH * 0.35);
+            int tLogoH = qMax(20, static_cast<int>(sbH * 0.50));
             QImage tLogoA = m_teamLogoImgA.scaledToHeight(tLogoH, Qt::SmoothTransformation);
             painter.drawImage(static_cast<int>(sbX + sbW * 0.25 - tLogoA.width() / 2), static_cast<int>(sbY + sbH * 0.05), tLogoA);
         }
@@ -1233,7 +1233,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
         // Team B logo (if available)
         if (!m_teamLogoImgB.isNull()) {
-            int tLogoH = static_cast<int>(sbH * 0.35);
+            int tLogoH = qMax(20, static_cast<int>(sbH * 0.50));
             QImage tLogoB = m_teamLogoImgB.scaledToHeight(tLogoH, Qt::SmoothTransformation);
             painter.drawImage(static_cast<int>(sbX + sbW * 0.75 - tLogoB.width() / 2), static_cast<int>(sbY + sbH * 0.05), tLogoB);
         }
