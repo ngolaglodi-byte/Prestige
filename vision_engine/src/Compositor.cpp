@@ -406,7 +406,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // and Talent Nameplate system (20 styles with IA detection)
 
     // Ticker (scrolling text at very bottom)
-    if (m_tickerVisible && !m_tickerText.isEmpty()) {
+    if (m_tickerVisible && !m_tickerText.isEmpty() && !m_bypassActive) {
         int tkH = static_cast<int>(36 * scale);
         int tkOffY = static_cast<int>(m_tickerOffY * scale);
         int tkY = fh - tkH - tkOffY;
@@ -434,7 +434,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     }
 
     // Subtitles (above ticker or at position)
-    if (m_subtitleVisible && !m_subtitleText.isEmpty()) {
+    if (m_subtitleVisible && !m_subtitleText.isEmpty() && !m_bypassActive) {
         // Fade in new text
         if (m_subtitleFadeProgress < 1.0)
             m_subtitleFadeProgress = qMin(1.0, m_subtitleFadeProgress + 0.1);
@@ -1027,7 +1027,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     }
 
     // Clock (top-right) — broadcast: text + drop shadow, no box
-    if (m_clockVisible) {
+    if (m_clockVisible && !m_bypassActive) {
         double ckS = m_clockScale;
         QString timeStr = QTime::currentTime().toString(m_clockFormat);
         QFont clockF("Menlo", qMax(12, static_cast<int>(18 * scale * ckS)), QFont::Bold);
@@ -1047,7 +1047,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     }
 
     // Countdown pill (top-left) — broadcast: subtle glass pill
-    if (m_countdownVisible && !m_countdownText.isEmpty()) {
+    if (m_countdownVisible && !m_countdownText.isEmpty() && !m_bypassActive) {
         double cdS = m_countdownScale;
         QFont cdFont("Menlo", qMax(12, static_cast<int>(17 * scale * cdS)), QFont::Bold);
         painter.setFont(cdFont);
@@ -1066,7 +1066,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     }
 
     // QR Code overlay (styled box with URL)
-    if (m_qrVisible && !m_qrUrl.isEmpty()) {
+    if (m_qrVisible && !m_qrUrl.isEmpty() && !m_bypassActive) {
         double qrS = m_qrCodeScale;
         int qrBoxSize = static_cast<int>(120 * scale * qrS);
         int qrPad = static_cast<int>(16 * scale);
@@ -1138,7 +1138,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     }
 
     // Social chat overlay (top-right, semi-transparent vertical list)
-    if (m_chatVisible && !m_chatMessages.isEmpty()) {
+    if (m_chatVisible && !m_chatMessages.isEmpty() && !m_bypassActive) {
         QFont chatFont("Helvetica Neue", static_cast<int>(11 * scale));
         painter.setFont(chatFont);
         QFontMetrics chatFm(chatFont);
@@ -1358,11 +1358,21 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         fx::pathTrace(painter, pts, std::min(1.0, m_loopFrame / 40.0), m_accentColor, 2 * scale);
     }
 
-    // Blur/Focus effects (applied as overlay layer)
+    // Blur/Focus effects
     if (m_animTypeStr == "radial_blur")
         fx::radialBlur(painter, overlayZone, 0.7, m_accentColor);
     else if (m_animTypeStr == "defocus")
         fx::defocus(painter, overlayZone, 0.6, m_accentColor);
+    else if (m_animTypeStr == "gaussian_blur_in") {
+        QFont f("Helvetica Neue", static_cast<int>(18 * scale), QFont::Bold);
+        fx::gaussianBlurIn(painter, m_channelName, overlayZone, 0.8, f, Qt::white);
+    }
+    else if (m_animTypeStr == "directional_blur") {
+        QFont f("Helvetica Neue", static_cast<int>(18 * scale), QFont::Bold);
+        fx::directionalBlur(painter, m_channelName, overlayZone, 0.8, f, Qt::white, 0);
+    }
+    else if (m_animTypeStr == "tilt_shift")
+        fx::tiltShift(painter, fullFrame, fh * 0.5, fh * 0.3);
 
     // Color/Style effects (ambient styling)
     if (m_animTypeStr == "color_sweep")
@@ -1373,10 +1383,28 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         fx::duotone(painter, fullFrame, QColor(0, 0, 30, 15), QColor(m_accentColor.red(), m_accentColor.green(), m_accentColor.blue(), 10));
     else if (m_animTypeStr == "shadow_drop_animate")
         fx::shadowDropAnimate(painter, overlayZone.adjusted(fw*0.05, 10, -fw*0.05, -10), 1.0, QColor(0, 0, 0));
+    else if (m_animTypeStr == "outline_stroke" && !m_channelName.isEmpty()) {
+        QFont f("Helvetica Neue", static_cast<int>(m_nameFontSize * scale), QFont::Bold);
+        fx::outlineStroke(painter, m_channelName, QRectF(fw * 0.05, fh * 0.85, fw * 0.4, fh * 0.06), 1.0, f, m_accentColor, 2 * scale);
+    }
 
-    // Transition effects (applied when animating in overlays)
+    // Transition effects
     if (m_animTypeStr == "light_leak")
         fx::lightLeak(painter, output.size(), std::fmod(m_loopFrame / 150.0, 1.0), m_accentColor);
+    else if (m_animTypeStr == "wipe_linear")
+        fx::wipeLinear(painter, output.size(), std::fmod(m_loopFrame / 60.0, 1.0), true);
+    else if (m_animTypeStr == "push_slide")
+        fx::pushSlide(painter, output.size(), std::fmod(m_loopFrame / 60.0, 1.0), true);
+    else if (m_animTypeStr == "zoom_through")
+        fx::zoomThrough(painter, output.size(), std::fmod(m_loopFrame / 60.0, 1.0));
+    else if (m_animTypeStr == "glitch_transition")
+        fx::glitchTransition(painter, output.size(), std::fmod(m_loopFrame / 60.0, 1.0), m_loopFrame);
+    else if (m_animTypeStr == "ink_bleed")
+        fx::inkBleed(painter, output.size(), std::fmod(m_loopFrame / 80.0, 1.0));
+    else if (m_animTypeStr == "spin_transition")
+        fx::spinTransition(painter, output.size(), std::fmod(m_loopFrame / 60.0, 1.0));
+    else if (m_animTypeStr == "cross_dissolve")
+        fx::crossDissolve(painter, output.size(), std::fmod(m_loopFrame / 60.0, 1.0));
 
     // Distortion effects (ambient)
     if (m_animTypeStr == "wave_distort")
