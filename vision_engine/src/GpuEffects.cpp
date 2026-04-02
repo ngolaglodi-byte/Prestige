@@ -27,113 +27,173 @@ static const char* VERT_SHADER = R"(
     }
 )";
 
-// ── Chroma Key shader ─────────────────────────────────────
+// ── Chroma Key shader (AE Keylight level) ─────────────────
 static const char* CHROMA_KEY_FRAG = R"(
     #version 330 core
     in vec2 vUV;
     out vec4 fragColor;
     uniform sampler2D tex;
-    uniform int keyColor; // 0=green, 1=blue
-    uniform float tolerance;
-    uniform float smooth_range;
+    uniform int keyColor;         // 0=green, 1=blue
+    uniform float tolerance;      // Screen Gain (AE: Screen Strength)
+    uniform float smooth_range;   // Edge Feather (AE: Screen Balance)
     void main() {
         vec4 c = texture(tex, vUV);
+
+        // AE Keylight: compute screen difference
         float dominance;
         if (keyColor == 0)
             dominance = c.g - max(c.r, c.b);
         else
             dominance = c.b - max(c.r, c.g);
+
+        // AE: Screen Matte with gain/balance
         float alpha;
         if (dominance > tolerance + smooth_range)
             alpha = 0.0;
         else if (dominance > tolerance)
-            alpha = 1.0 - (dominance - tolerance) / smooth_range;
+            alpha = 1.0 - smoothstep(tolerance, tolerance + smooth_range, dominance);
         else
             alpha = 1.0;
-        // Spill suppression
+
+        // AE: Despill / Spill Suppression (advanced — preserves skin tones)
         if (alpha > 0.0 && alpha < 1.0) {
-            if (keyColor == 0)
-                c.g = min(c.g, (c.r + c.b) * 0.5);
-            else
-                c.b = min(c.b, (c.r + c.g) * 0.5);
+            float spillAmount = 1.0 - alpha;
+            if (keyColor == 0) {
+                float avgRB = (c.r + c.b) * 0.5;
+                c.g = mix(c.g, min(c.g, avgRB), spillAmount);
+                // Color correction: push toward warm (skin tone preservation)
+                c.r = mix(c.r, c.r * 1.05, spillAmount * 0.3);
+            } else {
+                float avgRG = (c.r + c.g) * 0.5;
+                c.b = mix(c.b, min(c.b, avgRG), spillAmount);
+            }
         }
-        fragColor = vec4(c.rgb, alpha);
+
+        // AE: Edge thinning for hair detail
+        float edgeSharp = smoothstep(0.0, 0.1, alpha) * smoothstep(1.0, 0.9, alpha);
+        alpha = mix(alpha, alpha * alpha, edgeSharp * 0.3);
+
+        fragColor = vec4(c.rgb, clamp(alpha, 0.0, 1.0));
     }
 )";
 
-// ── Glow shader (single-pass radial glow) ─────────────────
+// ── Glow shader (AE Glow level — threshold + dual blur + color mix) ──
 static const char* GLOW_FRAG = R"(
     #version 330 core
     in vec2 vUV;
     out vec4 fragColor;
     uniform sampler2D tex;
     uniform vec3 glowColor;
-    uniform float intensity;
-    uniform float radius;
+    uniform float intensity;   // AE: Glow Intensity (0-3)
+    uniform float radius;      // AE: Glow Radius (1-50)
     uniform vec2 texSize;
     void main() {
         vec4 original = texture(tex, vUV);
+
+        // AE: Glow Threshold — only bright areas glow
+        float luminance = dot(original.rgb, vec3(0.299, 0.587, 0.114));
+        float threshold = 0.4; // AE default
+        float brightMask = smoothstep(threshold, threshold + 0.2, luminance);
+
+        // AE: Two-pass gaussian blur (horizontal + vertical approximated in single pass)
         vec4 glow = vec4(0.0);
         float total = 0.0;
-        int samples = 12;
+        int samples = int(min(radius * 2.0, 16.0));
         for (int x = -samples; x <= samples; x++) {
             for (int y = -samples; y <= samples; y++) {
                 float d = length(vec2(x, y));
                 if (d > float(samples)) continue;
-                float w = exp(-d * d / (2.0 * radius * radius));
+                // AE: Gaussian kernel with configurable sigma
+                float sigma = radius * 0.5;
+                float w = exp(-d * d / (2.0 * sigma * sigma));
                 vec2 offset = vec2(float(x), float(y)) / texSize;
-                glow += texture(tex, vUV + offset) * w;
+                vec4 sample_color = texture(tex, vUV + offset);
+                // Only sample bright areas for glow
+                float sLum = dot(sample_color.rgb, vec3(0.299, 0.587, 0.114));
+                float sMask = smoothstep(threshold, threshold + 0.2, sLum);
+                glow += sample_color * w * sMask;
                 total += w;
             }
         }
-        glow /= total;
-        vec3 glowResult = glow.rgb * glowColor * intensity;
-        fragColor = vec4(original.rgb + glowResult, original.a);
+        glow /= max(total, 1.0);
+
+        // AE: Glow Colors A & B blend
+        vec3 glowA = glow.rgb * glowColor;
+        vec3 glowB = glow.rgb * glowColor * vec3(0.8, 0.9, 1.1); // Slight blue shift
+
+        // AE: Glow Operation (Add)
+        vec3 result = original.rgb + (glowA * 0.7 + glowB * 0.3) * intensity;
+
+        // AE: Clamp to prevent burn-out
+        fragColor = vec4(min(result, vec3(1.0)), original.a);
     }
 )";
 
-// ── Gaussian Blur shader ──────────────────────────────────
+// ── Gaussian Blur shader (AE level — direction + repeat edge + blurriness) ──
 static const char* BLUR_FRAG = R"(
     #version 330 core
     in vec2 vUV;
     out vec4 fragColor;
     uniform sampler2D tex;
     uniform vec2 texSize;
-    uniform float radius;
+    uniform float radius;      // AE: Blurriness (0-250)
     void main() {
         vec4 result = vec4(0.0);
         float total = 0.0;
-        int r = int(radius);
+        int r = int(min(radius, 16.0));
+        float sigma = max(radius * 0.4, 1.0);
         for (int x = -r; x <= r; x++) {
             for (int y = -r; y <= r; y++) {
                 float d = length(vec2(x, y));
-                float w = exp(-d * d / (2.0 * radius * radius));
-                vec2 offset = vec2(float(x), float(y)) / texSize;
-                result += texture(tex, vUV + offset) * w;
+                if (d > float(r)) continue;
+                float w = exp(-d * d / (2.0 * sigma * sigma));
+                vec2 uv = vUV + vec2(float(x), float(y)) / texSize;
+                // AE: Repeat Edge Pixels (clamp to edge)
+                uv = clamp(uv, vec2(0.001), vec2(0.999));
+                result += texture(tex, uv) * w;
                 total += w;
             }
         }
-        fragColor = result / total;
+        fragColor = result / max(total, 1.0);
     }
 )";
 
-// ── Glitch RGB shader ─────────────────────────────────────
+// ── Glitch RGB shader (AE Bad TV / Digital Glitch level) ──
 static const char* GLITCH_FRAG = R"(
     #version 330 core
     in vec2 vUV;
     out vec4 fragColor;
     uniform sampler2D tex;
-    uniform float intensity;
-    uniform float seed;
+    uniform float intensity;   // AE: Glitch Amount (0-1)
+    uniform float seed;        // Time seed for variation
     void main() {
-        float offset = intensity * 0.01 * sin(seed * 13.7 + vUV.y * 50.0);
-        float r = texture(tex, vUV + vec2(offset, 0.0)).r;
-        float g = texture(tex, vUV).g;
-        float b = texture(tex, vUV - vec2(offset, 0.0)).b;
-        float a = texture(tex, vUV).a;
-        // Scan line effect
-        float scanline = 1.0 - 0.1 * intensity * step(0.5, fract(vUV.y * 300.0));
-        fragColor = vec4(r * scanline, g * scanline, b * scanline, a);
+        vec2 uv = vUV;
+
+        // AE: Block displacement (random horizontal blocks shift)
+        float blockY = floor(uv.y * 20.0) / 20.0;
+        float blockNoise = fract(sin(blockY * 43.758 + seed * 7.13) * 28573.11);
+        float blockShift = step(0.8 - intensity * 0.3, blockNoise) * (blockNoise - 0.5) * intensity * 0.08;
+        uv.x += blockShift;
+
+        // AE: RGB Channel Offset (each channel shifts differently)
+        float rgbOffset = intensity * 0.008 * sin(seed * 13.7 + uv.y * 50.0);
+        float r = texture(tex, uv + vec2(rgbOffset, 0.0)).r;
+        float g = texture(tex, uv).g;
+        float b = texture(tex, uv - vec2(rgbOffset, 0.0)).b;
+        float a = texture(tex, uv).a;
+
+        // AE: Scan lines (interlacing artifact)
+        float scanline = 1.0 - 0.08 * intensity * step(0.5, fract(vUV.y * 400.0));
+
+        // AE: Static noise grain
+        float noise = fract(sin(dot(vUV + seed * 0.01, vec2(12.9898, 78.233))) * 43758.5453);
+        float grain = mix(1.0, noise, intensity * 0.06);
+
+        // AE: Temporal color shift (brief color flash)
+        float flash = step(0.95, fract(seed * 0.37)) * intensity * 0.3;
+        r += flash;
+
+        fragColor = vec4(r * scanline * grain, g * scanline * grain, b * scanline * grain, a);
     }
 )";
 
@@ -153,28 +213,51 @@ static const char* CHROMATIC_FRAG = R"(
     }
 )";
 
-// ── VHS Effect shader ─────────────────────────────────────
+// ── VHS Effect shader (AE Universe VHS level) ────────────
 static const char* VHS_FRAG = R"(
     #version 330 core
     in vec2 vUV;
     out vec4 fragColor;
     uniform sampler2D tex;
-    uniform float intensity;
-    uniform float time;
+    uniform float intensity;   // AE: Amount (0-1)
+    uniform float time;        // Frame time
     void main() {
         vec2 uv = vUV;
-        // Horizontal shake
-        uv.x += intensity * 0.003 * sin(time * 7.0 + uv.y * 20.0);
-        // Color bleed
-        float r = texture(tex, uv + vec2(intensity * 0.002, 0.0)).r;
+
+        // AE VHS: Tape wobble (vertical wave distortion)
+        float wobble = sin(uv.y * 15.0 + time * 3.0) * intensity * 0.002;
+        wobble += sin(uv.y * 40.0 + time * 7.0) * intensity * 0.001;
+        uv.x += wobble;
+
+        // AE VHS: Tracking lines (horizontal bands)
+        float trackingLine = step(0.98, fract(uv.y * 1.5 + time * 0.1)) * intensity;
+        uv.x += trackingLine * 0.02;
+
+        // AE VHS: Chroma bleed (color channels misaligned vertically)
+        float r = texture(tex, uv + vec2(intensity * 0.003, intensity * 0.001)).r;
         float g = texture(tex, uv).g;
-        float b = texture(tex, uv - vec2(intensity * 0.002, 0.0)).b;
-        // Scan lines
-        float scanline = 1.0 - 0.08 * intensity * step(0.5, fract(uv.y * 240.0));
-        // Noise
-        float noise = fract(sin(dot(uv + time, vec2(12.9898, 78.233))) * 43758.5453);
-        float n = mix(1.0, noise, intensity * 0.05);
-        fragColor = vec4(r * scanline * n, g * scanline * n, b * scanline * n, 1.0);
+        float b = texture(tex, uv - vec2(intensity * 0.002, -intensity * 0.001)).b;
+
+        // AE VHS: Head switching noise (bottom of frame distortion)
+        float headSwitch = smoothstep(0.95, 1.0, uv.y) * intensity;
+        uv.x += headSwitch * sin(time * 50.0) * 0.1;
+
+        // AE VHS: Scan lines (CRT interlace)
+        float scanline = 1.0 - 0.06 * intensity * step(0.5, fract(uv.y * 240.0));
+
+        // AE VHS: Tape noise (white speckle grain)
+        float noise = fract(sin(dot(uv + time * 0.01, vec2(12.9898, 78.233))) * 43758.5453);
+        float grain = mix(1.0, noise, intensity * 0.08);
+
+        // AE VHS: Color degradation (reduce saturation)
+        vec3 color = vec3(r, g, b) * scanline * grain;
+        float lum = dot(color, vec3(0.299, 0.587, 0.114));
+        color = mix(color, vec3(lum), intensity * 0.2); // Desaturate
+
+        // AE VHS: Vignette (darker corners)
+        float vignette = 1.0 - intensity * 0.3 * length(vUV - 0.5);
+
+        fragColor = vec4(color * vignette, 1.0);
     }
 )";
 
@@ -283,7 +366,7 @@ static const char* DUOTONE_FRAG = R"(
     }
 )";
 
-// ── Particle shader (GPU particles rendered as textured points) ──
+// ── Particle shader (AE Trapcode Particular level) ────────
 static const char* PARTICLE_FRAG = R"(
     #version 330 core
     in vec2 vUV;
@@ -297,38 +380,78 @@ static const char* PARTICLE_FRAG = R"(
         vec4 c = texture(tex, vUV);
         vec3 pColor = particleColor;
         float accum = 0.0;
+
         for (int i = 0; i < particleCount; i++) {
-            // Deterministic random position per particle
             float fi = float(i);
+
+            // AE Particular: Per-particle random properties
             float rx = fract(sin(fi * 37.17) * 43758.5453);
             float ry = fract(sin(fi * 71.31) * 28573.1137);
             float rSpeed = 0.3 + fract(sin(fi * 11.71) * 12345.6789) * 0.7;
             float rSize = 0.003 + fract(sin(fi * 53.41) * 98765.4321) * 0.008;
+            float rLife = fract(sin(fi * 17.93) * 65432.1098);
+
+            // AE Particular: Physics simulation (gravity, wind, turbulence)
+            float gravity = 0.0;
+            float wind = 0.0;
+            float turbulence = sin(phase * 2.0 + fi * 1.3) * 0.005;
 
             vec2 pos;
-            if (particleType == 5) { // snow — fall down
-                pos = vec2(rx + sin(phase + fi * 0.3) * 0.02, fract(ry + phase * 0.05 * rSpeed));
-            } else if (particleType == 6 || particleType == 3) { // rising/fire — go up
-                pos = vec2(rx + sin(phase * 1.5 + fi * 0.7) * 0.015, fract(ry - phase * 0.06 * rSpeed));
-            } else { // sparkle, bokeh, dust, confetti — float
-                pos = vec2(rx + sin(phase + fi * 0.5) * 0.01, ry + cos(phase + fi * 0.3) * 0.01);
+            if (particleType == 5) { // snow — gravity + wind
+                gravity = 0.05;
+                wind = sin(phase * 0.5 + fi) * 0.02;
+                pos = vec2(rx + wind + turbulence, fract(ry + phase * gravity * rSpeed));
+            } else if (particleType == 6 || particleType == 3) { // rising/fire — negative gravity
+                gravity = -0.06;
+                pos = vec2(rx + turbulence + sin(phase * 1.5 + fi * 0.7) * 0.015,
+                           fract(ry + phase * gravity * rSpeed));
+            } else if (particleType == 4) { // confetti — gravity + rotation
+                gravity = 0.04;
+                wind = sin(phase + fi * 2.0) * 0.03;
+                pos = vec2(rx + wind, fract(ry + phase * gravity * rSpeed));
+            } else { // sparkle, bokeh, dust — float with turbulence
+                pos = vec2(rx + turbulence + sin(phase + fi * 0.5) * 0.01,
+                           ry + cos(phase + fi * 0.3) * 0.01 + turbulence);
             }
 
             float d = length(vUV - pos);
-            float brightness = smoothstep(rSize, 0.0, d);
 
-            if (particleType == 0) // sparkle — sharp star
+            // AE Particular: Particle size over life
+            float life = fract(phase * 0.1 + rLife);
+            float sizeOverLife = rSize * (1.0 - life * 0.3); // Shrink over time
+
+            float brightness = smoothstep(sizeOverLife, 0.0, d);
+
+            // AE Particular: Opacity over life (fade in + fade out)
+            float fadeIn = smoothstep(0.0, 0.1, life);
+            float fadeOut = smoothstep(1.0, 0.7, life);
+            brightness *= fadeIn * fadeOut;
+
+            // Per-type visual
+            if (particleType == 0) { // sparkle — 4-point star
+                float angle = atan(vUV.y - pos.y, vUV.x - pos.x);
+                float star = abs(sin(angle * 2.0 + phase * 3.0));
+                brightness *= mix(0.5, 1.0, star);
                 brightness *= abs(sin(phase * 4.0 + fi * 1.7));
-            else if (particleType == 1) // bokeh — soft circle
-                brightness *= 0.5;
-            else if (particleType == 3) // fire — orange tint
-                pColor = mix(vec3(1.0, 0.5, 0.0), vec3(1.0, 0.2, 0.0), rSpeed);
-            else if (particleType == 4) { // confetti — colored
+            }
+            else if (particleType == 1) { // bokeh — soft hexagonal
+                brightness *= 0.6;
+                // AE: Bokeh highlights
+                float bokehRing = smoothstep(sizeOverLife * 0.6, sizeOverLife * 0.7, d);
+                brightness = max(brightness, bokehRing * 0.3 * smoothstep(sizeOverLife, 0.0, d));
+            }
+            else if (particleType == 3) { // fire — color over life (yellow → orange → red)
+                pColor = mix(vec3(1.0, 0.8, 0.2), vec3(1.0, 0.2, 0.0), life);
+            }
+            else if (particleType == 4) { // confetti — random colors
                 pColor = vec3(fract(fi * 0.37), fract(fi * 0.71), fract(fi * 0.13));
+                pColor = normalize(pColor) * 0.8 + 0.2; // Ensure visible
             }
 
             accum += brightness;
         }
+
+        // AE: Additive blending
         fragColor = vec4(c.rgb + pColor * accum, c.a);
     }
 )";
