@@ -1,8 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Dialogs
-
 Item {
     id: tp
     property string scriptText: "Bienvenue au journal de 20 heures.\n\nCe soir, les titres de l'actualité..."
@@ -12,22 +10,14 @@ Item {
     property int fontSize: 24
     property string fontColor: "#FFFFFF"
 
-    FileDialog {
-        id: importFileDialog
-        title: "Importer un script"
-        nameFilters: ["Fichiers texte (*.txt)", "Tous les fichiers (*)"]
-        onAccepted: {
-            var path = selectedFile.toString().replace("file://", "")
-            // Read file via XMLHttpRequest (local file)
-            var xhr = new XMLHttpRequest()
-            xhr.open("GET", selectedFile)
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                    tp.scriptText = xhr.responseText
-                }
-            }
-            xhr.send()
+    // File import handled via text field path input (no QtQuick.Dialogs dependency)
+    function importScript(path) {
+        var xhr = new XMLHttpRequest()
+        xhr.open("GET", "file:///" + path)
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) tp.scriptText = xhr.responseText
         }
+        xhr.send()
     }
 
     ColumnLayout {
@@ -63,7 +53,16 @@ Item {
             Item { Layout.fillWidth: true }
             Rectangle { Layout.preferredWidth: 80; Layout.preferredHeight: 30; radius: 6; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06)
                 Label { anchors.centerIn: parent; text: "Importer..."; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
-                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: importFileDialog.open() }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: importPathField.visible = !importPathField.visible }
+            }
+            RowLayout { id: importPathField; visible: false; Layout.fillWidth: true; spacing: 4
+                TextField { id: scriptPathField; Layout.fillWidth: true; placeholderText: "Chemin du fichier .txt"; font.pixelSize: 10; color: window.darkMode ? "#CCC" : "#333"
+                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                }
+                Rectangle { Layout.preferredWidth: 50; Layout.preferredHeight: 28; radius: 4; color: "#5B4FDB"
+                    Label { anchors.centerIn: parent; text: "OK"; color: "white"; font.pixelSize: 10; font.bold: true }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { importScript(scriptPathField.text); importPathField.visible = false } }
+                }
             }
             Rectangle { Layout.preferredWidth: 80; Layout.preferredHeight: 30; radius: 6; color: tp.isScrolling ? "#CC0000" : "#1DB954"
                 Label { anchors.centerIn: parent; text: tp.isScrolling ? "STOP" : "DÉFILER"; color: "white"; font.pixelSize: 11; font.bold: true }

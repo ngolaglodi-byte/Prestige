@@ -192,14 +192,8 @@ Item {
                     width: plate.width * 1.2; height: plate.height * 1.4
                     radius: plate.height; color: "transparent"
                     Rectangle {
-                        anchors.fill: parent; radius: parent.radius
-                        gradient: RadialGradient {
-                            centerX: parent.width / 2; centerY: parent.height / 2
-                            focalX: centerX; focalY: centerY; focalRadius: 0
-                            centerRadius: parent.width / 2
-                            GradientStop { position: 0; color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.15) }
-                            GradientStop { position: 1; color: "transparent" }
-                        }
+                        anchors.fill: parent; anchors.margins: parent.width * 0.15; radius: parent.radius
+                        color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.12)
                     }
                 }
 

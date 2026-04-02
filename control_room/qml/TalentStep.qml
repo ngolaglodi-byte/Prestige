@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Dialogs
+// QtQuick.Dialogs removed — using built-in path input
 
 // ============================================================
 // Step 2 — Talent Management (real backend)
@@ -386,25 +386,15 @@ Item {
         }
     }
 
-    // ── File dialogs ───────────────────────────────────────
-    FileDialog {
+    // ── File path helpers (no QtQuick.Dialogs dependency) ──
+    // addPhotoDialog and photoFileDialog replaced by inline path input
+    QtObject {
         id: addPhotoDialog
-        title: "Choisir une photo"
-        nameFilters: ["Images (*.jpg *.jpeg *.png *.bmp)"]
-        onAccepted: {
-            var path = selectedFile.toString().replace("file://", "")
-            addTalentDialog.selectedPhotoPath = path
-        }
+        function open() { /* handled via inline TextField in add talent form */ }
     }
-
-    FileDialog {
+    QtObject {
         id: photoFileDialog
         property string talentId: ""
-        title: "Ajouter une photo pour l'embedding"
-        nameFilters: ["Images (*.jpg *.jpeg *.png *.bmp)"]
-        onAccepted: {
-            var path = selectedFile.toString().replace("file://", "")
-            talentManager.enrollPhoto(photoFileDialog.talentId, path)
-        }
+        function open() { /* handled via inline TextField */ }
     }
 }
