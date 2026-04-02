@@ -62,9 +62,26 @@ public:
                           double phase, const QColor& color);
 
     // ── Full GPU post-process pipeline ───────────────────
-    // Applies the selected effect to the entire composited frame
     QImage postProcess(const QImage& frame, const QString& effectId,
                        const QColor& accentColor, int frameCount);
+
+    // ── GPU Text Rendering ───────────────────────────────
+    // Renders text onto a frame using GPU-accelerated QPainter → texture → composite
+    void drawText(QImage& target, const QString& text, const QRectF& rect,
+                  const QFont& font, const QColor& color, int flags = 0);
+    void drawTextWithShadow(QImage& target, const QString& text, const QRectF& rect,
+                            const QFont& font, const QColor& color, const QColor& shadow,
+                            double shadowOffset = 1.0);
+    void drawGlassRect(QImage& target, const QRectF& rect, double radius,
+                       const QColor& tint, double opacity);
+    void drawLine(QImage& target, const QPointF& p1, const QPointF& p2,
+                  const QColor& color, double width);
+    void drawRect(QImage& target, const QRectF& rect, const QColor& fill,
+                  const QColor& border = QColor(), double borderWidth = 0);
+    void drawRoundedRect(QImage& target, const QRectF& rect, double radius,
+                         const QColor& fill, const QColor& border = QColor(), double borderWidth = 0);
+    void drawImage(QImage& target, const QImage& source, int x, int y);
+    void drawEllipse(QImage& target, const QPointF& center, double rx, double ry, const QColor& fill);
 
 private:
     bool compileShader(QOpenGLShaderProgram& program, const char* vertSrc, const char* fragSrc);

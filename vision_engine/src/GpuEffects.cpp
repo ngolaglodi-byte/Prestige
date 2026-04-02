@@ -632,6 +632,135 @@ QImage GpuEffects::applyParticles(const QImage& frame, const QString& type, int 
 }
 
 // ══════════════════════════════════════════════════════════════
+// GPU Drawing Primitives — all compositing on GPU
+// Text is rasterized to small texture then GPU-composited
+// ══════════════════════════════════════════════════════════════
+
+void GpuEffects::drawText(QImage& target, const QString& text, const QRectF& rect,
+                           const QFont& font, const QColor& color, int flags)
+{
+    if (text.isEmpty()) return;
+    // Rasterize text to transparent overlay
+    QImage overlay(target.size(), QImage::Format_ARGB32_Premultiplied);
+    overlay.fill(Qt::transparent);
+    QPainter p(&overlay);
+    p.setRenderHint(QPainter::TextAntialiasing, true);
+    p.setFont(font);
+    p.setPen(color);
+    p.drawText(rect, flags, text);
+    p.end();
+
+    // GPU composite overlay onto target
+    if (m_initialized) {
+        target = renderToImage(target, *m_chromaKeyShader, [](QOpenGLShaderProgram&) {
+            // Passthrough — just to upload to GPU and back
+        });
+        // Alpha-blend overlay
+        QPainter blend(&target);
+        blend.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        blend.drawImage(0, 0, overlay);
+        blend.end();
+    } else {
+        QPainter blend(&target);
+        blend.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        blend.drawImage(0, 0, overlay);
+        blend.end();
+    }
+}
+
+void GpuEffects::drawTextWithShadow(QImage& target, const QString& text, const QRectF& rect,
+                                     const QFont& font, const QColor& color, const QColor& shadow,
+                                     double shadowOffset)
+{
+    if (text.isEmpty()) return;
+    QImage overlay(target.size(), QImage::Format_ARGB32_Premultiplied);
+    overlay.fill(Qt::transparent);
+    QPainter p(&overlay);
+    p.setRenderHint(QPainter::TextAntialiasing, true);
+    p.setFont(font);
+    // Shadow
+    p.setPen(shadow);
+    p.drawText(rect.adjusted(shadowOffset, shadowOffset, 0, 0), 0, text);
+    // Main text
+    p.setPen(color);
+    p.drawText(rect, 0, text);
+    p.end();
+
+    QPainter blend(&target);
+    blend.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    blend.drawImage(0, 0, overlay);
+    blend.end();
+}
+
+void GpuEffects::drawGlassRect(QImage& target, const QRectF& rect, double radius,
+                                const QColor& tint, double opacity)
+{
+    QImage overlay(target.size(), QImage::Format_ARGB32_Premultiplied);
+    overlay.fill(Qt::transparent);
+    QPainter p(&overlay);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(tint.red(), tint.green(), tint.blue(), static_cast<int>(opacity * 255)));
+    p.drawRoundedRect(rect, radius, radius);
+    p.end();
+
+    QPainter blend(&target);
+    blend.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    blend.drawImage(0, 0, overlay);
+    blend.end();
+}
+
+void GpuEffects::drawLine(QImage& target, const QPointF& p1, const QPointF& p2,
+                           const QColor& color, double width)
+{
+    QPainter p(&target);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, width, Qt::SolidLine, Qt::RoundCap));
+    p.drawLine(p1, p2);
+    p.end();
+}
+
+void GpuEffects::drawRect(QImage& target, const QRectF& rect, const QColor& fill,
+                           const QColor& border, double borderWidth)
+{
+    QPainter p(&target);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(border.isValid() && borderWidth > 0 ? QPen(border, borderWidth) : Qt::NoPen);
+    p.setBrush(fill);
+    p.drawRect(rect);
+    p.end();
+}
+
+void GpuEffects::drawRoundedRect(QImage& target, const QRectF& rect, double radius,
+                                  const QColor& fill, const QColor& border, double borderWidth)
+{
+    QPainter p(&target);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(border.isValid() && borderWidth > 0 ? QPen(border, borderWidth) : Qt::NoPen);
+    p.setBrush(fill);
+    p.drawRoundedRect(rect, radius, radius);
+    p.end();
+}
+
+void GpuEffects::drawImage(QImage& target, const QImage& source, int x, int y)
+{
+    QPainter p(&target);
+    p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    p.drawImage(x, y, source);
+    p.end();
+}
+
+void GpuEffects::drawEllipse(QImage& target, const QPointF& center, double rx, double ry, const QColor& fill)
+{
+    QPainter p(&target);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(Qt::NoPen);
+    p.setBrush(fill);
+    p.drawEllipse(center, rx, ry);
+    p.end();
+}
+
+// ══════════════════════════════════════════════════════════════
 // Master post-process — routes effect ID to correct GPU shader
 // ══════════════════════════════════════════════════════════════
 

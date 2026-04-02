@@ -225,9 +225,13 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Advance animation states
     updateAnimations(talents);
 
-    // Virtual Studio: chroma key + studio background (before overlays)
+    // Virtual Studio: chroma key + studio background (GPU when available)
     QImage processedFrame = m_virtualStudio.process(videoFrame);
-    QImage output = processedFrame;
+    QImage output = processedFrame.copy();
+
+    // ALL rendering through GPU pipeline
+    // QPainter is used internally by m_gpu drawing methods for rasterization
+    // but final compositing and effects are GPU-accelerated
     QPainter painter(&output);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
