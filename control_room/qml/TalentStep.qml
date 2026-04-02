@@ -390,11 +390,13 @@ Item {
     // addPhotoDialog and photoFileDialog replaced by inline path input
     QtObject {
         id: addPhotoDialog
-        function open() { /* handled via inline TextField in add talent form */ }
+        property bool showing: false
+        function open() { showing = true }
     }
     QtObject {
         id: photoFileDialog
         property string talentId: ""
-        function open() { /* handled via inline TextField */ }
+        property bool showing: false
+        function open() { showing = true }
     }
 }
