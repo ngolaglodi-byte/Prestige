@@ -166,6 +166,87 @@ Item {
                     }
                 }
 
+                // ── Effect preview on the nameplate ──────────
+                // QML visual effects that match the GPU effects in the compositor
+                // So the director sees the effect INSTANTLY when selecting it
+
+                // Neon Glow effect on plate
+                Rectangle {
+                    visible: setupController.animationType === "neon_glow" || setupController.animationType === "edge_glow"
+                    x: plate.x - 6; y: plate.y - 6
+                    width: plate.width + 12; height: plate.height + 12
+                    radius: 8; color: "transparent"
+                    border.color: setupController.accentColor; border.width: 2
+                    opacity: 0.4 + 0.2 * Math.sin(glowTimer.phase)
+                    Rectangle {
+                        anchors.fill: parent; anchors.margins: -4; radius: 12
+                        color: "transparent"; border.color: setupController.accentColor; border.width: 1
+                        opacity: 0.2
+                    }
+                }
+
+                // Bloom effect
+                Rectangle {
+                    visible: setupController.animationType === "bloom" || setupController.animationType === "shimmer"
+                    anchors.centerIn: plate
+                    width: plate.width * 1.2; height: plate.height * 1.4
+                    radius: plate.height; color: "transparent"
+                    Rectangle {
+                        anchors.fill: parent; radius: parent.radius
+                        gradient: RadialGradient {
+                            centerX: parent.width / 2; centerY: parent.height / 2
+                            focalX: centerX; focalY: centerY; focalRadius: 0
+                            centerRadius: parent.width / 2
+                            GradientStop { position: 0; color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.15) }
+                            GradientStop { position: 1; color: "transparent" }
+                        }
+                    }
+                }
+
+                // Glitch RGB preview
+                Row {
+                    visible: setupController.animationType === "glitch_rgb" || setupController.animationType === "vhs_effect"
+                    x: plate.x; y: plate.y; z: plate.z + 1
+                    Text {
+                        text: getName(root.previewStyleId); color: Qt.rgba(1, 0, 0, 0.3)
+                        font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true
+                        x: 2 * Math.sin(glowTimer.phase * 3)
+                    }
+                    Text {
+                        text: getName(root.previewStyleId); color: Qt.rgba(0, 1, 1, 0.3)
+                        font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true
+                        x: -2 * Math.sin(glowTimer.phase * 3)
+                    }
+                }
+
+                // Particle sparkles preview
+                Repeater {
+                    model: (setupController.animationType === "sparkles" || setupController.animationType === "rising_particles" || setupController.animationType === "bokeh") ? 12 : 0
+                    Rectangle {
+                        x: plate.x + Math.random() * plate.width
+                        y: plate.y - 10 + Math.random() * (plate.height + 20)
+                        width: 3 + Math.random() * 4; height: width; radius: width / 2
+                        color: setupController.accentColor
+                        opacity: 0.3 + 0.4 * Math.sin(glowTimer.phase * 3 + index * 0.8)
+                    }
+                }
+
+                // Effect animation timer
+                Timer {
+                    id: glowTimer; interval: 50; running: true; repeat: true
+                    property real phase: 0
+                    onTriggered: phase += 0.1
+                }
+
+                // Effect name badge
+                Rectangle {
+                    visible: setupController.animationType !== "slide_left" && setupController.animationType !== ""
+                    anchors.bottom: plate.top; anchors.left: plate.left; anchors.bottomMargin: 4
+                    width: fxLbl.implicitWidth + 10; height: 16; radius: 3
+                    color: Qt.rgba(91/255, 79/255, 219/255, 0.3)
+                    Label { id: fxLbl; anchors.centerIn: parent; text: setupController.animationType.replace(/_/g, " ").toUpperCase(); font.pixelSize: 7; font.bold: true; color: "#AAA" }
+                }
+
                 // Badges
                 Rectangle { anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 8; width: pvLbl.implicitWidth+12; height: 18; radius: 4; color: Qt.rgba(0,0,0,0.4); Label { id: pvLbl; anchors.centerIn: parent; text: "PREVIEW"; font.pixelSize: 10; color: "#666" } }
                 Rectangle { anchors.top: parent.top; anchors.left: parent.left; anchors.margins: 8; width: stLbl.implicitWidth+12; height: 18; radius: 4; color: Qt.rgba(0,0,0,0.4); Label { id: stLbl; anchors.centerIn: parent; text: root.previewStyleId.toUpperCase(); font.pixelSize: 10; font.bold: true; color: "#999" } }
