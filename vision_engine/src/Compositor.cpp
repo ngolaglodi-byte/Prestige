@@ -128,7 +128,7 @@ void Compositor::setSubtitleText(const QString& text)
     }
 }
 void Compositor::setSubtitleVisible(bool v) { m_subtitleVisible = v; }
-void Compositor::setSubtitleFontSize(int s) { m_subtitleFontSize = qBound(12, s, 48); }
+void Compositor::setSubtitleFontSize(int s) { m_subtitleFontSize = qBound(10, s, 60); }
 void Compositor::setSubtitlePosition(const QString& p) { m_subtitlePosition = p; }
 void Compositor::setSubtitleBgOpacity(double o) { m_subtitleBgOpacity = qBound(0.0, o, 1.0); }
 void Compositor::setSubtitleTextColor(const QColor& c) { m_subtitleTextColor = c; }
@@ -886,7 +886,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     if (m_clockVisible) {
         double ckS = m_clockScale;
         QString timeStr = QTime::currentTime().toString(m_clockFormat);
-        QFont clockF("Menlo", static_cast<int>(16 * scale * ckS), QFont::Bold);
+        QFont clockF("Menlo", qMax(12, static_cast<int>(18 * scale * ckS)), QFont::Bold);
         painter.setFont(clockF);
 
         int clockW = QFontMetrics(clockF).horizontalAdvance(timeStr);
@@ -905,7 +905,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Countdown pill (top-left) — broadcast: subtle glass pill
     if (m_countdownVisible && !m_countdownText.isEmpty()) {
         double cdS = m_countdownScale;
-        QFont cdFont("Menlo", static_cast<int>(15 * scale * cdS), QFont::Bold);
+        QFont cdFont("Menlo", qMax(12, static_cast<int>(17 * scale * cdS)), QFont::Bold);
         painter.setFont(cdFont);
         int cdW = QFontMetrics(cdFont).horizontalAdvance(m_countdownText) + static_cast<int>(24 * scale * cdS);
         int cdH = static_cast<int>(30 * scale * cdS);
@@ -1052,9 +1052,10 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         painter.setBrush(Qt::NoBrush);
         painter.drawRoundedRect(sbRect, 6 * scale, 6 * scale);
 
-        int fntTeam = static_cast<int>(9 * scale * sbS);
-        int fntScore = static_cast<int>(24 * scale * sbS);
-        int fntTime = static_cast<int>(8 * scale * sbS);
+        // Font sizes with minimum floors — small text scales faster than large
+        int fntTeam = qMax(11, static_cast<int>(14 * scale * (0.7 + sbS * 0.3)));
+        int fntScore = qMax(16, static_cast<int>(22 * scale * sbS));
+        int fntTime = qMax(10, static_cast<int>(12 * scale * (0.7 + sbS * 0.3)));
         int midY = sbY + sbH / 2;
 
         QFont teamFont("Helvetica Neue", fntTeam, QFont::DemiBold);
@@ -1109,15 +1110,18 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int wPad = static_cast<int>(24 * scale);
 
         // Icon
-        int iconSize = static_cast<int>(24 * scale * wS);
+        // Font sizes with minimum floors for readability
+        int iconSize = qMax(18, static_cast<int>(28 * scale * wS));
         QFont iconFont("Helvetica Neue", iconSize);
 
-        // City
-        QFont cityFont("Helvetica Neue", static_cast<int>(13 * scale * wS), QFont::Bold);
+        // City — larger base, scales well
+        int citySize = qMax(13, static_cast<int>(16 * scale * (0.7 + wS * 0.3)));
+        QFont cityFont("Helvetica Neue", citySize, QFont::Bold);
         QFontMetrics cityFm(cityFont);
 
         // Temperature
-        QFont tempFont("Helvetica Neue", static_cast<int>(11 * scale * wS));
+        int tempSize = qMax(11, static_cast<int>(14 * scale * (0.7 + wS * 0.3)));
+        QFont tempFont("Helvetica Neue", tempSize);
         QFontMetrics tempFm(tempFont);
         QString tempStr = QString::number(qRound(m_weatherTemp)) + m_weatherUnit;
 
