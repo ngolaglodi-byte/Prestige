@@ -257,48 +257,9 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     int fh = output.height();
     double scale = fw / 1920.0;
 
-    // Lower Third (hidden during bypass)
-    if (m_lowerVisible && !m_lowerTitle.isEmpty() && !m_bypassActive) {
-        int ltH = static_cast<int>(88 * scale);
-        int ltY = fh - static_cast<int>(fh * 0.14);
-        QRectF ltRect(0, ltY, fw, ltH);
-
-        drawGlassRect(painter, ltRect, 0, QColor(5, 5, 8), 0.88);
-
-        // Accent line top
-        drawGlowLine(painter, QPointF(0, ltY), QPointF(fw, ltY), 3 * scale, m_accentColor, 4);
-
-        // Title
-        QFont titleF("Helvetica Neue", static_cast<int>(22 * scale), QFont::Bold);
-        painter.setFont(titleF);
-        painter.setPen(Qt::white);
-        painter.drawText(static_cast<int>(24 * scale), ltY + static_cast<int>(36 * scale), m_lowerTitle);
-
-        // Subtitle
-        if (!m_lowerSubtitle.isEmpty()) {
-            QFont subF("Helvetica Neue", static_cast<int>(14 * scale));
-            painter.setFont(subF);
-            painter.setPen(QColor(200, 200, 200));
-            painter.drawText(static_cast<int>(24 * scale), ltY + static_cast<int>(62 * scale), m_lowerSubtitle);
-        }
-
-        // Channel name badge (right side of lower third)
-        if (!m_channelName.isEmpty()) {
-            QFont chF("Helvetica Neue", static_cast<int>(11 * scale), QFont::Bold);
-            chF.setLetterSpacing(QFont::AbsoluteSpacing, 1);
-            painter.setFont(chF);
-            int chW = QFontMetrics(chF).horizontalAdvance(m_channelName) + static_cast<int>(20 * scale);
-            int chH = static_cast<int>(24 * scale);
-            int chX = fw - chW - static_cast<int>(16 * scale);
-            int chY = ltY + (ltH - chH) / 2;
-            QRectF chRect(chX, chY, chW, chH);
-            painter.setPen(Qt::NoPen);
-            painter.setBrush(QColor(255, 255, 255, 18));
-            painter.drawRoundedRect(chRect, chH / 2.0, chH / 2.0);
-            painter.setPen(QColor(255, 255, 255, 180));
-            painter.drawText(chRect, Qt::AlignCenter, m_channelName);
-        }
-    }
+    // Legacy Lower Third — REMOVED
+    // Replaced by Show Title system (setShowTitle/setShowTitleVisible)
+    // and Talent Nameplate system (20 styles with IA detection)
 
     // Ticker (scrolling text at very bottom)
     if (m_tickerVisible && !m_tickerText.isEmpty()) {
