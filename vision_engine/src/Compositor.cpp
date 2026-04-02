@@ -13,7 +13,16 @@
 
 namespace prestige {
 
-Compositor::Compositor(QObject* parent) : QObject(parent) { registerStyles(); }
+Compositor::Compositor(QObject* parent) : QObject(parent) {
+    registerStyles();
+    // Initialize GPU effects engine
+    if (m_gpu.initialize()) {
+        m_virtualStudio.setGpuEffects(&m_gpu);
+        qInfo() << "[Compositor] GPU effects engine ACTIVE";
+    } else {
+        qInfo() << "[Compositor] GPU not available — using CPU fallback";
+    }
+}
 
 void Compositor::registerStyles()
 {
@@ -1431,6 +1440,25 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     }
 
     painter.end();
+
+    // ── GPU Post-Processing (replaces CPU effects when available) ──
+    if (m_gpu.isAvailable() && !m_bypassActive) {
+        if (m_animTypeStr == "glitch_rgb" || m_animTypeStr == "glitch_transition")
+            output = m_gpu.applyGlitchRGB(output, 0.5, m_loopFrame);
+        else if (m_animTypeStr == "chromatic_aberration")
+            output = m_gpu.applyChromaticAberration(output, 0.003);
+        else if (m_animTypeStr == "vhs_effect")
+            output = m_gpu.applyVHS(output, 0.5, m_loopFrame);
+        else if (m_animTypeStr == "gaussian_blur_in" || m_animTypeStr == "blur_in")
+            output = m_gpu.applyGaussianBlur(output, 3.0);
+        else if (m_animTypeStr == "radial_blur")
+            output = m_gpu.applyRadialBlur(output, 0.5, 0.5, 0.02);
+        else if (m_animTypeStr == "neon_glow" || m_animTypeStr == "bloom")
+            output = m_gpu.applyGlow(output, m_accentColor, 0.4, 6.0);
+        else if (m_animTypeStr == "edge_glow")
+            output = m_gpu.applyGlow(output, m_accentColor, 0.3, 3.0);
+    }
+
     m_lastCompositeMs = m_perfTimer.nsecsElapsed() / 1000000.0;
     emit frameComposited(output);
     return output;

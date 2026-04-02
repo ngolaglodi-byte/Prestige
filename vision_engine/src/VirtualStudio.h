@@ -12,6 +12,8 @@
 #include <QString>
 #include <cmath>
 
+namespace prestige { class GpuEffects; }
+
 namespace prestige {
 
 class VirtualStudio {
@@ -42,6 +44,9 @@ public:
     void setCustomBackgroundPath(const QString& path);
     bool hasCustomBackground() const { return !m_customBg.isNull(); }
 
+    // GPU acceleration (set from Compositor)
+    void setGpuEffects(GpuEffects* gpu) { m_gpu = gpu; }
+
 private:
     QImage applyChromaKey(const QImage& frame);
     QImage renderStudioBackground(const QSize& size);
@@ -71,6 +76,8 @@ private:
     int     m_frameCounter    = 0;
     bool    m_bgDirty         = true;
     QImage  m_cachedBg;
+
+    GpuEffects* m_gpu = nullptr; // GPU acceleration (optional)
 };
 
 } // namespace prestige

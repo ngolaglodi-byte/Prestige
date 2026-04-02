@@ -22,6 +22,7 @@
 #include "TalentData.h"
 #include "BroadcastEffects.h"
 #include "VirtualStudio.h"
+#include "GpuEffects.h"
 
 namespace prestige {
 
@@ -342,6 +343,9 @@ private:
     double  m_showTitleEntryProgress = 0.0;
     bool    m_talentNameplateVisible = true;
     bool    m_bypassActive = false;
+
+    // GPU Effects Engine
+    GpuEffects m_gpu;
 
     // Virtual Studio
     VirtualStudio m_virtualStudio;

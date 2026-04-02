@@ -4,6 +4,7 @@
 // ============================================================
 
 #include "VirtualStudio.h"
+#include "GpuEffects.h"
 #include <QLinearGradient>
 #include <QRadialGradient>
 #include <QPen>
@@ -42,8 +43,16 @@ QImage VirtualStudio::process(const QImage& rawFrame)
 
     QSize sz = rawFrame.size();
 
-    // Step 1: Chroma key — extract talent with alpha mask
-    QImage keyedTalent = m_chromaKeyEnabled ? applyChromaKey(rawFrame) : rawFrame.convertToFormat(QImage::Format_ARGB32);
+    // Step 1: Chroma key — GPU if available, CPU fallback
+    QImage keyedTalent;
+    if (m_chromaKeyEnabled) {
+        if (m_gpu && m_gpu->isAvailable())
+            keyedTalent = m_gpu->chromaKey(rawFrame, m_chromaKeyColor, m_tolerance, m_smooth);
+        else
+            keyedTalent = applyChromaKey(rawFrame);
+    } else {
+        keyedTalent = rawFrame.convertToFormat(QImage::Format_ARGB32);
+    }
 
     // Step 2: Render studio background (cached if unchanged)
     if (m_bgDirty || m_cachedBg.size() != sz) {
