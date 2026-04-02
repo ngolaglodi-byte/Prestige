@@ -104,6 +104,14 @@ SetupController::SetupController(ProfileManager* profiles, QObject* parent)
     m_vsAnimEnabled = m_profile.vsAnimationsEnabled;
     m_vsCustomBg = m_profile.vsCustomBackground;
     m_srtUrl = m_profile.srtUrl;
+    // Design Templates
+    m_nameplateDesign = m_profile.nameplateDesign;
+    m_titleDesign = m_profile.titleDesign;
+    m_channelDesign = m_profile.channelDesign;
+    m_tickerDesign = m_profile.tickerDesign;
+    m_scoreboardDesign = m_profile.scoreboardDesign;
+    m_clockDesign = m_profile.clockDesign;
+    m_weatherDesign = m_profile.weatherDesign;
 }
 
 QString SetupController::currentProfileName() const
@@ -539,6 +547,14 @@ void SetupController::saveProfile()
     m_profile.vsAnimationsEnabled = m_vsAnimEnabled;
     m_profile.vsCustomBackground = m_vsCustomBg;
     m_profile.srtUrl = m_srtUrl;
+    // Design Templates
+    m_profile.nameplateDesign = m_nameplateDesign;
+    m_profile.titleDesign = m_titleDesign;
+    m_profile.channelDesign = m_channelDesign;
+    m_profile.tickerDesign = m_tickerDesign;
+    m_profile.scoreboardDesign = m_scoreboardDesign;
+    m_profile.clockDesign = m_clockDesign;
+    m_profile.weatherDesign = m_weatherDesign;
 
     m_profiles->save(m_profile);
     qInfo() << "[SetupController] Profile saved:" << m_profile.name;

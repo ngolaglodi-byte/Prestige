@@ -118,6 +118,15 @@ struct EmissionProfile {
     QString     goalAnimEffect = "kinetic_pop";
     int         goalAnimDuration = 5;
 
+    // Design Templates
+    QString     nameplateDesign = "np_broadcast_news";
+    QString     titleDesign = "tt_broadcast";
+    QString     channelDesign = "ch_rectangle_red";
+    QString     tickerDesign = "tk_news_red";
+    QString     scoreboardDesign = "sb_glass_dark";
+    QString     clockDesign = "ck_shadow_only";
+    QString     weatherDesign = "wt_shadow_only";
+
     // Scoreboard detailed data
     QString     scoreboardTeamA = "HOME";
     QString     scoreboardTeamB = "AWAY";

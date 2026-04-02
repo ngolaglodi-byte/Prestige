@@ -22,6 +22,9 @@ Compositor::Compositor(QObject* parent) : QObject(parent) {
     } else {
         qInfo() << "[Compositor] GPU not available — using CPU fallback";
     }
+    // Initialize Design Templates
+    DesignRegistry::instance();
+    qInfo() << "[Compositor] Design Templates loaded";
 }
 
 void Compositor::registerStyles()
@@ -428,6 +431,10 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int tkOffY = static_cast<int>(m_tickerOffY * scale);
         int tkY = fh - tkH - tkOffY;
         QRectF tkRect(0, tkY, fw, tkH);
+
+        // Design Template: render ticker background layers
+        double timeSec = m_loopFrame / 25.0;
+        DesignRegistry::instance().render(painter, "ticker", m_tkDesign, tkRect, timeSec, scale, m_accentColor);
 
         painter.setPen(Qt::NoPen);
         painter.setBrush(m_tickerBgColor);
@@ -1183,6 +1190,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
     // Scoreboard overlay — glass morphism (FIFA/UEFA broadcast style)
     if (m_scoreboardVisible && !m_bypassActive) {
+        double timeSec = m_loopFrame / 25.0;
         double sbS = m_scoreboardScale;
         int sbW = static_cast<int>(360 * scale * sbS);
         int sbH = static_cast<int>(85 * scale * sbS);
@@ -1202,8 +1210,8 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             sbY = fh - sbH - sbMarginY + sbOffYPx;
 
         QRectF sbRect(sbX, sbY, sbW, sbH);
-        // Subtle glass background
-        drawGlassRect(painter, sbRect, static_cast<int>(6 * scale), QColor(0, 0, 0), 0.35);
+        // Design Template: render scoreboard background layers
+        DesignRegistry::instance().render(painter, "scoreboard", m_sbDesignId, sbRect, timeSec, scale, m_accentColor);
         // Top accent line
         painter.setPen(Qt::NoPen);
         painter.setBrush(QColor(255, 255, 255, 30));

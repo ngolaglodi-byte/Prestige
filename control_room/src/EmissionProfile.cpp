@@ -105,6 +105,15 @@ QJsonObject EmissionProfile::toJson() const
     obj["goal_anim_effect"]      = goalAnimEffect;
     obj["goal_anim_duration"]    = goalAnimDuration;
 
+    // Design Templates
+    obj["d_nameplate"]   = nameplateDesign;
+    obj["d_title"]       = titleDesign;
+    obj["d_channel"]     = channelDesign;
+    obj["d_ticker"]      = tickerDesign;
+    obj["d_scoreboard"]  = scoreboardDesign;
+    obj["d_clock"]       = clockDesign;
+    obj["d_weather"]     = weatherDesign;
+
     // Scoreboard data
     obj["p_sb_team_a"]           = scoreboardTeamA;
     obj["p_sb_team_b"]           = scoreboardTeamB;
@@ -228,6 +237,15 @@ EmissionProfile EmissionProfile::fromJson(const QJsonObject& obj)
     p.goalAnimText        = obj["goal_anim_text"].toString("GOAL!");
     p.goalAnimEffect      = obj["goal_anim_effect"].toString("kinetic_pop");
     p.goalAnimDuration    = obj["goal_anim_duration"].toInt(5);
+
+    // Design Templates
+    p.nameplateDesign     = obj["d_nameplate"].toString("np_broadcast_news");
+    p.titleDesign         = obj["d_title"].toString("tt_broadcast");
+    p.channelDesign       = obj["d_channel"].toString("ch_rectangle_red");
+    p.tickerDesign        = obj["d_ticker"].toString("tk_news_red");
+    p.scoreboardDesign    = obj["d_scoreboard"].toString("sb_glass_dark");
+    p.clockDesign         = obj["d_clock"].toString("ck_shadow_only");
+    p.weatherDesign       = obj["d_weather"].toString("wt_shadow_only");
 
     // Scoreboard data
     p.scoreboardTeamA     = obj["p_sb_team_a"].toString("HOME");
