@@ -110,6 +110,76 @@ void duotone(QPainter& p, const QRectF& r, const QColor& shadow, const QColor& h
 void shadowDropAnimate(QPainter& p, const QRectF& r, double prog, const QColor& shadow);
 void outlineStroke(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color, double width);
 
+// ══════════════════════════════════════════════════════════════
+// AE EXTENDED TEXT ANIMATIONS (25)
+// Per-character 3D, range selectors, advanced effects
+// ══════════════════════════════════════════════════════════════
+void matrixRain(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void cascadeReveal(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void elasticDrop(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void spiralIn(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void flipBoard(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void glowReveal(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void smokeIn(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void scatterAssemble(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void slotMachine(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void stampPress(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void wipePerLetter(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void swingDrop(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void neonFlicker(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void gravityCrush(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void rubberStretch(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void fadeInRandom(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void curvedPath(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void zoomBurst(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void jitterShake(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void shadowExpand(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void rangeWipe(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void textShatter(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void reflectReveal(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void perspectiveTilt(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+void liquidFill(QPainter& p, const QString& text, const QRectF& r, double prog, const QFont& font, const QColor& color);
+
+// ══════════════════════════════════════════════════════════════
+// AE EXTENDED TRANSITIONS (20)
+// Card Wipe, Venetian Blinds, Radial Wipe, Iris, etc.
+// ══════════════════════════════════════════════════════════════
+void cardWipe(QPainter& p, const QSize& size, double prog, int rows, int cols);
+void venetianBlinds(QPainter& p, const QSize& size, double prog, int blades, bool horizontal);
+void radialWipe(QPainter& p, const QSize& size, double prog, bool clockwise);
+void irisWipe(QPainter& p, const QSize& size, double prog, const QString& shape);
+void blockDissolve(QPainter& p, const QSize& size, double prog, int blockSize);
+void checkerWipe(QPainter& p, const QSize& size, double prog, int divisions);
+void spiralWipe(QPainter& p, const QSize& size, double prog, bool clockwise);
+void barnDoor(QPainter& p, const QSize& size, double prog, bool horizontal);
+void matrixWipe(QPainter& p, const QSize& size, double prog, int columns);
+void pinwheel(QPainter& p, const QSize& size, double prog, int blades);
+void zigzagWipe(QPainter& p, const QSize& size, double prog, int teeth);
+void diamondWipe(QPainter& p, const QSize& size, double prog);
+void heartWipe(QPainter& p, const QSize& size, double prog);
+void starWipe(QPainter& p, const QSize& size, double prog, int points);
+void clockWipe(QPainter& p, const QSize& size, double prog, bool clockwise);
+void slideReveal(QPainter& p, const QSize& size, double prog, const QString& direction);
+void splitWipe(QPainter& p, const QSize& size, double prog, bool horizontal);
+void doorWipe(QPainter& p, const QSize& size, double prog);
+void rippleDissolve(QPainter& p, const QSize& size, double prog);
+void particleDissolve(QPainter& p, const QSize& size, double prog, int count);
+
+// ══════════════════════════════════════════════════════════════
+// AE SHAPE LAYER OPERATIONS (10)
+// Trim Paths, Repeater, Offset Path, etc.
+// ══════════════════════════════════════════════════════════════
+void trimPath(QPainter& p, const std::vector<QPointF>& points, double startTrim, double endTrim, const QColor& color, double width);
+void repeaterShape(QPainter& p, const QRectF& shape, int copies, double offsetX, double offsetY, double rotation, double scaleStep, const QColor& color);
+void offsetPath(QPainter& p, const std::vector<QPointF>& points, double offset, const QColor& color, double width);
+void zigZagPath(QPainter& p, const std::vector<QPointF>& points, double size, int ridges, const QColor& color, double width);
+void puckerBloat(QPainter& p, const QRectF& r, double amount, const QColor& color, double width);
+void roundCorners(QPainter& p, const QRectF& r, double radius, const QColor& color, double width);
+void wigglePath(QPainter& p, const std::vector<QPointF>& points, double size, double detail, double phase, const QColor& color, double width);
+void dashedPath(QPainter& p, const std::vector<QPointF>& points, double dashLen, double gapLen, double offset, const QColor& color, double width);
+void taperStroke(QPainter& p, const std::vector<QPointF>& points, double startWidth, double endWidth, const QColor& color);
+void morphPaths(QPainter& p, const std::vector<QPointF>& from, const std::vector<QPointF>& to, double prog, const QColor& color, double width);
+
 } // namespace fx
 
 // ── Effect ID list for UI ─────────────────────────────────

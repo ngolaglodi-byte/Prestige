@@ -11,14 +11,16 @@
 #include <QSize>
 #include <QString>
 #include <cmath>
+#include <memory>
 
-namespace prestige { class GpuEffects; }
+namespace prestige { class GpuEffects; class Studio3DRenderer; }
 
 namespace prestige {
 
 class VirtualStudio {
 public:
-    VirtualStudio() = default;
+    VirtualStudio();
+    ~VirtualStudio();
 
     // Main entry point — returns processed frame (or passthrough if disabled)
     QImage process(const QImage& rawFrame);
@@ -78,6 +80,7 @@ private:
     QImage  m_cachedBg;
 
     GpuEffects* m_gpu = nullptr; // GPU acceleration (optional)
+    std::unique_ptr<Studio3DRenderer> m_3dRenderer; // PBR 3D studio renderer
 };
 
 } // namespace prestige

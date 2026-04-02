@@ -12,6 +12,7 @@ import json
 import time
 import threading
 import socket
+import ssl
 
 try:
     import zmq
@@ -70,7 +71,8 @@ class TwitchChatFetcher:
     """
 
     IRC_HOST = "irc.chat.twitch.tv"
-    IRC_PORT = 6667
+    IRC_PORT = 6697  # TLS port (plaintext 6667 is deprecated by Twitch)
+    MAX_RECONNECT_DELAY = 30
 
     def __init__(self, channel: str = "", oauth_token: str = "", nickname: str = "prestige_bot"):
         self._channel = channel
@@ -92,34 +94,53 @@ class TwitchChatFetcher:
         if self._thread:
             self._thread.join(timeout=3)
 
+    def _connect_tls(self) -> socket.socket:
+        """Create TLS-encrypted connection to Twitch IRC (SMPTE/EBU compliant)."""
+        raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        ctx = ssl.create_default_context()
+        sock = ctx.wrap_socket(raw, server_hostname=self.IRC_HOST)
+        sock.connect((self.IRC_HOST, self.IRC_PORT))
+        sock.settimeout(2.0)
+
+        sock.sendall(f"PASS {self._token}\r\n".encode("utf-8"))
+        sock.sendall(f"NICK {self._nick}\r\n".encode("utf-8"))
+        # Request tags for display names, badges, colors
+        sock.sendall(b"CAP REQ :twitch.tv/tags twitch.tv/commands\r\n")
+        sock.sendall(f"JOIN #{self._channel}\r\n".encode("utf-8"))
+        return sock
+
     def _run(self, publisher: SocialChatPublisher):
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((self.IRC_HOST, self.IRC_PORT))
-            sock.settimeout(2.0)
+        reconnect_delay = 1
+        while self._running:
+            try:
+                sock = self._connect_tls()
+                reconnect_delay = 1  # Reset on successful connect
+                print(f"[TwitchChat] Connected to #{self._channel} (TLS)")
 
-            sock.sendall(f"PASS {self._token}\r\n".encode("utf-8"))
-            sock.sendall(f"NICK {self._nick}\r\n".encode("utf-8"))
-            sock.sendall(f"JOIN #{self._channel}\r\n".encode("utf-8"))
+                buffer = ""
+                while self._running:
+                    try:
+                        data = sock.recv(4096).decode("utf-8", errors="replace")
+                        if not data:
+                            break  # Connection lost → reconnect
+                        buffer += data
+                        while "\r\n" in buffer:
+                            line, buffer = buffer.split("\r\n", 1)
+                            if line.startswith("PING"):
+                                sock.sendall(f"PONG {line[5:]}\r\n".encode("utf-8"))
+                            elif "PRIVMSG" in line:
+                                self._parse_and_publish(line, publisher)
+                    except socket.timeout:
+                        continue
+                sock.close()
+            except Exception as e:
+                print(f"[TwitchChat] Error: {e} — reconnecting in {reconnect_delay}s")
 
-            buffer = ""
-            while self._running:
-                try:
-                    data = sock.recv(4096).decode("utf-8", errors="replace")
-                    if not data:
-                        break
-                    buffer += data
-                    while "\r\n" in buffer:
-                        line, buffer = buffer.split("\r\n", 1)
-                        if line.startswith("PING"):
-                            sock.sendall(f"PONG {line[5:]}\r\n".encode("utf-8"))
-                        elif "PRIVMSG" in line:
-                            self._parse_and_publish(line, publisher)
-                except socket.timeout:
-                    continue
-            sock.close()
-        except Exception as e:
-            print(f"[TwitchChat] Error: {e}")
+            if not self._running:
+                break
+            # Exponential backoff reconnection
+            time.sleep(reconnect_delay)
+            reconnect_delay = min(reconnect_delay * 2, self.MAX_RECONNECT_DELAY)
 
     def _parse_and_publish(self, line: str, publisher: SocialChatPublisher):
         # Format: :nickname!user@host PRIVMSG #channel :message

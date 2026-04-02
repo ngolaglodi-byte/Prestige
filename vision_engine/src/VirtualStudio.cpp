@@ -5,6 +5,7 @@
 
 #include "VirtualStudio.h"
 #include "GpuEffects.h"
+#include "Studio3DRenderer.h"
 #include <QLinearGradient>
 #include <QRadialGradient>
 #include <QPen>
@@ -13,6 +14,9 @@
 #include <algorithm>
 
 namespace prestige {
+
+VirtualStudio::VirtualStudio() = default;
+VirtualStudio::~VirtualStudio() = default;
 
 void VirtualStudio::setCustomBackgroundPath(const QString& path)
 {
@@ -54,19 +58,55 @@ QImage VirtualStudio::process(const QImage& rawFrame)
         keyedTalent = rawFrame.convertToFormat(QImage::Format_ARGB32);
     }
 
-    // Step 2: Render studio background (cached if unchanged)
-    if (m_bgDirty || m_cachedBg.size() != sz) {
-        m_cachedBg = renderStudioBackground(sz);
-        m_bgDirty = false;
-    }
-    QImage studio = m_cachedBg.copy();
+    // Step 2: Render studio background
+    // Use 3D PBR renderer (preferred) or fallback to 2D procedural
+    QImage studio;
+    if (!m_customBg.isNull()) {
+        // Custom background image takes priority over everything
+        studio = m_customBg.scaled(sz, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    } else {
+        // Initialize 3D renderer on first use
+        if (!m_3dRenderer) {
+            m_3dRenderer = std::make_unique<Studio3DRenderer>();
+            m_3dRenderer->initialize(sz);
+            m_3dRenderer->setPreset(m_studioId);
+            if (m_primaryColor.isValid()) m_3dRenderer->setPrimaryColor(m_primaryColor);
+            if (m_secondaryColor.isValid()) m_3dRenderer->setSecondaryColor(m_secondaryColor);
+            if (m_accentColor.isValid()) m_3dRenderer->setAccentColor(m_accentColor);
+            if (m_floorColor.isValid()) m_3dRenderer->setFloorColor(m_floorColor);
+            m_3dRenderer->setLightIntensity(m_lightIntensity);
+            if (m_lightColor.isValid()) m_3dRenderer->setLightColor(m_lightColor);
+            m_3dRenderer->setAnimationsEnabled(m_animEnabled);
+        }
 
-    // Step 3: Animated elements on studio (if enabled)
-    if (m_animEnabled) {
-        QPainter bgPainter(&studio);
-        bgPainter.setRenderHint(QPainter::Antialiasing, true);
-        renderAnimatedElements(bgPainter, sz);
-        bgPainter.end();
+        // Sync settings when dirty
+        if (m_bgDirty) {
+            m_3dRenderer->setPreset(m_studioId);
+            if (m_primaryColor.isValid()) m_3dRenderer->setPrimaryColor(m_primaryColor);
+            if (m_secondaryColor.isValid()) m_3dRenderer->setSecondaryColor(m_secondaryColor);
+            if (m_accentColor.isValid()) m_3dRenderer->setAccentColor(m_accentColor);
+            if (m_floorColor.isValid()) m_3dRenderer->setFloorColor(m_floorColor);
+            m_3dRenderer->setLightIntensity(m_lightIntensity);
+            m_bgDirty = false;
+        }
+
+        // Render 3D studio (includes animations via timeSec)
+        double timeSec = m_frameCounter / 30.0; // Approximate — will be precise with wall clock
+        studio = m_3dRenderer->render(timeSec);
+
+        // Fallback: if 3D render returned null, use old 2D
+        if (studio.isNull()) {
+            if (m_cachedBg.size() != sz) {
+                m_cachedBg = renderStudioBackground(sz);
+            }
+            studio = m_cachedBg.copy();
+            if (m_animEnabled) {
+                QPainter bgPainter(&studio);
+                bgPainter.setRenderHint(QPainter::Antialiasing, true);
+                renderAnimatedElements(bgPainter, sz);
+                bgPainter.end();
+            }
+        }
     }
 
     // Step 4: Composite talent on studio
@@ -417,12 +457,11 @@ void VirtualStudio::renderAnimatedElements(QPainter& painter, const QSize& size)
     int sid = qBound(0, m_studioId, 7);
     QColor accent = m_accentColor.isValid() ? m_accentColor : templateAccents[sid];
 
-    // Apply light intensity
-    int intensityAlpha = static_cast<int>(m_lightIntensity * 255);
-    Q_UNUSED(intensityAlpha)
+    // Apply light intensity to all animated elements
+    double lightMul = std::clamp(m_lightIntensity, 0.2, 2.0);
 
     // 1. Pulsing glow lines (horizontal accent bars)
-    int glowAlpha = static_cast<int>(15 + 12 * phase);
+    int glowAlpha = static_cast<int>((15 + 12 * phase) * lightMul);
     painter.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), glowAlpha), 2 * scale));
     painter.drawLine(0, h * 0.65, w, h * 0.65);
     if (m_studioId != 7) { // no top line for luxury
@@ -434,7 +473,7 @@ void VirtualStudio::renderAnimatedElements(QPainter& painter, const QSize& size)
         double sweep = (m_frameCounter % 200) / 200.0; // 0→1 over ~8 seconds at 25fps
         QLinearGradient led(w * sweep - w * 0.15, 0, w * sweep + w * 0.15, 0);
         led.setColorAt(0, QColor(accent.red(), accent.green(), accent.blue(), 0));
-        led.setColorAt(0.5, QColor(accent.red(), accent.green(), accent.blue(), 12));
+        led.setColorAt(0.5, QColor(accent.red(), accent.green(), accent.blue(), static_cast<int>(12 * lightMul)));
         led.setColorAt(1, QColor(accent.red(), accent.green(), accent.blue(), 0));
 
         painter.setPen(Qt::NoPen);
@@ -450,7 +489,7 @@ void VirtualStudio::renderAnimatedElements(QPainter& painter, const QSize& size)
         double px = ((seed * 7919) % w);
         double py = ((seed * 6271) % static_cast<int>(h * 0.65));
         double particlePhase = std::sin(m_frameCounter * 0.03 + i * 0.8);
-        int particleAlpha = static_cast<int>(4 + 6 * (0.5 + 0.5 * particlePhase));
+        int particleAlpha = static_cast<int>((4 + 6 * (0.5 + 0.5 * particlePhase)) * lightMul);
         double particleSize = (2 + (i % 3)) * scale;
 
         painter.setBrush(QColor(accent.red(), accent.green(), accent.blue(), particleAlpha));
@@ -458,7 +497,7 @@ void VirtualStudio::renderAnimatedElements(QPainter& painter, const QSize& size)
     }
 
     // 4. Floor reflection shimmer
-    int shimmerAlpha = static_cast<int>(5 + 4 * phaseFast);
+    int shimmerAlpha = static_cast<int>((5 + 4 * phaseFast) * lightMul);
     QLinearGradient shimmer(0, h * 0.66, 0, h * 0.75);
     shimmer.setColorAt(0, QColor(accent.red(), accent.green(), accent.blue(), shimmerAlpha));
     shimmer.setColorAt(1, QColor(0, 0, 0, 0));

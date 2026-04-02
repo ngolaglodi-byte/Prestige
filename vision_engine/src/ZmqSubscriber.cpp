@@ -111,11 +111,24 @@ void ZmqSubscriber::run(const QString& address)
         zmq_getsockopt(socket, ZMQ_RCVMORE, &more, &moreSize);
 
         if (more) {
+            // Multipart message: [topic, payload]
             zmq_msg_t frame2;
             zmq_msg_init(&frame2);
             zmq_msg_recv(&frame2, socket, 0);
             QByteArray payload(static_cast<char*>(zmq_msg_data(&frame2)), zmq_msg_size(&frame2));
             zmq_msg_close(&frame2);
+
+            // Drain any extra frames
+            int more2 = 0;
+            size_t more2Size = sizeof(more2);
+            zmq_getsockopt(socket, ZMQ_RCVMORE, &more2, &more2Size);
+            while (more2) {
+                zmq_msg_t extra;
+                zmq_msg_init(&extra);
+                zmq_msg_recv(&extra, socket, 0);
+                zmq_msg_close(&extra);
+                zmq_getsockopt(socket, ZMQ_RCVMORE, &more2, &more2Size);
+            }
 
             if (firstPart == "subtitle") {
                 auto doc = QJsonDocument::fromJson(payload);
@@ -125,49 +138,74 @@ void ZmqSubscriber::run(const QString& address)
                     obj["language"].toString(),
                     obj["confidence"].toDouble(0.9)
                 );
+                continue;
             }
-            continue;
+
+            if (firstPart == "social_chat") {
+                auto doc = QJsonDocument::fromJson(payload);
+                auto obj = doc.object();
+                emit socialChatReceived(
+                    obj["platform"].toString(),
+                    obj["author"].toString(),
+                    obj["message"].toString(),
+                    obj["color"].toString("#FFFFFF")
+                );
+                continue;
+            }
+
+            if (firstPart == "detection") {
+                // Detection messages now use topic-based multipart
+                perfTimer.start();
+                DetectionMessage msg = DetectionMessage::fromJson(payload);
+
+                qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+                if (msg.captureTimestampMs > 0) {
+                    m_syncOffsetMs = static_cast<double>(nowMs - msg.captureTimestampMs);
+                }
+
+                QList<TalentOverlay> overlays;
+                overlays.reserve(msg.talents.size());
+                for (const auto& t : msg.talents) {
+                    TalentOverlay ov;
+                    ov.id           = t.id;
+                    ov.name         = t.name;
+                    ov.role         = t.role;
+                    ov.confidence   = t.confidence;
+                    ov.showOverlay  = t.showOverlay;
+                    ov.overlayStyle = t.overlayStyle;
+                    ov.bbox = QRectF(t.bbox.x, t.bbox.y, t.bbox.w, t.bbox.h);
+                    overlays.append(ov);
+                }
+                m_store.update(overlays);
+                emit messageReceived(msg);
+
+                qint64 elapsed = perfTimer.nsecsElapsed() / 1000000;
+                if (elapsed > 10) {
+                    qWarning() << "[ZmqSubscriber] Parse took" << elapsed << "ms (> 10ms budget)";
+                }
+            }
+            continue; // All multipart messages handled above
         }
 
+        // Legacy: plain (non-multipart) detection message — backward compat
         perfTimer.start();
-
-        QByteArray raw = firstPart;
-        DetectionMessage msg = DetectionMessage::fromJson(raw);
-
-        // ── Temporal sync ──────────────────────────────────
-        // Calculate how old this detection is relative to now
+        DetectionMessage msg = DetectionMessage::fromJson(firstPart);
         qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
         if (msg.captureTimestampMs > 0) {
             m_syncOffsetMs = static_cast<double>(nowMs - msg.captureTimestampMs);
         }
-
-        // ── Update talent store with bbox prediction ───────
         QList<TalentOverlay> overlays;
         overlays.reserve(msg.talents.size());
-
         for (const auto& t : msg.talents) {
             TalentOverlay ov;
-            ov.id           = t.id;
-            ov.name         = t.name;
-            ov.role         = t.role;
-            ov.confidence   = t.confidence;
-            ov.showOverlay  = t.showOverlay;
+            ov.id = t.id; ov.name = t.name; ov.role = t.role;
+            ov.confidence = t.confidence; ov.showOverlay = t.showOverlay;
             ov.overlayStyle = t.overlayStyle;
-
-            // Use bbox as-is — the Python tracker already provides
-            // smoothed, up-to-date positions at 30fps+
             ov.bbox = QRectF(t.bbox.x, t.bbox.y, t.bbox.w, t.bbox.h);
-
             overlays.append(ov);
         }
-
         m_store.update(overlays);
         emit messageReceived(msg);
-
-        qint64 elapsed = perfTimer.nsecsElapsed() / 1000000;
-        if (elapsed > 10) {
-            qWarning() << "[ZmqSubscriber] Parse took" << elapsed << "ms (> 10ms budget)";
-        }
     }
 
     m_connected = false;

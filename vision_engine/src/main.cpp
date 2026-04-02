@@ -163,8 +163,13 @@ int main(int argc, char* argv[])
         });
 
     // ── 5. Output Router (RTMP/SRT/File) ─────────────────────
-    // (Moved before config receiver so it can be captured by the lambda)
     prestige::OutputRouter outputRouter;
+
+    // ── 5b. Audio passthrough: Whisper audio capture → OutputRouter ──
+    // The WhisperEngine captures audio at 16kHz mono. For broadcast output,
+    // we need a separate 48kHz stereo audio capture routed to the encoder.
+    // For now, connect the whisper audio buffer as a source.
+    // TODO: Add dedicated 48kHz audio capture for broadcast-grade A/V sync.
 
     // ── 4b. Config receiver from Control Room (:5559) ────────
     // Listens for style/animation changes from the director
@@ -217,6 +222,35 @@ int main(int argc, char* argv[])
             QMetaObject::invokeMethod(&compositor, [&compositor, accentColor, bgOpacity]() {
                 compositor.setAccentColor(QColor(accentColor));
                 compositor.setBgOpacity(bgOpacity);
+            }, Qt::QueuedConnection);
+
+            // ── AE Effects ─────────────────────────────────
+            QString easingCurve = obj["easing_curve"].toString();
+            QString blendMode = obj["overlay_blend_mode"].toString();
+            QString aeEffectId = obj["ae_effect_id"].toString();
+            double aeIntensity = obj["ae_effect_intensity"].toDouble(0.5);
+            double aeParam1 = obj["ae_effect_param1"].toDouble(0.5);
+            double aeParam2 = obj["ae_effect_param2"].toDouble(0.5);
+            QString aeColor1 = obj["ae_effect_color1"].toString("#E30613");
+            QString aeColor2 = obj["ae_effect_color2"].toString("#FFFFFF");
+            bool wiggleOn = obj["wiggle_enabled"].toBool(false);
+            double wiggleFreq = obj["wiggle_freq"].toDouble(3.0);
+            double wiggleAmp = obj["wiggle_amp"].toDouble(5.0);
+
+            QMetaObject::invokeMethod(&compositor, [&compositor, easingCurve, blendMode, aeEffectId,
+                                                      aeIntensity, aeParam1, aeParam2, aeColor1, aeColor2,
+                                                      wiggleOn, wiggleFreq, wiggleAmp]() {
+                if (!easingCurve.isEmpty()) compositor.setEasingCurve(easingCurve);
+                if (!blendMode.isEmpty())   compositor.setOverlayBlendMode(blendMode);
+                compositor.setAeEffectId(aeEffectId);
+                compositor.setAeEffectIntensity(aeIntensity);
+                compositor.setAeEffectParam1(aeParam1);
+                compositor.setAeEffectParam2(aeParam2);
+                compositor.setAeEffectColor1(QColor(aeColor1));
+                compositor.setAeEffectColor2(QColor(aeColor2));
+                compositor.setWiggleEnabled(wiggleOn);
+                compositor.setWiggleFreq(wiggleFreq);
+                compositor.setWiggleAmp(wiggleAmp);
             }, Qt::QueuedConnection);
 
             // Input source — open/switch video source dynamically
@@ -504,6 +538,10 @@ int main(int argc, char* argv[])
             QString sbPos = obj["scoreboard_position"].toString("top_left");
             QString sbTime = obj["scoreboard_match_time"].toString("00:00");
             int sbPeriod = obj["scoreboard_period"].toInt(1);
+            int sbYellowA = obj["scoreboard_yellow_a"].toInt(0);
+            int sbYellowB = obj["scoreboard_yellow_b"].toInt(0);
+            int sbRedA = obj["scoreboard_red_a"].toInt(0);
+            int sbRedB = obj["scoreboard_red_b"].toInt(0);
 
             // Weather data
             bool weatherVis = obj["weather_visible"].toBool(false);
@@ -520,6 +558,7 @@ int main(int argc, char* argv[])
                 cdOffX, cdOffY, ckOffX, ckOffY, qrOffX, qrOffY,
                 sbOffX, sbOffY, wOffX, wOffY, logoOffX, logoOffY, nameOffX, nameOffY,
                 scoreVis, sbTeamA, sbTeamB, sbScoreA, sbScoreB, sbColA, sbColB, sbPos, sbTime, sbPeriod,
+                sbYellowA, sbYellowB, sbRedA, sbRedB,
                 weatherVis, wCity, wTemp, wUnit, wIcon]() {
                 // Scales
                 compositor.setNameplateScale(npScale);
@@ -551,6 +590,7 @@ int main(int argc, char* argv[])
                 compositor.setScoreboardVisible(scoreVis);
                 compositor.setScoreboardData(sbTeamA, sbTeamB, sbScoreA, sbScoreB,
                                              QColor(sbColA), QColor(sbColB), sbPos, sbTime, sbPeriod);
+                compositor.setScoreboardCards(sbYellowA, sbYellowB, sbRedA, sbRedB);
                 // Weather
                 compositor.setWeatherVisible(weatherVis);
                 compositor.setWeatherData(wCity, wTemp, wUnit, wIcon);
@@ -695,7 +735,7 @@ int main(int argc, char* argv[])
     // Step 2: Timer drives compositing at steady rate (not tied to capture rate)
     QTimer compositeTimer;
     QObject::connect(&compositeTimer, &QTimer::timeout,
-        [&compositor, &talentStore, &outputRouter, &previewSender, liveProvider,
+        [&compositor, &talentStore, &aiPipeline, &outputRouter, &previewSender, liveProvider,
          &latestFrame, &frameMutex, &compositing, &processedCount]()
         {
             if (compositing.load()) return; // Skip if previous frame still processing
@@ -709,8 +749,18 @@ int main(int argc, char* argv[])
 
             compositing.store(true);
 
-            // Get current overlay data
-            auto talents = talentStore.snapshot();
+            // Get interpolated overlay positions (called every render frame for smooth motion)
+            // predictNow() uses velocity extrapolation between 5fps detections
+            auto predicted = aiPipeline.predictNow();
+            QList<prestige::TalentOverlay> talents;
+            for (const auto& f : predicted) {
+                prestige::TalentOverlay ov;
+                ov.id = f.id; ov.name = f.name; ov.role = f.role;
+                ov.confidence = f.confidence; ov.showOverlay = f.showOverlay;
+                ov.overlayStyle = f.overlayStyle;
+                ov.bbox = f.smoothedBbox.isValid() ? f.smoothedBbox : f.bbox;
+                talents.append(ov);
+            }
 
             // Composite: video frame + overlay nameplates → single frame
             QImage composited = compositor.composite(frame, talents);

@@ -121,6 +121,15 @@ Item {
             ColorPickerButton { currentColor: setupController.vsPrimaryColor || "#0A0F23"; onColorSelected: function(c) { setupController.vsPrimaryColor = c } }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label { text: "Second:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11; Layout.preferredWidth: 70 }
+            Repeater {
+                model: ["#1A1A2E", "#2D2D3D", "#0F1A2E", "#1E1E28", "#232336", "#3A1A2E", "#1A2E3A", "#2E2E1A"]
+                Rectangle { width: 22; height: 22; radius: 4; color: modelData; border.color: modelData === (setupController.vsSecondaryColor ? setupController.vsSecondaryColor.toString() : "") ? "white" : "transparent"; border.width: 2
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.vsSecondaryColor = modelData } }
+            }
+            ColorPickerButton { currentColor: setupController.vsSecondaryColor || "#1A1A2E"; onColorSelected: function(c) { setupController.vsSecondaryColor = c } }
+        }
+        RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Accent:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11; Layout.preferredWidth: 70 }
             Repeater {
                 model: ["#E30613", "#5B4FDB", "#0066CC", "#1DB954", "#FF6B00", "#D4AF37", "#00E5FF", "#FFFFFF"]

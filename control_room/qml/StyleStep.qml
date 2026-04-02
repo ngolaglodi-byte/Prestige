@@ -166,155 +166,199 @@ Item {
                     }
                 }
 
-                // ── Effect preview on the nameplate ──────────
-                // QML visual effects that match the GPU effects in the compositor
-                // So the director sees the effect INSTANTLY when selecting it
+                // ── Effect preview — BIG and VISIBLE ──────────
+                // Each effect category shows a clearly distinct visual
 
-                // Neon Glow effect on plate
+                // === GLOW: bright thick border + outer halo ===
                 Rectangle {
-                    visible: setupController.animationType === "neon_glow" || setupController.animationType === "edge_glow"
-                    x: plate.x - 6; y: plate.y - 6
-                    width: plate.width + 12; height: plate.height + 12
-                    radius: 8; color: "transparent"
-                    border.color: setupController.accentColor; border.width: 2
-                    opacity: 0.4 + 0.2 * Math.sin(glowTimer.phase)
-                    Rectangle {
-                        anchors.fill: parent; anchors.margins: -4; radius: 12
-                        color: "transparent"; border.color: setupController.accentColor; border.width: 1
-                        opacity: 0.2
-                    }
+                    visible: ["neon_glow","edge_glow","bloom","shimmer"].indexOf(setupController.animationType) >= 0
+                    x: plate.x - 10; y: plate.y - 10
+                    width: plate.width + 20; height: plate.height + 20
+                    radius: 10; color: "transparent"
+                    border.color: setupController.accentColor; border.width: 4
+                    opacity: 0.6 + 0.3 * Math.sin(glowTimer.phase)
+                    Rectangle { anchors.fill: parent; anchors.margins: -8; radius: 18; color: "transparent"; border.color: setupController.accentColor; border.width: 2; opacity: 0.3 + 0.2 * Math.sin(glowTimer.phase * 1.5) }
+                    Rectangle { anchors.fill: parent; anchors.margins: -16; radius: 26; color: "transparent"; border.color: setupController.accentColor; border.width: 1; opacity: 0.15 + 0.1 * Math.sin(glowTimer.phase * 2) }
                 }
 
-                // Bloom effect
-                Rectangle {
-                    visible: setupController.animationType === "bloom" || setupController.animationType === "shimmer"
-                    anchors.centerIn: plate
-                    width: plate.width * 1.2; height: plate.height * 1.4
-                    radius: plate.height; color: "transparent"
-                    Rectangle {
-                        anchors.fill: parent; anchors.margins: parent.width * 0.15; radius: parent.radius
-                        color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.12)
-                    }
+                // === GLITCH/VHS: strong RGB split + scan lines ===
+                Item {
+                    visible: ["glitch_rgb","vhs_effect","chromatic_aberration"].indexOf(setupController.animationType) >= 0
+                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; z: plate.z + 1
+                    Text { text: getName(root.previewStyleId); color: Qt.rgba(1,0,0,0.5); font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true; x: 4 * Math.sin(glowTimer.phase * 4); anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -6 }
+                    Text { text: getName(root.previewStyleId); color: Qt.rgba(0,1,1,0.5); font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true; x: -4 * Math.sin(glowTimer.phase * 4); anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -6 }
+                    // Scan lines
+                    Column { anchors.fill: parent; spacing: 3; opacity: 0.15; Repeater { model: Math.floor(parent.height / 4); Rectangle { width: plate.width; height: 1; color: "white" } } }
                 }
 
-                // Glitch RGB preview
-                Row {
-                    visible: setupController.animationType === "glitch_rgb" || setupController.animationType === "vhs_effect"
-                    x: plate.x; y: plate.y; z: plate.z + 1
-                    Text {
-                        text: getName(root.previewStyleId); color: Qt.rgba(1, 0, 0, 0.3)
-                        font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true
-                        x: 2 * Math.sin(glowTimer.phase * 3)
-                    }
-                    Text {
-                        text: getName(root.previewStyleId); color: Qt.rgba(0, 1, 1, 0.3)
-                        font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true
-                        x: -2 * Math.sin(glowTimer.phase * 3)
-                    }
-                }
-
-                // Particle sparkles preview
+                // === PARTICLES: big visible animated dots ===
                 Repeater {
-                    model: (setupController.animationType === "sparkles" || setupController.animationType === "rising_particles" || setupController.animationType === "bokeh") ? 12 : 0
-                    Rectangle {
-                        x: plate.x + Math.random() * plate.width
-                        y: plate.y - 10 + Math.random() * (plate.height + 20)
-                        width: 3 + Math.random() * 4; height: width; radius: width / 2
-                        color: setupController.accentColor
-                        opacity: 0.3 + 0.4 * Math.sin(glowTimer.phase * 3 + index * 0.8)
-                    }
-                }
-
-                // Effect animation timer
-                Timer {
-                    id: glowTimer; interval: 50; running: true; repeat: true
-                    property real phase: 0
-                    onTriggered: phase += 0.1
-                }
-
-                // Chromatic aberration preview
-                Row {
-                    visible: setupController.animationType === "chromatic_aberration"
-                    x: plate.x; y: plate.y; z: plate.z + 1
-                    Text { text: getName(root.previewStyleId); color: Qt.rgba(1,0,0,0.25); font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true; x: 3 }
-                    Text { text: getName(root.previewStyleId); color: Qt.rgba(0,1,1,0.25); font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true; x: -3 }
-                }
-
-                // Blur preview
-                Rectangle {
-                    visible: setupController.animationType === "gaussian_blur_in" || setupController.animationType === "radial_blur" || setupController.animationType === "directional_blur" || setupController.animationType === "defocus" || setupController.animationType === "blur_in"
-                    x: plate.x - 4; y: plate.y - 4; width: plate.width + 8; height: plate.height + 8
-                    radius: 8; color: "transparent"; border.color: Qt.rgba(1,1,1,0.1); border.width: 1
-                    Rectangle { anchors.fill: parent; radius: 8; color: Qt.rgba(1,1,1,0.05) }
-                }
-
-                // Color sweep / gradient preview
-                Rectangle {
-                    visible: setupController.animationType === "color_sweep" || setupController.animationType === "gradient_shift" || setupController.animationType === "duotone"
-                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; radius: 4
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop { position: 0; color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.15) }
-                        GradientStop { position: Math.abs(Math.sin(glowTimer.phase * 0.5)); color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.3) }
-                        GradientStop { position: 1; color: "transparent" }
-                    }
-                }
-
-                // Fire / confetti / snow particles preview
-                Repeater {
-                    model: setupController.animationType === "fire_embers" ? 10 : (setupController.animationType === "confetti" ? 15 : (setupController.animationType === "snow" ? 20 : (setupController.animationType === "dust" ? 8 : 0)))
+                    model: ["sparkles","bokeh","rising_particles","fire_embers","confetti","snow","dust"].indexOf(setupController.animationType) >= 0 ? 20 : 0
                     Rectangle {
                         property real rx: Math.random()
                         property real ry: Math.random()
-                        x: plate.x + rx * plate.width
-                        y: setupController.animationType === "snow" ? (plate.y - 20 + ((ry * plate.height + glowTimer.phase * 30) % (plate.height + 40))) :
-                           setupController.animationType === "fire_embers" ? (plate.y + plate.height - ((ry * plate.height + glowTimer.phase * 25) % plate.height)) :
-                           (plate.y + ry * plate.height)
-                        width: setupController.animationType === "confetti" ? 4 : 3; height: width; radius: setupController.animationType === "confetti" ? 1 : width / 2
-                        color: setupController.animationType === "fire_embers" ? (index % 2 === 0 ? "#FF8C00" : "#FF4500") :
-                               setupController.animationType === "snow" ? "white" :
-                               setupController.animationType === "confetti" ? ["#FF0000","#00CC00","#0066FF","#FFCC00","#FF00CC","#00FFFF"][index % 6] :
-                               Qt.rgba(0.8, 0.8, 0.7, 0.4)
-                        opacity: 0.3 + 0.4 * Math.sin(glowTimer.phase * 3 + index * 1.2)
+                        property real rSpeed: 0.3 + Math.random() * 0.7
+                        x: plate.x - 20 + rx * (plate.width + 40)
+                        y: {
+                            var at = setupController.animationType
+                            if (at === "snow" || at === "confetti") return plate.y - 30 + ((ry * (plate.height + 60) + glowTimer.phase * 40 * rSpeed) % (plate.height + 60))
+                            if (at === "fire_embers" || at === "rising_particles") return plate.y + plate.height + 10 - ((ry * (plate.height + 40) + glowTimer.phase * 35 * rSpeed) % (plate.height + 40))
+                            return plate.y - 15 + ry * (plate.height + 30)
+                        }
+                        width: 4 + Math.random() * 6; height: width; radius: width / 2
+                        color: {
+                            var at = setupController.animationType
+                            if (at === "fire_embers") return index % 2 === 0 ? "#FF8C00" : "#FF3300"
+                            if (at === "snow") return "white"
+                            if (at === "confetti") return ["#FF0000","#00CC00","#0066FF","#FFCC00","#FF00CC","#00FFFF"][index % 6]
+                            if (at === "dust") return "#C0B8A0"
+                            return setupController.accentColor
+                        }
+                        opacity: 0.5 + 0.4 * Math.sin(glowTimer.phase * 3 + index * 0.9)
                     }
                 }
 
-                // Lower third animation preview (line draw, bar slide, etc.)
+                // === BLUR: frosted glass overlay ===
                 Rectangle {
-                    visible: ["line_draw","bar_slide","underline_grow","split_reveal"].indexOf(setupController.animationType) >= 0
-                    x: plate.x; y: plate.y + plate.height - 2
-                    width: plate.width * Math.min(1, glowTimer.phase % 3 / 2); height: 2
-                    color: setupController.accentColor
-                }
-                // Bracket / corner / box preview
-                Rectangle {
-                    visible: ["bracket_expand","corner_build","box_wipe","shape_morph"].indexOf(setupController.animationType) >= 0
-                    x: plate.x - 3; y: plate.y - 3; width: plate.width + 6; height: plate.height + 6
-                    radius: 2; color: "transparent"; border.color: setupController.accentColor; border.width: 1.5
-                    opacity: 0.5 + 0.3 * Math.sin(glowTimer.phase)
+                    visible: ["gaussian_blur_in","radial_blur","directional_blur","defocus","blur_in","tilt_shift"].indexOf(setupController.animationType) >= 0
+                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; radius: 4
+                    color: Qt.rgba(1, 1, 1, 0.08 + 0.04 * Math.sin(glowTimer.phase))
+                    border.color: Qt.rgba(1, 1, 1, 0.15); border.width: 1
                 }
 
-                // Transition preview (wipe, dissolve, etc.)
+                // === COLOR: moving gradient overlay ===
                 Rectangle {
-                    visible: ["wipe_linear","push_slide","zoom_through","ink_bleed","spin_transition","cross_dissolve"].indexOf(setupController.animationType) >= 0
-                    x: plate.x; y: plate.y; width: plate.width * Math.abs(Math.sin(glowTimer.phase * 0.3)); height: plate.height
-                    color: Qt.rgba(0, 0, 0, 0.3); radius: 2
-                }
-
-                // Light leak / lens flare preview
-                Rectangle {
-                    visible: setupController.animationType === "light_leak" || setupController.animationType === "lens_flare" || setupController.animationType === "light_rays"
-                    x: plate.x + plate.width * (0.3 + 0.4 * Math.sin(glowTimer.phase * 0.4)); y: plate.y - 10
-                    width: 30; height: plate.height + 20; radius: 15
+                    visible: ["color_sweep","gradient_shift","duotone","shadow_drop_animate","outline_stroke"].indexOf(setupController.animationType) >= 0
+                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; radius: 4
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
+                        GradientStop { position: Math.abs(Math.sin(glowTimer.phase * 0.3)) * 0.5; color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.4) }
+                        GradientStop { position: 0.5 + Math.abs(Math.sin(glowTimer.phase * 0.3)) * 0.5; color: "transparent" }
+                    }
+                }
+
+                // === LOWER THIRD: thick animated accent line ===
+                Rectangle {
+                    visible: ["line_draw","bar_slide","underline_grow","split_reveal"].indexOf(setupController.animationType) >= 0
+                    x: plate.x; y: plate.y + plate.height - 3
+                    width: plate.width * Math.min(1, (glowTimer.phase % 4) / 2); height: 4; radius: 2
+                    color: setupController.accentColor
+                }
+
+                // === SHAPE: thick animated border ===
+                Rectangle {
+                    visible: ["bracket_expand","corner_build","box_wipe","shape_morph","rectangle_build","hexagon_pattern","grid_reveal","circle_expand"].indexOf(setupController.animationType) >= 0
+                    x: plate.x - 4; y: plate.y - 4; width: plate.width + 8; height: plate.height + 8
+                    radius: 4; color: "transparent"
+                    border.color: setupController.accentColor; border.width: 3
+                    opacity: 0.6 + 0.3 * Math.sin(glowTimer.phase * 1.5)
+                }
+
+                // === TRANSITION: wipe bar moving across ===
+                Rectangle {
+                    visible: ["wipe_linear","push_slide","zoom_through","ink_bleed","spin_transition","cross_dissolve","light_leak"].indexOf(setupController.animationType) >= 0
+                    x: plate.x + plate.width * Math.abs(Math.sin(glowTimer.phase * 0.4)) - 5; y: plate.y - 5
+                    width: 10; height: plate.height + 10; radius: 5
+                    color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.5)
+                }
+
+                // === LIGHT: bright sweep across plate ===
+                Rectangle {
+                    visible: ["lens_flare","light_rays","light_leak","light_streak"].indexOf(setupController.animationType) >= 0
+                    x: plate.x + plate.width * (0.2 + 0.6 * Math.abs(Math.sin(glowTimer.phase * 0.3))); y: plate.y - 15
+                    width: 40; height: plate.height + 30; radius: 20
+                    gradient: Gradient { orientation: Gradient.Horizontal
                         GradientStop { position: 0; color: "transparent" }
-                        GradientStop { position: 0.5; color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.2) }
+                        GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.25 + 0.15 * Math.sin(glowTimer.phase)) }
                         GradientStop { position: 1; color: "transparent" }
                     }
                 }
 
-                // Effect name badge
+                // ═══ AE POST-EFFECT PREVIEW ═══════════════════
+                // Visual indicator for the active AE post-effect on overlay
+
+                // Distortion preview: wave/ripple on nameplate
+                Item {
+                    visible: ["turbulent_displace","twirl","spherize","bulge","ripple","wave_warp","kaleidoscope","mesh_warp","reshape"].indexOf(setupController.aeEffectId) >= 0
+                    x: plate.x; y: plate.y; width: plate.width; height: plate.height
+                    transform: [
+                        Translate { x: Math.sin(glowTimer.phase * 3) * 3 * setupController.aeEffectIntensity; y: Math.cos(glowTimer.phase * 2.5) * 2 * setupController.aeEffectIntensity }
+                    ]
+                    Rectangle { anchors.fill: parent; radius: 4; color: "transparent"; border.color: "#FF6600"; border.width: 2; opacity: 0.5 + 0.3 * Math.sin(glowTimer.phase * 2) }
+                    Label { anchors.centerIn: parent; text: "DISTORTION"; font.pixelSize: 7; font.bold: true; color: "#FF6600"; opacity: 0.7 }
+                }
+
+                // Color correction preview: tinted overlay
+                Rectangle {
+                    visible: ["curves","levels","hue_saturation","brightness_contrast","exposure","tint","tritone","colorama","leave_color","vibrance","photo_filter","gradient_map","black_white","invert","threshold","solarize","color_balance"].indexOf(setupController.aeEffectId) >= 0
+                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; radius: 4
+                    color: Qt.rgba(setupController.aeEffectColor1.r || 0.9, setupController.aeEffectColor1.g || 0.1, setupController.aeEffectColor1.b || 0.1, 0.25 * setupController.aeEffectIntensity)
+                    Label { anchors.centerIn: parent; text: "COLOR"; font.pixelSize: 7; font.bold: true; color: "#FFD700"; opacity: 0.7 }
+                }
+
+                // Generate preview: animated pattern
+                Item {
+                    visible: ["fractal_noise","cell_pattern","grid","gradient_ramp","vegas","radio_waves","audio_spectrum","lens_flare_gen","light_burst","beam","4color_gradient","fill","stroke","circle_burst","checkerboard"].indexOf(setupController.aeEffectId) >= 0
+                    x: plate.x; y: plate.y; width: plate.width; height: plate.height
+                    Repeater {
+                        model: 8
+                        Rectangle {
+                            property real rx: Math.random()
+                            x: rx * (plate.width - 6); y: (index / 8.0) * plate.height
+                            width: 6; height: 6; radius: 3
+                            color: setupController.aeEffectColor1 || "#00FF88"
+                            opacity: 0.4 + 0.5 * Math.sin(glowTimer.phase * 4 + index * 0.8)
+                        }
+                    }
+                    Label { anchors.centerIn: parent; text: "GENERATE"; font.pixelSize: 7; font.bold: true; color: "#00FF88"; opacity: 0.7 }
+                }
+
+                // Stylize preview: edge/texture effect
+                Rectangle {
+                    visible: ["emboss","find_edges","roughen_edges","scatter","stylize_glow","cartoon","halftone","stained_glass","noise","strobe","motion_tile","cross_hatch","oil_paint"].indexOf(setupController.aeEffectId) >= 0
+                    x: plate.x - 2; y: plate.y - 2; width: plate.width + 4; height: plate.height + 4; radius: 6
+                    color: "transparent"; border.color: "#FF00FF"; border.width: 2
+                    opacity: 0.5 + 0.4 * Math.sin(glowTimer.phase * 1.5)
+                    Label { anchors.centerIn: parent; text: "STYLIZE"; font.pixelSize: 7; font.bold: true; color: "#FF00FF"; opacity: 0.7 }
+                }
+
+                // Perspective preview: skewed plate
+                Rectangle {
+                    visible: ["cc_sphere","cc_cylinder","bevel_alpha","drop_shadow","radial_shadow","3d_rotation","reflection"].indexOf(setupController.aeEffectId) >= 0
+                    x: plate.x + 5; y: plate.y + 5; width: plate.width - 4; height: plate.height - 4; radius: 4
+                    color: Qt.rgba(0, 0, 0, 0.3 * setupController.aeEffectIntensity)
+                    Label { anchors.centerIn: parent; text: "3D"; font.pixelSize: 9; font.bold: true; color: "#00CCFF"; opacity: 0.7 }
+                }
+
+                // Time preview: ghosting trail
+                Rectangle {
+                    visible: ["echo","trails","force_motion_blur"].indexOf(setupController.aeEffectId) >= 0
+                    x: plate.x - 8; y: plate.y; width: plate.width; height: plate.height; radius: 4
+                    color: getBg(root.previewStyleId); opacity: 0.3
+                }
+                Rectangle {
+                    visible: ["echo","trails","force_motion_blur"].indexOf(setupController.aeEffectId) >= 0
+                    x: plate.x - 4; y: plate.y; width: plate.width; height: plate.height; radius: 4
+                    color: getBg(root.previewStyleId); opacity: 0.5
+                    Label { anchors.centerIn: parent; text: "TIME"; font.pixelSize: 7; font.bold: true; color: "#FFCC00"; opacity: 0.7 }
+                }
+
+                // Blend mode preview: colored overlay with mode label
+                Rectangle {
+                    visible: setupController.overlayBlendMode !== "normal" && setupController.overlayBlendMode !== ""
+                    x: plate.x; y: plate.y - 18; width: bmLbl.implicitWidth + 10; height: 14; radius: 3
+                    color: Qt.rgba(0.3, 0.2, 0.8, 0.5)
+                    Label { id: bmLbl; anchors.centerIn: parent; text: "BLEND: " + (setupController.overlayBlendMode || "").toUpperCase(); font.pixelSize: 6; font.bold: true; color: "#DDD" }
+                }
+
+                // Wiggle preview: jittering nameplate
+                property real wiggleX: setupController.wiggleEnabled ? Math.sin(glowTimer.phase * (setupController.wiggleFreq || 3) * 2) * (setupController.wiggleAmp || 5) * 0.3 : 0
+                property real wiggleY: setupController.wiggleEnabled ? Math.cos(glowTimer.phase * (setupController.wiggleFreq || 3) * 1.5) * (setupController.wiggleAmp || 5) * 0.2 : 0
+
+                // Effect animation timer
+                Timer { id: glowTimer; interval: 50; running: true; repeat: true; property real phase: 0; onTriggered: phase += 0.1 }
+
+                // Effect name badge (BIG)
                 Rectangle {
                     visible: setupController.animationType !== "slide_left" && setupController.animationType !== ""
                     anchors.bottom: plate.top; anchors.left: plate.left; anchors.bottomMargin: 4
@@ -362,26 +406,32 @@ Item {
                         model: [
                             "— Classiques —", "Glisser gauche", "Glisser droite", "Monter", "Fondu+zoom", "Balayage", "Fondu", "Iris", "Glitch",
                             "— Text (10) —", "Typewriter", "Bounce In", "Wave", "Tracking Expand", "Fade Up Letter", "Scale Up Letter", "Rotate In Letter", "Blur In", "Slide Per Letter", "Kinetic Pop",
+                            "— AE Text (25) —", "Matrix Rain", "Cascade Reveal", "Elastic Drop", "Spiral In", "Flip Board", "Glow Reveal", "Smoke In", "Scatter Assemble", "Slot Machine", "Stamp Press", "Wipe Per Letter", "Swing Drop", "Neon Flicker", "Gravity Crush", "Rubber Stretch", "Fade In Random", "Curved Path", "Zoom Burst", "Jitter Shake", "Shadow Expand", "Range Wipe", "Text Shatter", "Reflect Reveal", "Perspective Tilt", "Liquid Fill",
                             "— Lower Third (8) —", "Line Draw", "Bar Slide", "Shape Morph", "Split Reveal", "Bracket Expand", "Underline Grow", "Box Wipe", "Corner Build",
                             "— Logo Reveals (8) —", "Fade Glow", "Light Streak", "Particle Form", "Scale Bounce", "Shatter In", "Blur Zoom", "Rotate 3D", "Pulse Reveal",
                             "— Transitions (8) —", "Wipe Linear", "Push Slide", "Zoom Through", "Glitch Transition", "Light Leak", "Ink Bleed", "Spin", "Cross Dissolve",
+                            "— AE Transitions (20) —", "Card Wipe", "Venetian Blinds", "Radial Wipe", "Iris Wipe", "Block Dissolve", "Checker Wipe", "Spiral Wipe", "Barn Door", "Matrix Wipe", "Pinwheel", "Zigzag Wipe", "Diamond Wipe", "Heart Wipe", "Star Wipe", "Clock Wipe", "Slide Reveal", "Split Wipe", "Door Wipe", "Ripple Dissolve", "Particle Dissolve",
                             "— Glow & Light (6) —", "Neon Glow", "Bloom", "Light Rays", "Lens Flare", "Shimmer", "Edge Glow",
                             "— Distortion (5) —", "Glitch RGB", "Chromatic Aberration", "Wave Distort", "Pixel Sort", "VHS Effect",
                             "— Particles (7) —", "Sparkles", "Bokeh", "Dust", "Fire Embers", "Confetti", "Snow", "Rising Particles",
                             "— Shape/Line (6) —", "Line Draw On", "Circle Expand", "Rectangle Build", "Path Trace", "Grid Reveal", "Hexagon Pattern",
+                            "— AE Shape (10) —", "Trim Path", "Repeater", "Offset Path", "Zig Zag", "Pucker & Bloat", "Round Corners", "Wiggle Path", "Dashed Path", "Taper Stroke", "Morph Paths",
                             "— Blur/Focus (5) —", "Gaussian Blur In", "Radial Blur", "Directional Blur", "Tilt Shift", "Defocus",
                             "— Color/Style (5) —", "Color Sweep", "Gradient Shift", "Duotone", "Shadow Drop", "Outline Stroke"
                         ]
                         property var values: [
                             "", "slide_left", "slide_right", "slide_up", "fade_scale", "wipe", "fade", "iris", "glitch",
                             "", "typewriter", "bounce_in", "wave_text", "tracking_expand", "fade_up_letter", "scale_up_letter", "rotate_in_letter", "blur_in", "slide_per_letter", "kinetic_pop",
+                            "", "matrix_rain", "cascade_reveal", "elastic_drop", "spiral_in", "flip_board", "glow_reveal", "smoke_in", "scatter_assemble", "slot_machine", "stamp_press", "wipe_per_letter", "swing_drop", "neon_flicker", "gravity_crush", "rubber_stretch", "fade_in_random", "curved_path", "zoom_burst", "jitter_shake", "shadow_expand", "range_wipe", "text_shatter", "reflect_reveal", "perspective_tilt", "liquid_fill",
                             "", "line_draw", "bar_slide", "shape_morph", "split_reveal", "bracket_expand", "underline_grow", "box_wipe", "corner_build",
                             "", "fade_glow", "light_streak", "particle_form", "scale_bounce", "shatter_in", "blur_zoom", "rotate_3d", "pulse_reveal",
                             "", "wipe_linear", "push_slide", "zoom_through", "glitch_transition", "light_leak", "ink_bleed", "spin_transition", "cross_dissolve",
+                            "", "card_wipe", "venetian_blinds", "radial_wipe", "iris_wipe", "block_dissolve", "checker_wipe", "spiral_wipe", "barn_door", "matrix_wipe", "pinwheel", "zigzag_wipe", "diamond_wipe", "heart_wipe", "star_wipe", "clock_wipe", "slide_reveal", "split_wipe", "door_wipe", "ripple_dissolve", "particle_dissolve",
                             "", "neon_glow", "bloom", "light_rays", "lens_flare", "shimmer", "edge_glow",
                             "", "glitch_rgb", "chromatic_aberration", "wave_distort", "pixel_sort", "vhs_effect",
                             "", "sparkles", "bokeh", "dust", "fire_embers", "confetti", "snow", "rising_particles",
                             "", "line_draw_on", "circle_expand", "rectangle_build", "path_trace", "grid_reveal", "hexagon_pattern",
+                            "", "trim_path", "repeater", "offset_path", "zig_zag", "pucker_bloat", "round_corners", "wiggle_path", "dashed_path", "taper_stroke", "morph_paths",
                             "", "gaussian_blur_in", "radial_blur", "directional_blur", "tilt_shift", "defocus",
                             "", "color_sweep", "gradient_shift", "duotone", "shadow_drop_animate", "outline_stroke"
                         ]
@@ -393,6 +443,138 @@ Item {
 
                     RowLayout { Label{text:"Entrée:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:3;to:45;stepSize:1;value:setupController.animEnterFrames;Layout.preferredWidth:100;onMoved:setupController.animEnterFrames=value} Label{text:setupController.animEnterFrames+"f";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
                     RowLayout { Label{text:"Sortie:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:2;to:20;stepSize:1;value:setupController.animExitFrames;Layout.preferredWidth:100;onMoved:setupController.animExitFrames=value} Label{text:setupController.animExitFrames+"f";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
+
+                    // ══════════════════════════════════════════════
+                    // AE EASING CURVE (Graph Editor)
+                    // ══════════════════════════════════════════════
+                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
+                    Label { text: "Courbe d'animation (AE)"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
+                    ComboBox {
+                        Layout.fillWidth: true
+                        model: [
+                            "— Standard —", "Linear", "Ease Out Cubic", "Ease In Out Cubic",
+                            "— Sine —", "Ease In Sine", "Ease Out Sine", "Ease In Out Sine",
+                            "— Quad —", "Ease In Quad", "Ease Out Quad", "Ease In Out Quad",
+                            "— Quart —", "Ease In Quart", "Ease Out Quart", "Ease In Out Quart",
+                            "— Quint —", "Ease In Quint", "Ease Out Quint", "Ease In Out Quint",
+                            "— Expo —", "Ease In Expo", "Ease Out Expo", "Ease In Out Expo",
+                            "— Circ —", "Ease In Circ", "Ease Out Circ", "Ease In Out Circ",
+                            "— Back —", "Ease In Back", "Ease Out Back", "Ease In Out Back",
+                            "— Elastic —", "Ease In Elastic", "Ease Out Elastic", "Ease In Out Elastic",
+                            "— Bounce —", "Ease In Bounce", "Ease Out Bounce", "Ease In Out Bounce",
+                            "— Avancé —", "Spring", "Overshoot", "Anticipation", "Snap", "Rubber Band", "Smoother Step"
+                        ]
+                        property var values: [
+                            "", "linear", "ease_out_cubic", "ease_in_out_cubic",
+                            "", "ease_in_sine", "ease_out_sine", "ease_in_out_sine",
+                            "", "ease_in_quad", "ease_out_quad", "ease_in_out_quad",
+                            "", "ease_in_quart", "ease_out_quart", "ease_in_out_quart",
+                            "", "ease_in_quint", "ease_out_quint", "ease_in_out_quint",
+                            "", "ease_in_expo", "ease_out_expo", "ease_in_out_expo",
+                            "", "ease_in_circ", "ease_out_circ", "ease_in_out_circ",
+                            "", "ease_in_back", "ease_out_back", "ease_in_out_back",
+                            "", "ease_in_elastic", "ease_out_elastic", "ease_in_out_elastic",
+                            "", "ease_in_bounce", "ease_out_bounce", "ease_in_out_bounce",
+                            "", "spring", "overshoot", "anticipation", "snap", "rubber_band", "smoother_step"
+                        ]
+                        currentIndex: 2
+                        onActivated: { if (values[currentIndex] !== "") setupController.easingCurve = values[currentIndex] }
+                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#5B4FDB"; border.width: 1 }
+                        contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
+                    }
+
+                    // ══════════════════════════════════════════════
+                    // AE BLEND MODE (27 modes)
+                    // ══════════════════════════════════════════════
+                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
+                    Label { text: "Mode de fusion (AE)"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
+                    ComboBox {
+                        Layout.fillWidth: true
+                        model: [
+                            "Normal", "Dissolve",
+                            "— Assombrissement —", "Darken", "Multiply", "Color Burn", "Linear Burn", "Darker Color",
+                            "— Éclaircissement —", "Lighten", "Screen", "Color Dodge", "Linear Dodge", "Lighter Color",
+                            "— Contraste —", "Overlay", "Soft Light", "Hard Light", "Vivid Light", "Linear Light", "Pin Light", "Hard Mix",
+                            "— Inversion —", "Difference", "Exclusion", "Subtract", "Divide",
+                            "— Composant —", "Hue", "Saturation", "Color", "Luminosity"
+                        ]
+                        property var values: [
+                            "normal", "dissolve",
+                            "", "darken", "multiply", "color_burn", "linear_burn", "darker_color",
+                            "", "lighten", "screen", "color_dodge", "linear_dodge", "lighter_color",
+                            "", "overlay", "soft_light", "hard_light", "vivid_light", "linear_light", "pin_light", "hard_mix",
+                            "", "difference", "exclusion", "subtract", "divide",
+                            "", "hue", "saturation", "color", "luminosity"
+                        ]
+                        currentIndex: 0
+                        onActivated: { if (values[currentIndex] !== "") setupController.overlayBlendMode = values[currentIndex] }
+                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#5B4FDB"; border.width: 1 }
+                        contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
+                    }
+
+                    // ══════════════════════════════════════════════
+                    // AE POST-EFFECTS on Overlay
+                    // ══════════════════════════════════════════════
+                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
+                    Label { text: "Effet AE sur overlay"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
+                    ComboBox {
+                        id: aeEffectCombo; Layout.fillWidth: true
+                        model: [
+                            "Aucun",
+                            "— Distortion (14) —", "Turbulent Displace", "Twirl", "Spherize", "Bulge", "Ripple", "Wave Warp", "Kaleidoscope", "Mirror", "Pixelate", "Mosaic", "Polar Coords", "Mesh Warp", "Posterize", "Reshape",
+                            "— Color (17) —", "Curves", "Levels", "Hue/Saturation", "Brightness/Contrast", "Exposure", "Tint", "Tritone", "Colorama", "Leave Color", "Vibrance", "Photo Filter", "Gradient Map", "Black & White", "Invert", "Threshold", "Solarize", "Color Balance",
+                            "— Generate (15) —", "Fractal Noise", "Cell Pattern", "Grid", "Gradient Ramp", "Vegas", "Radio Waves", "Audio Spectrum", "Lens Flare", "Light Burst", "Beam", "4-Color Gradient", "Fill", "Stroke", "Circle Burst", "Checkerboard",
+                            "— Stylize (13) —", "Emboss", "Find Edges", "Roughen Edges", "Scatter", "Glow", "Cartoon", "Halftone", "Stained Glass", "Noise", "Strobe", "Motion Tile", "Cross Hatch", "Oil Paint",
+                            "— Perspective (7) —", "CC Sphere", "CC Cylinder", "Bevel Alpha", "Drop Shadow", "Radial Shadow", "3D Rotation", "Reflection",
+                            "— Time (3) —", "Echo", "Trails", "Force Motion Blur",
+                            "— Matte (1) —", "Luma Key"
+                        ]
+                        property var values: [
+                            "",
+                            "", "turbulent_displace", "twirl", "spherize", "bulge", "ripple", "wave_warp", "kaleidoscope", "mirror", "pixelate", "mosaic", "polar_coords", "mesh_warp", "posterize", "reshape",
+                            "", "curves", "levels", "hue_saturation", "brightness_contrast", "exposure", "tint", "tritone", "colorama", "leave_color", "vibrance", "photo_filter", "gradient_map", "black_white", "invert", "threshold", "solarize", "color_balance",
+                            "", "fractal_noise", "cell_pattern", "grid", "gradient_ramp", "vegas", "radio_waves", "audio_spectrum", "lens_flare_gen", "light_burst", "beam", "4color_gradient", "fill", "stroke", "circle_burst", "checkerboard",
+                            "", "emboss", "find_edges", "roughen_edges", "scatter", "stylize_glow", "cartoon", "halftone", "stained_glass", "noise", "strobe", "motion_tile", "cross_hatch", "oil_paint",
+                            "", "cc_sphere", "cc_cylinder", "bevel_alpha", "drop_shadow", "radial_shadow", "3d_rotation", "reflection",
+                            "", "echo", "trails", "force_motion_blur",
+                            "", "luma_key"
+                        ]
+                        currentIndex: 0
+                        onActivated: { setupController.aeEffectId = values[currentIndex] || "" }
+                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#5B4FDB"; border.width: 1 }
+                        contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
+                    }
+
+                    // AE Effect parameters (visible when an effect is selected)
+                    ColumnLayout {
+                        visible: setupController.aeEffectId !== ""
+                        Layout.fillWidth: true; spacing: 6
+
+                        RowLayout { Label{text:"Intensité:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectIntensity=value} Label{text:Math.round(value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
+                        RowLayout { Label{text:"Param 1:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectParam1=value} Label{text:Math.round(value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
+                        RowLayout { Label{text:"Param 2:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectParam2=value} Label{text:Math.round(value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
+
+                        Row { spacing: 5
+                            Label { text: "Couleur 1:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+                            ColorPickerButton { currentColor: setupController.aeEffectColor1 || "#E30613"; onColorSelected: function(c) { setupController.aeEffectColor1 = c } }
+                            Label { text: "Couleur 2:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+                            ColorPickerButton { currentColor: setupController.aeEffectColor2 || "#FFFFFF"; onColorSelected: function(c) { setupController.aeEffectColor2 = c } }
+                        }
+                    }
+
+                    // ══════════════════════════════════════════════
+                    // AE EXPRESSION: Wiggle
+                    // ══════════════════════════════════════════════
+                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
+                    RowLayout {
+                        Label { text: "Expression: Wiggle"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
+                        Switch { checked: false; onCheckedChanged: setupController.wiggleEnabled = checked }
+                    }
+                    RowLayout {
+                        visible: setupController.wiggleEnabled
+                        Label{text:"Freq:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:0.5;to:15;value:3;Layout.preferredWidth:80;onMoved:setupController.wiggleFreq=value} Label{text:value.toFixed(1);color:window.darkMode?"#888":"#555";font.pixelSize:11}
+                        Label{text:"Amp:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:1;to:30;value:5;Layout.preferredWidth:80;onMoved:setupController.wiggleAmp=value} Label{text:Math.round(value)+"px";color:window.darkMode?"#888":"#555";font.pixelSize:11}
+                    }
 
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
                     Label { text: window.t("multi_face"); font.pixelSize: 13; color: window.darkMode ? "#AAA" : "#444" }

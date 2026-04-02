@@ -15,8 +15,8 @@
 
 namespace prestige {
 
-// ── Vertex shader (shared by all effects) ─────────────────
-static const char* VERT_SHADER = R"(
+// ── Vertex shader (shared by all effects, also used by AEGpuEffects.cpp) ──
+const char* VERT_SHADER = R"(
     #version 330 core
     layout(location = 0) in vec2 aPos;
     layout(location = 1) in vec2 aUV;

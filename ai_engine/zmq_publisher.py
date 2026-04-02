@@ -101,8 +101,9 @@ class ZmqPublisher:
 
         try:
             payload = json.dumps(message).encode("utf-8")
-            # Send plain (backward compat) — current C++ subscribers expect this
-            self._socket.send(payload, zmq.NOBLOCK)
+            # Send with topic prefix for clean multipart protocol
+            # All messages use topics: "detection", "subtitle", "social_chat"
+            self._socket.send_multipart([b"detection", payload], zmq.NOBLOCK)
         except zmq.Again:
             logger.debug("ZMQ send would block — dropping frame %d", self._frame_counter)
         except zmq.ZMQError as exc:

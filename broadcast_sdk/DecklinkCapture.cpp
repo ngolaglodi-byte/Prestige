@@ -148,9 +148,51 @@ bool DecklinkCapture::open(const QString& deviceName, const QSize& resolution, i
         displayMode = bmdMode720p50;
     }
 
-    // Enable video input
+    // Enable video input + embedded audio (SMPTE 299M)
     if (m_deckLinkInput->EnableVideoInput(displayMode, bmdFormat8BitYUV, bmdVideoInputFlagDefault) != S_OK) {
         emit errorOccurred("Failed to enable video input at requested resolution");
+        close();
+        return false;
+    }
+
+    // Enable audio input (48kHz, 16-bit stereo — broadcast standard)
+    if (m_deckLinkInput->EnableAudioInput(bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger, 2) != S_OK) {
+        qWarning() << "[DeckLink] Audio input not available — video only";
+    }
+
+    // Register frame callback (CRITICAL — without this, frames are never delivered)
+    // Using the DeckLink delegate callback mechanism
+    class DeckLinkCallback : public IDeckLinkInputCallback {
+    public:
+        DeckLinkCallback(DecklinkCapture* owner) : m_owner(owner), m_refCount(1) {}
+        // IUnknown
+        HRESULT QueryInterface(REFIID, LPVOID*) override { return E_NOINTERFACE; }
+        ULONG AddRef() override { return ++m_refCount; }
+        ULONG Release() override { ULONG r = --m_refCount; if (r == 0) delete this; return r; }
+        // IDeckLinkInputCallback
+        HRESULT VideoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode*, BMDDetectedVideoInputFormatFlags) override { return S_OK; }
+        HRESULT VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame, IDeckLinkAudioInputPacket*) override {
+            if (!videoFrame) return S_OK;
+            void* frameBytes = nullptr;
+            if (videoFrame->GetBytes(&frameBytes) != S_OK || !frameBytes) return S_OK;
+            int w = static_cast<int>(videoFrame->GetWidth());
+            int h = static_cast<int>(videoFrame->GetHeight());
+            int rowBytes = static_cast<int>(videoFrame->GetRowBytes());
+            QImage frame(static_cast<const uchar*>(frameBytes), w, h, rowBytes,
+                         QImage::Format_RGB32);
+            qint64 ts = QDateTime::currentMSecsSinceEpoch();
+            emit m_owner->frameReady(frame.copy(), ts);
+            return S_OK;
+        }
+    private:
+        DecklinkCapture* m_owner;
+        ULONG m_refCount;
+    };
+
+    auto* callback = new DeckLinkCallback(this);
+    if (m_deckLinkInput->SetCallback(callback) != S_OK) {
+        emit errorOccurred("Failed to set DeckLink input callback");
+        callback->Release();
         close();
         return false;
     }

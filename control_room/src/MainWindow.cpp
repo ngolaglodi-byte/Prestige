@@ -120,6 +120,7 @@ MainWindow::MainWindow(QObject* parent)
     connect(m_setupController, &SetupController::outputsChanged, this, schedulePublish);
     connect(m_setupController, &SetupController::overlayTimingChanged, this, schedulePublish);
     connect(m_setupController, &SetupController::virtualStudioChanged, this, schedulePublish);
+    connect(m_setupController, &SetupController::aeEffectsChanged, this, schedulePublish);
     connect(m_weatherFetcher, &WeatherFetcher::weatherChanged, this, schedulePublish);
 
     // Auto-save profile when branding/settings change (debounced via timer)
@@ -433,6 +434,19 @@ void MainWindow::publishConfig()
     obj["accent_color"] = m_setupController->accentColor().name();
     obj["bg_opacity"] = m_setupController->backgroundOpacity();
 
+    // AE Effects
+    obj["easing_curve"] = m_setupController->easingCurve();
+    obj["overlay_blend_mode"] = m_setupController->overlayBlendMode();
+    obj["ae_effect_id"] = m_setupController->aeEffectId();
+    obj["ae_effect_intensity"] = m_setupController->aeEffectIntensity();
+    obj["ae_effect_param1"] = m_setupController->aeEffectParam1();
+    obj["ae_effect_param2"] = m_setupController->aeEffectParam2();
+    obj["ae_effect_color1"] = m_setupController->aeEffectColor1().name();
+    obj["ae_effect_color2"] = m_setupController->aeEffectColor2().name();
+    obj["wiggle_enabled"] = m_setupController->wiggleEnabled();
+    obj["wiggle_freq"] = m_setupController->wiggleFreq();
+    obj["wiggle_amp"] = m_setupController->wiggleAmp();
+
     // Input source config
     obj["input_type"] = m_setupController->inputType();
     obj["input_source"] = m_setupController->inputSource();
@@ -571,6 +585,10 @@ void MainWindow::publishConfig()
     obj["scoreboard_position"] = m_setupController->scoreboardPosition();
     obj["scoreboard_match_time"] = m_setupController->scoreboardMatchTime();
     obj["scoreboard_period"] = m_setupController->scoreboardPeriod();
+    obj["scoreboard_yellow_a"] = m_setupController->scoreboardYellowA();
+    obj["scoreboard_yellow_b"] = m_setupController->scoreboardYellowB();
+    obj["scoreboard_red_a"] = m_setupController->scoreboardRedA();
+    obj["scoreboard_red_b"] = m_setupController->scoreboardRedB();
 
     // Design Templates
     obj["nameplate_design"] = m_setupController->nameplateDesign();

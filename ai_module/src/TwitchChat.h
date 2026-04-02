@@ -1,14 +1,15 @@
 #pragma once
 // ============================================================
-// Prestige AI — Twitch Chat Integration
+// Prestige AI — Twitch Chat Integration (TLS)
 // Copyright (c) 2024-2026 Prestige Technologie Company
 //
-// Connects to Twitch IRC via QTcpSocket.
+// Connects to Twitch IRC via QSslSocket (TLS on port 6697).
 // Supports anonymous (read-only) or OAuth login.
+// Auto-reconnects on disconnect with exponential backoff.
 // ============================================================
 
 #include <QObject>
-#include <QTcpSocket>
+#include <QSslSocket>
 #include <QTimer>
 
 namespace prestige { namespace ai {
@@ -38,15 +39,20 @@ private slots:
     void onDataReady();
     void onConnected();
     void onDisconnected();
+    void onSslErrors(const QList<QSslError>& errors);
+    void attemptReconnect();
 
 private:
     void parseLine(const QString& line);
 
-    QTcpSocket* m_socket = nullptr;
-    QString m_channel;
-    QString m_token;
-    bool m_connected = false;
-    QByteArray m_buffer;
+    QSslSocket* m_socket = nullptr;
+    QTimer*     m_reconnectTimer = nullptr;
+    QString     m_channel;
+    QString     m_token;
+    bool        m_connected = false;
+    bool        m_intentionalDisconnect = false;
+    int         m_reconnectDelay = 1000;  // Start at 1s, max 30s
+    QByteArray  m_buffer;
 };
 
 }} // namespace prestige::ai

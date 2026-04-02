@@ -1,0 +1,94 @@
+{
+  "version": "1.0",
+  "renderer": "qt3d_pbr",
+  "studios": [
+    {
+      "id": 0,
+      "name": "News Desk",
+      "description": "Classic broadcast news studio with LED screens and reflective floor",
+      "category": "news",
+      "desk": true,
+      "backScreen": true,
+      "sideScreens": true,
+      "lightRigs": 4,
+      "floorReflectivity": 0.4
+    },
+    {
+      "id": 1,
+      "name": "Morning Show",
+      "description": "Warm daylight studio with wood desk and bright atmosphere",
+      "category": "entertainment",
+      "desk": true,
+      "backScreen": true,
+      "sideScreens": false,
+      "lightRigs": 5,
+      "floorReflectivity": 0.1
+    },
+    {
+      "id": 2,
+      "name": "Sports Center",
+      "description": "Dynamic sports broadcast with brushed metal desk and mirror floor",
+      "category": "sports",
+      "desk": true,
+      "backScreen": true,
+      "sideScreens": true,
+      "lightRigs": 6,
+      "floorReflectivity": 0.5
+    },
+    {
+      "id": 3,
+      "name": "Interview Set",
+      "description": "Two-person interview studio with warm neutral tones",
+      "category": "talk",
+      "desk": true,
+      "backScreen": false,
+      "sideScreens": false,
+      "lightRigs": 3,
+      "floorReflectivity": 0.15
+    },
+    {
+      "id": 4,
+      "name": "Weather Center",
+      "description": "Standing presenter with large map screen",
+      "category": "weather",
+      "desk": false,
+      "backScreen": true,
+      "sideScreens": false,
+      "lightRigs": 3,
+      "floorReflectivity": 0.3
+    },
+    {
+      "id": 5,
+      "name": "Election Night",
+      "description": "Data-heavy studio with multiple screens for election coverage",
+      "category": "politics",
+      "desk": true,
+      "backScreen": true,
+      "sideScreens": true,
+      "lightRigs": 6,
+      "floorReflectivity": 0.4
+    },
+    {
+      "id": 6,
+      "name": "Tech Studio",
+      "description": "Modern cyberpunk studio with chrome desk and neon accents",
+      "category": "tech",
+      "desk": true,
+      "backScreen": true,
+      "sideScreens": true,
+      "lightRigs": 4,
+      "floorReflectivity": 0.6
+    },
+    {
+      "id": 7,
+      "name": "Luxury Prestige",
+      "description": "Premium black and gold studio with polished surfaces",
+      "category": "luxury",
+      "desk": true,
+      "backScreen": false,
+      "sideScreens": false,
+      "lightRigs": 3,
+      "floorReflectivity": 0.7
+    }
+  ]
+}

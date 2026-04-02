@@ -234,8 +234,15 @@ void NdiCapture::captureLoop()
             NDIlib_recv_free_metadata(m_recvInstance, &metadataFrame);
             break;
         case NDIlib_frame_type_error:
-            qWarning() << "[NDI] Receive error";
+            qWarning() << "[NDI] Receive error — attempting reconnection in 3s";
             emit connectionLost();
+            // Auto-reconnect after 3 seconds (instead of dying permanently)
+            QThread::msleep(3000);
+            if (m_capturing && m_recvInstance) {
+                qInfo() << "[NDI] Attempting reconnect to" << m_sourceName;
+                // NDI receiver automatically reconnects if source reappears
+                continue;  // Re-enter receive loop
+            }
             m_capturing = false;
             break;
         default:

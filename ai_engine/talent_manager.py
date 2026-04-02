@@ -57,10 +57,18 @@ class TalentDatabase:
 
     def _save(self) -> None:
         data = {"version": "1.0", "talents": self._talents}
-        self._path.write_text(
-            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-        logger.info("Saved %d talents to %s", len(self._talents), self._path)
+        try:
+            # Write to temp file first, then atomic rename (prevents corruption)
+            tmp_path = self._path.with_suffix(".tmp")
+            tmp_path.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            tmp_path.replace(self._path)  # Atomic on POSIX
+            logger.info("Saved %d talents to %s", len(self._talents), self._path)
+        except OSError as exc:
+            logger.error("Failed to save talents to %s: %s", self._path, exc)
+        except Exception as exc:
+            logger.error("Unexpected error saving talents: %s", exc)
 
     def _load_model(self) -> bool:
         if self._model is not None:
@@ -69,7 +77,7 @@ class TalentDatabase:
             from insightface.app import FaceAnalysis
             self._model = FaceAnalysis(
                 name="buffalo_l",
-                providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+                providers=["CoreMLExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"],
             )
             self._model.prepare(ctx_id=0, det_size=(640, 640))
             logger.info("InsightFace model loaded for enrollment")

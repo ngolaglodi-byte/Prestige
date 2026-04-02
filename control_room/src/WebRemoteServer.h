@@ -27,6 +27,8 @@ class WebRemoteServer : public QObject {
     Q_PROPERTY(bool running READ isRunning NOTIFY runningChanged)
     Q_PROPERTY(int port READ port WRITE setPort NOTIFY portChanged)
     Q_PROPERTY(QString url READ url NOTIFY runningChanged)
+    Q_PROPERTY(QString apiKey READ apiKey WRITE setApiKey NOTIFY apiKeyChanged)
+    Q_PROPERTY(bool authEnabled READ authEnabled WRITE setAuthEnabled NOTIFY apiKeyChanged)
 
 public:
     explicit WebRemoteServer(LiveController* live, OverlayController* overlay,
@@ -44,9 +46,15 @@ public:
     void setPort(int p);
     QString url() const;
 
+    QString apiKey() const { return m_apiKey; }
+    void setApiKey(const QString& key) { if (m_apiKey != key) { m_apiKey = key; emit apiKeyChanged(); } }
+    bool authEnabled() const { return m_authEnabled; }
+    void setAuthEnabled(bool v) { if (m_authEnabled != v) { m_authEnabled = v; emit apiKeyChanged(); } }
+
 signals:
     void runningChanged();
     void portChanged();
+    void apiKeyChanged();
 
 private:
     void handleConnection();
@@ -71,6 +79,8 @@ private:
     RssFetcher*        m_rss        = nullptr;
     GraphicsQueue*     m_queue      = nullptr;
     int                m_port       = 8080;
+    QString            m_apiKey;         // If empty + auth disabled, all requests pass
+    bool               m_authEnabled = false;
 };
 
 } // namespace prestige

@@ -82,8 +82,7 @@ AnimType Compositor::animTypeForStyle(const QString& /*id*/)
 
 // ── Broadcast overlay setters ──────────────────────────────
 
-void Compositor::setLowerThirdText(const QString& title, const QString& subtitle) { m_lowerTitle = title; m_lowerSubtitle = subtitle; }
-void Compositor::setLowerThirdVisible(bool v) { m_lowerVisible = v; }
+// Lower Third removed — replaced by Show Title + Talent Nameplate
 void Compositor::setTickerText(const QString& text) { m_tickerText = text; }
 void Compositor::setTickerVisible(bool v) { m_tickerVisible = v; }
 void Compositor::setLogoImage(const QImage& logo) { m_logoFrames = {logo}; m_logoFrameIndex = 0; }
@@ -156,7 +155,7 @@ void Compositor::setTeamLogoB(const QString& path) {
 }
 void Compositor::setGoalAnim(bool active, const QString& text, const QString& team,
                               const QString& player, const QString& effect, int duration) {
-    if (active && !m_goalAnimActive) m_goalAnimFrame = 0; // Reset on new goal
+    if (active && !m_goalAnimActive) m_goalAnimTime = 0; // Reset on new goal
     m_goalAnimActive = active;
     m_goalAnimText = text;
     m_goalAnimTeam = team;
@@ -197,9 +196,12 @@ void Compositor::updateAnimations(const QList<TalentOverlay>& talents)
         }
     }
 
-    // Advance all animations — director-configurable duration
-    double enterStep = (1.0 / m_enterFrames) * m_animSpeed;
-    double exitStep  = (1.0 / m_exitFrames)  * m_animSpeed;
+    // Advance all animations — wall-clock based (frame-rate independent)
+    // enterFrames at 30fps → enterDuration in seconds → step = deltaTime / duration
+    double enterDuration = m_enterFrames / 30.0;  // Convert frame count to seconds (at reference 30fps)
+    double exitDuration  = m_exitFrames / 30.0;
+    double enterStep = (m_deltaTime / enterDuration) * m_animSpeed;
+    double exitStep  = (m_deltaTime / exitDuration)  * m_animSpeed;
 
     for (auto it = m_animStates.begin(); it != m_animStates.end(); ) {
         auto& state = it->second;
@@ -225,7 +227,21 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     if (videoFrame.isNull()) return {};
     m_perfTimer.start();
 
-    // Advance animation states
+    // ── Wall-clock delta-time (frame-rate independent) ──────
+    if (!m_wallClockStarted) {
+        m_wallClock.start();
+        m_wallClockStarted = true;
+        m_deltaTime = 1.0 / 30.0; // Assume 30fps for first frame
+    } else {
+        double elapsedNs = m_wallClock.nsecsElapsed();
+        m_wallClock.restart();
+        m_deltaTime = elapsedNs / 1.0e9;
+        // Clamp delta to avoid explosion on stalls (min 10fps, max 120fps)
+        m_deltaTime = std::clamp(m_deltaTime, 1.0 / 120.0, 1.0 / 10.0);
+    }
+    m_wallTimeSec += m_deltaTime;
+
+    // Advance animation states (using delta-time)
     updateAnimations(talents);
 
     // ── GPU PIPELINE ─────────────────────────────────────────
@@ -256,13 +272,12 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             }
             if (!talent) continue;
 
-            // Apply easing: OutCubic for enter (fast start, slow end)
-            //                InOutCubic for exit (smooth both ways)
+            // Apply AE easing curve (configurable from Graph Editor)
             double easedProg;
             if (state.targetProg > 0.5) {
-                easedProg = easeOutCubic(state.progress);  // Entering
+                easedProg = m_easingFunc ? m_easingFunc(state.progress) : easeOutCubic(state.progress);
             } else {
-                easedProg = state.progress * state.progress;  // Exiting: quadratic falloff
+                easedProg = ae::easeInCubic(state.progress);  // Exit: smooth cubic in
             }
 
             // Draw with animation progress
@@ -271,6 +286,14 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             if (it != m_styles.end()) {
                 painter.save();
                 painter.setOpacity(easedProg);  // Global opacity animation
+                // Apply nameplate scale (configurable from UI)
+                if (std::abs(m_nameplateScale - 1.0) > 0.01) {
+                    QRectF plate = calcPlate(*talent, output.size(), output.width() * 0.198, 64);
+                    QPointF center = plate.center();
+                    painter.translate(center);
+                    painter.scale(m_nameplateScale, m_nameplateScale);
+                    painter.translate(-center);
+                }
                 it->second(painter, *talent, output.size(), easedProg);
 
                 // Broadcast lower third effects (drawn around the nameplate)
@@ -305,16 +328,28 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     int fh = output.height();
     double scale = fw / 1920.0;
 
+    // ── EBU R 95 / SMPTE RP 218 Safe Areas ──────────────
+    // Title safe: inner 80% — all text must be within this area
+    // Action safe: inner 90% — all graphics should be within this area
+    int actionSafeX = static_cast<int>(fw * 0.05);  // 5% margin each side = 90% center
+    int actionSafeY = static_cast<int>(fh * 0.05);
+    int titleSafeX  = static_cast<int>(fw * 0.10);  // 10% margin each side = 80% center
+    int titleSafeY  = static_cast<int>(fh * 0.10);
+    // Use title safe as minimum margin for all overlay positioning
+    int safeMarginX = titleSafeX;
+    int safeMarginY = titleSafeY;
+    (void)actionSafeX; (void)actionSafeY; // Available for action-safe checks
+
     // ── Sport: Team logos in scoreboard ─────────────────────
     // (rendered inside the scoreboard section below)
 
-    // ── Sport: GOAL Animation (full-screen overlay) ──────
-    if (m_goalAnimActive && m_goalAnimFrame < m_goalAnimDuration * 25) {
-        m_goalAnimFrame++;
-        double totalFrames = m_goalAnimDuration * 25.0;
-        double prog = m_goalAnimFrame / totalFrames;
-        double entryProg = std::min(1.0, m_goalAnimFrame / 20.0); // 20 frames entry
-        double exitProg = std::max(0.0, (m_goalAnimFrame - totalFrames + 15) / 15.0); // 15 frames exit
+    // ── Sport: GOAL Animation (full-screen overlay, wall-clock timed) ──
+    if (m_goalAnimActive && m_goalAnimTime < m_goalAnimDuration) {
+        m_goalAnimTime += m_deltaTime;
+        double totalDuration = static_cast<double>(m_goalAnimDuration);
+        double prog = m_goalAnimTime / totalDuration;
+        double entryProg = std::min(1.0, m_goalAnimTime / 0.66); // 0.66s entry (~20f@30fps)
+        double exitProg = std::max(0.0, (m_goalAnimTime - totalDuration + 0.5) / 0.5); // 0.5s exit
 
         // Semi-transparent overlay
         painter.save();
@@ -375,12 +410,12 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         }
 
         // Particles
-        fx::sparkles(painter, QRectF(0, 0, fw, fh), 40, m_goalAnimFrame * 0.06, teamColor);
+        fx::sparkles(painter, QRectF(0, 0, fw, fh), 40, m_goalAnimTime * 0.06, teamColor);
 
         painter.restore();
-    } else if (m_goalAnimActive && m_goalAnimFrame >= m_goalAnimDuration * 25) {
+    } else if (m_goalAnimActive && m_goalAnimTime >= m_goalAnimDuration) {
         m_goalAnimActive = false;
-        m_goalAnimFrame = 0;
+        m_goalAnimTime = 0;
     }
 
     // ── Sport: Event overlay (card, halftime, etc.) ──────
@@ -433,26 +468,31 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int tkY = fh - tkH - tkOffY;
         QRectF tkRect(0, tkY, fw, tkH);
 
-        // Design Template: render ticker background layers
+        // Design Template: render ticker background layers (if active)
         double timeSec = m_loopFrame / 25.0;
-        DesignRegistry::instance().render(painter, "ticker", m_tkDesign, tkRect, timeSec, scale, m_accentColor);
-
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(m_tickerBgColor);
-        painter.drawRect(tkRect);
+        bool hasDesign = !m_tkDesign.isEmpty() && m_tkDesign != "tk_news_red";
+        if (hasDesign) {
+            DesignRegistry::instance().render(painter, "ticker", m_tkDesign, tkRect, timeSec, scale, m_accentColor);
+        } else {
+            // Fallback: solid color background (only when no design template)
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(m_tickerBgColor);
+            painter.drawRect(tkRect);
+        }
 
         QFont tkF("Helvetica Neue", static_cast<int>(m_tickerFontSize * scale), QFont::Bold);
         painter.setFont(tkF);
         painter.setPen(m_tickerTextColor);
 
-        // Scrolling: offset advances each frame (speed configurable)
-        int scrollPx = qMax(1, m_tickerSpeed);
+        // Scrolling: wall-clock based (frame-rate independent)
+        double scrollPixPerSec = qMax(1, m_tickerSpeed) * 30.0; // Reference: speed at 30fps
+        double scrollDelta = scrollPixPerSec * m_deltaTime;
         int textW = QFontMetrics(tkF).horizontalAdvance(m_tickerText);
         if (m_layoutRtl || m_tickerText.isRightToLeft()) {
-            m_tickerOffset += scrollPx;
+            m_tickerOffset += static_cast<int>(scrollDelta);
             if (m_tickerOffset > fw) m_tickerOffset = -textW;
         } else {
-            m_tickerOffset -= scrollPx;
+            m_tickerOffset -= static_cast<int>(scrollDelta);
             if (m_tickerOffset < -textW) m_tickerOffset = fw;
         }
         painter.drawText(m_tickerOffset, tkY + static_cast<int>(24 * scale), m_tickerText);
@@ -509,14 +549,16 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         painter.setOpacity(1.0);
     }
 
-    // ── Branding animation state machine ────────────────────
-    m_loopFrame++;
+    // ── Branding animation state machine (wall-clock timed) ──
+    m_loopFrame++; // Keep for compatibility but use m_wallTimeSec for timing
 
-    // Advance entry animations
+    // Advance entry animations: 0.03 per frame at 30fps = ~1s entry
+    // Convert to: deltaTime / 1.0s = step per real second
+    double brandingStep = m_deltaTime * 0.9; // ~1.1s entry duration
     if (m_logoEntryProgress < 1.0)
-        m_logoEntryProgress = qMin(1.0, m_logoEntryProgress + 0.03);
+        m_logoEntryProgress = qMin(1.0, m_logoEntryProgress + brandingStep);
     if (m_nameEntryProgress < 1.0)
-        m_nameEntryProgress = qMin(1.0, m_nameEntryProgress + 0.03);
+        m_nameEntryProgress = qMin(1.0, m_nameEntryProgress + brandingStep);
 
     double loopPhase = std::sin(m_loopFrame * 0.05);
 
@@ -544,7 +586,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             int logoOffX = 0, logoOffY = 0;
             double logoScale = 1.0;
             if (m_logoEntryProgress < 1.0) {
-                double p = m_logoEntryProgress;
+                double p = m_easingFunc ? m_easingFunc(m_logoEntryProgress) : easeOutCubic(m_logoEntryProgress);
                 if (m_logoEntryAnimType == "fade") {
                     logoOpacity = p * 0.9;
                 } else if (m_logoEntryAnimType == "slide_left") {
@@ -708,7 +750,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 int nameOffX = 0, nameOffY = 0;
                 double nameScale = 1.0;
                 if (m_nameEntryProgress < 1.0) {
-                    double p = m_nameEntryProgress;
+                    double p = m_easingFunc ? m_easingFunc(m_nameEntryProgress) : easeOutCubic(m_nameEntryProgress);
                     if (m_nameEntryAnimType == "fade") {
                         nameOpacity = p;
                     } else if (m_nameEntryAnimType == "slide_left") {
@@ -804,6 +846,13 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                     painter.drawRoundedRect(nameRect.adjusted(2 * scale, 2 * scale, 2 * scale, 2 * scale), 2 * scale, 2 * scale);
                 }
 
+                // Channel Name Design Template
+                if (!m_chDesign.isEmpty()) {
+                    double timeSec = m_loopFrame / 30.0;
+                    DesignRegistry::instance().render(painter, "channel", m_chDesign, nameRect,
+                                                       timeSec, scale, m_accentColor, m_channelName);
+                }
+
                 // Glow loop for name
                 if (m_nameEntryProgress >= 1.0 && m_nameLoopAnimType == "glow") {
                     double glowOp = 0.3 + loopPhase * 0.15;
@@ -881,15 +930,15 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Advance entry animation when visible
     if (m_showTitleVisible && !m_showTitleText.isEmpty() && !m_bypassActive) {
         if (m_showTitleEntryProgress < 1.0)
-            m_showTitleEntryProgress = qMin(1.0, m_showTitleEntryProgress + 0.03);
+            m_showTitleEntryProgress = qMin(1.0, m_showTitleEntryProgress + brandingStep);
         if (m_showTitleProgress < 1.0)
-            m_showTitleProgress = qMin(1.0, m_showTitleProgress + 0.08);
+            m_showTitleProgress = qMin(1.0, m_showTitleProgress + m_deltaTime * 2.4); // ~0.42s fade-in
     } else {
         if (m_showTitleProgress > 0.0)
-            m_showTitleProgress = qMax(0.0, m_showTitleProgress - 0.08);
+            m_showTitleProgress = qMax(0.0, m_showTitleProgress - m_deltaTime * 2.4); // ~0.42s fade-out
     }
     if (m_showTitleProgress > 0.01) {
-        double prog = easeOutCubic(m_showTitleProgress);
+        double prog = m_easingFunc ? m_easingFunc(m_showTitleProgress) : easeOutCubic(m_showTitleProgress);
 
         QFont titleF("Helvetica Neue", static_cast<int>(m_showTitleFontSize * scale), QFont::Bold);
         int subSize = qMax(10, m_showTitleFontSize - 4);
@@ -922,7 +971,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int titleOffX = 0, titleOffY = 0;
         double titleScale = 1.0;
         if (m_showTitleEntryProgress < 1.0) {
-            double p = m_showTitleEntryProgress;
+            double p = m_easingFunc ? m_easingFunc(m_showTitleEntryProgress) : easeOutCubic(m_showTitleEntryProgress);
             if (m_showTitleEntryAnimType == "fade") {
                 titleOpacity = p * prog;
             } else if (m_showTitleEntryAnimType == "slide_left") {
@@ -1009,6 +1058,14 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             painter.drawRoundedRect(boxRect.adjusted(2 * scale, 2 * scale, 2 * scale, 2 * scale), 4 * scale, 4 * scale);
         }
 
+        // Design Template overlay (rendered on top of shape background)
+        if (!m_titleDesignId.isEmpty()) {
+            double timeSec = m_loopFrame / 30.0;
+            DesignRegistry::instance().render(painter, "title", m_titleDesignId, boxRect,
+                                               timeSec, scale, m_accentColor,
+                                               m_showTitleText, m_showSubtitleText, titleF);
+        }
+
         // Glow loop
         if (m_showTitleEntryProgress >= 1.0 && m_showTitleLoopAnimType == "glow") {
             double stLoopPhase2 = std::sin(m_loopFrame * 0.05);
@@ -1063,6 +1120,15 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int clockY = (m_logoVisible ? static_cast<int>(72 * scale) : static_cast<int>(16 * scale)) + static_cast<int>(m_clockOffY * scale);
         int textY = clockY + QFontMetrics(clockF).ascent();
 
+        QRectF clockRect(clockX, clockY, clockW + 10, QFontMetrics(clockF).height());
+
+        // Clock Design Template
+        if (!m_ckDesign.isEmpty()) {
+            double timeSec = m_loopFrame / 30.0;
+            DesignRegistry::instance().render(painter, "clock", m_ckDesign, clockRect,
+                                               timeSec, scale * ckS, m_accentColor, timeStr);
+        }
+
         // Drop shadow
         painter.setPen(QColor(0, 0, 0, 180));
         painter.drawText(clockX + 1, textY + 1, timeStr);
@@ -1115,54 +1181,122 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
         QRectF qrRect(qrX, qrY, qrBoxSize, qrBoxSize);
 
-        // Background
-        drawGlassRect(painter, qrRect, static_cast<int>(8 * scale), QColor(10, 10, 15), 0.88);
+        // ── Real QR Code Generation (Version 1-2, Byte mode, ECC L) ──
+        // Generate a scannable QR code matrix from m_qrUrl
+        {
+            QByteArray urlData = m_qrUrl.toUtf8();
+            int dataLen = urlData.size();
 
-        // Border pattern (QR-style)
-        painter.setPen(QPen(QColor(255, 255, 255, 180), 2 * scale));
-        int inset = static_cast<int>(8 * scale);
-        QRectF inner(qrX + inset, qrY + inset, qrBoxSize - 2 * inset, qrBoxSize - 2 * inset);
-        painter.drawRect(inner);
+            // QR Version 1 = 21x21 (max 17 bytes), Version 2 = 25x25 (max 32 bytes)
+            int version = (dataLen <= 17) ? 1 : 2;
+            int modules = 17 + version * 4; // 21 or 25
 
-        // Corner squares (QR finder patterns)
-        int cornerSize = static_cast<int>(20 * scale);
-        painter.setBrush(QColor(255, 255, 255, 200));
-        painter.setPen(Qt::NoPen);
-        // Top-left corner
-        painter.drawRect(QRectF(inner.left(), inner.top(), cornerSize, cornerSize));
-        // Top-right corner
-        painter.drawRect(QRectF(inner.right() - cornerSize, inner.top(), cornerSize, cornerSize));
-        // Bottom-left corner
-        painter.drawRect(QRectF(inner.left(), inner.bottom() - cornerSize, cornerSize, cornerSize));
+            // Build module grid (true = dark)
+            std::vector<std::vector<bool>> grid(modules, std::vector<bool>(modules, false));
+            std::vector<std::vector<bool>> reserved(modules, std::vector<bool>(modules, false));
 
-        // Inner squares of corners (hollow effect)
-        int innerCorner = static_cast<int>(10 * scale);
-        int offset2 = static_cast<int>(5 * scale);
-        painter.setBrush(QColor(10, 10, 15));
-        painter.drawRect(QRectF(inner.left() + offset2, inner.top() + offset2, innerCorner, innerCorner));
-        painter.drawRect(QRectF(inner.right() - cornerSize + offset2, inner.top() + offset2, innerCorner, innerCorner));
-        painter.drawRect(QRectF(inner.left() + offset2, inner.bottom() - cornerSize + offset2, innerCorner, innerCorner));
+            // Helper: draw finder pattern at (r,c)
+            auto drawFinder = [&](int r, int c) {
+                for (int dy = -1; dy <= 7; ++dy) {
+                    for (int dx = -1; dx <= 7; ++dx) {
+                        int y = r + dy, x = c + dx;
+                        if (y < 0 || y >= modules || x < 0 || x >= modules) continue;
+                        bool dark = false;
+                        if (dy >= 0 && dy <= 6 && dx >= 0 && dx <= 6) {
+                            if (dy == 0 || dy == 6 || dx == 0 || dx == 6) dark = true;
+                            else if (dy >= 2 && dy <= 4 && dx >= 2 && dx <= 4) dark = true;
+                        }
+                        grid[y][x] = dark;
+                        reserved[y][x] = true;
+                    }
+                }
+            };
 
-        // "SCAN" label
-        QFont scanFont("Helvetica Neue", static_cast<int>(10 * scale), QFont::Bold);
-        painter.setFont(scanFont);
-        painter.setPen(m_accentColor);
-        painter.drawText(QRectF(qrX, qrY + static_cast<int>(60 * scale), qrBoxSize, static_cast<int>(16 * scale)),
-                         Qt::AlignHCenter, "SCAN");
+            // Draw 3 finder patterns
+            drawFinder(0, 0);
+            drawFinder(0, modules - 7);
+            drawFinder(modules - 7, 0);
 
-        // URL text (truncated if needed)
-        QFont urlFont("Menlo", static_cast<int>(7 * scale));
-        painter.setFont(urlFont);
-        painter.setPen(QColor(180, 180, 180));
-        QString displayUrl = m_qrUrl;
-        QFontMetrics urlFm(urlFont);
-        if (urlFm.horizontalAdvance(displayUrl) > qrBoxSize - 2 * inset)
-            displayUrl = urlFm.elidedText(displayUrl, Qt::ElideMiddle, qrBoxSize - 2 * inset);
-        painter.drawText(QRectF(qrX, qrY + static_cast<int>(80 * scale), qrBoxSize, static_cast<int>(30 * scale)),
-                         Qt::AlignHCenter | Qt::TextWordWrap, displayUrl);
+            // Timing patterns
+            for (int i = 8; i < modules - 8; ++i) {
+                grid[6][i] = (i % 2 == 0);
+                reserved[6][i] = true;
+                grid[i][6] = (i % 2 == 0);
+                reserved[i][6] = true;
+            }
+
+            // Format info (simplified — mask 0, ECC L)
+            // Reserve format info area
+            for (int i = 0; i < 9; ++i) {
+                reserved[8][i] = true;
+                reserved[i][8] = true;
+                if (i < 8) { reserved[8][modules - 1 - i] = true; reserved[modules - 1 - i][8] = true; }
+            }
+            grid[modules - 8][8] = true; // Dark module
+            reserved[modules - 8][8] = true;
+
+            // Encode data bits: simple byte encoding
+            // Place data in zigzag pattern (right to left, bottom to top)
+            std::vector<bool> bits;
+            // Mode indicator (0100 = byte) + character count
+            bits.push_back(false); bits.push_back(true); bits.push_back(false); bits.push_back(false);
+            int countBits = (version == 1) ? 8 : 8;
+            for (int b = countBits - 1; b >= 0; --b)
+                bits.push_back((dataLen >> b) & 1);
+            // Data bytes
+            for (int i = 0; i < dataLen && i < (version == 1 ? 17 : 32); ++i)
+                for (int b = 7; b >= 0; --b)
+                    bits.push_back((urlData[i] >> b) & 1);
+            // Terminator + padding
+            for (int i = 0; i < 4 && static_cast<int>(bits.size()) < modules * modules; ++i)
+                bits.push_back(false);
+            while (bits.size() % 8 != 0) bits.push_back(false);
+            // Pad codewords
+            bool padToggle = false;
+            while (static_cast<int>(bits.size()) < modules * modules) {
+                uint8_t padByte = padToggle ? 0x11 : 0xEC;
+                for (int b = 7; b >= 0; --b) bits.push_back((padByte >> b) & 1);
+                padToggle = !padToggle;
+            }
+
+            // Place bits in zigzag
+            int bitIdx = 0;
+            for (int right = modules - 1; right >= 1; right -= 2) {
+                if (right == 6) right = 5; // Skip timing column
+                for (int vert = 0; vert < modules; ++vert) {
+                    for (int j = 0; j < 2; ++j) {
+                        int x = right - j;
+                        bool upward = ((modules - 1 - right) / 2) % 2 == 0;
+                        int y = upward ? (modules - 1 - vert) : vert;
+                        if (x >= 0 && x < modules && y >= 0 && y < modules && !reserved[y][x]) {
+                            bool val = (bitIdx < static_cast<int>(bits.size())) ? bits[bitIdx] : false;
+                            // Apply mask pattern 0: (row + col) % 2 == 0
+                            if ((y + x) % 2 == 0) val = !val;
+                            grid[y][x] = val;
+                            bitIdx++;
+                        }
+                    }
+                }
+            }
+
+            // Render the QR matrix
+            drawGlassRect(painter, qrRect, static_cast<int>(8 * scale), QColor(255, 255, 255), 0.95);
+            double cellSize = (qrBoxSize - 16.0 * scale) / modules;
+            double startX = qrX + 8.0 * scale;
+            double startY = qrY + 8.0 * scale;
+            painter.setPen(Qt::NoPen);
+            for (int y = 0; y < modules; ++y) {
+                for (int x = 0; x < modules; ++x) {
+                    if (grid[y][x]) {
+                        painter.setBrush(Qt::black);
+                        painter.drawRect(QRectF(startX + x * cellSize, startY + y * cellSize, cellSize + 0.5, cellSize + 0.5));
+                    }
+                }
+            }
+        }
     }
 
-    // Social chat overlay (top-right, semi-transparent vertical list)
+    // Social chat overlay (configurable position + offset)
     if (m_chatVisible && !m_chatMessages.isEmpty() && !m_bypassActive) {
         QFont chatFont("Helvetica Neue", static_cast<int>(11 * scale));
         painter.setFont(chatFont);
@@ -1172,10 +1306,23 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int maxLines = qMin(5, m_chatMessages.size());
         int chatW = static_cast<int>(300 * scale);
         int chatH = lineH * maxLines + static_cast<int>(12 * scale);
-        int chatX = fw - chatW - static_cast<int>(16 * scale);
-        int chatY = static_cast<int>(16 * scale);
-        // Push below logo if visible
-        if (m_logoVisible) chatY = static_cast<int>(72 * scale);
+        int chatPad = static_cast<int>(16 * scale);
+        int chatX, chatY;
+
+        if (m_chatPosition == "top_left") {
+            chatX = chatPad; chatY = chatPad;
+        } else if (m_chatPosition == "bottom_left") {
+            int tickerH = (m_tickerVisible && !m_tickerText.isEmpty()) ? static_cast<int>(36 * scale) : 0;
+            chatX = chatPad; chatY = fh - chatH - chatPad - tickerH;
+        } else if (m_chatPosition == "bottom_right") {
+            int tickerH = (m_tickerVisible && !m_tickerText.isEmpty()) ? static_cast<int>(36 * scale) : 0;
+            chatX = fw - chatW - chatPad; chatY = fh - chatH - chatPad - tickerH;
+        } else { // top_right (default)
+            chatX = fw - chatW - chatPad; chatY = chatPad;
+            if (m_logoVisible) chatY = static_cast<int>(72 * scale);
+        }
+        chatX += static_cast<int>(m_chatOffX * scale);
+        chatY += static_cast<int>(m_chatOffY * scale);
 
         QRectF chatBg(chatX, chatY, chatW, chatH);
         drawGlassRect(painter, chatBg, static_cast<int>(6 * scale), QColor(0, 0, 0), 0.65);
@@ -1283,6 +1430,33 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         painter.setPen(QColor(0, 229, 255, 200));
         QString timeLabel = m_sbMatchTime + "  P" + QString::number(m_sbPeriod);
         painter.drawText(QRectF(sbX, sbY + sbH * 0.80, sbW, sbH * 0.18), Qt::AlignHCenter, timeLabel);
+
+        // Cards (yellow/red) — small indicators below scores
+        if (m_sbYellowA > 0 || m_sbRedA > 0 || m_sbYellowB > 0 || m_sbRedB > 0) {
+            double cardY = sbY + sbH + 4 * scale;
+            double cardSize = 8 * scale;
+            double cardGap = 3 * scale;
+            // Team A cards
+            double cardX = sbX + sbW * 0.15;
+            for (int i = 0; i < m_sbYellowA; ++i) {
+                painter.fillRect(QRectF(cardX, cardY, cardSize, cardSize * 1.3), QColor("#FFD700"));
+                cardX += cardSize + cardGap;
+            }
+            for (int i = 0; i < m_sbRedA; ++i) {
+                painter.fillRect(QRectF(cardX, cardY, cardSize, cardSize * 1.3), QColor("#CC0000"));
+                cardX += cardSize + cardGap;
+            }
+            // Team B cards
+            cardX = sbX + sbW * 0.65;
+            for (int i = 0; i < m_sbYellowB; ++i) {
+                painter.fillRect(QRectF(cardX, cardY, cardSize, cardSize * 1.3), QColor("#FFD700"));
+                cardX += cardSize + cardGap;
+            }
+            for (int i = 0; i < m_sbRedB; ++i) {
+                painter.fillRect(QRectF(cardX, cardY, cardSize, cardSize * 1.3), QColor("#CC0000"));
+                cardX += cardSize + cardGap;
+            }
+        }
     }
 
     // Weather overlay — broadcast: text + drop shadow, no box
@@ -1317,6 +1491,14 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int wX = fw - totalW - wPad + wOffXPx;
         int wY = fh - wMarginY + wOffYPx;
 
+        // Weather Design Template
+        if (!m_wtDesign.isEmpty()) {
+            QRectF weatherRect(wX - 5, wY - 5, totalW + 10, iconSize + cityFm.height() + tempFm.height() + 10);
+            double timeSec = m_loopFrame / 30.0;
+            DesignRegistry::instance().render(painter, "weather", m_wtDesign, weatherRect,
+                                               timeSec, scale * wS, m_accentColor, m_weatherCity, tempStr);
+        }
+
         // Drop shadow for icon
         painter.setFont(iconFont);
         painter.setPen(QColor(0, 0, 0, 150));
@@ -1347,9 +1529,197 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
     painter.end(); // End overlay layer rasterization
 
+    // ══════════════════════════════════════════════════════════
+    // AE STEP 2.5: Apply AE post-effects to overlay layer
+    // This happens AFTER rasterization, BEFORE compositing
+    // Exactly like After Effects: Layer → Effects → Composite
+    // ══════════════════════════════════════════════════════════
+    m_aeFrameCount++;
+    double aeTime = m_wallTimeSec; // Wall-clock time (frame-rate independent)
+
+    // ── AE Expression: Wiggle (applied to overlay position) ──
+    // Wiggle creates organic movement on the entire overlay layer
+    if (m_wiggleEnabled && !m_bypassActive) {
+        double wx = ae::wiggle(aeTime, m_wiggleFreq, m_wiggleAmp, 0);
+        double wy = ae::wiggle(aeTime, m_wiggleFreq, m_wiggleAmp, 42);
+        QImage shifted(overlayLayer.size(), QImage::Format_ARGB32_Premultiplied);
+        shifted.fill(Qt::transparent);
+        QPainter sp(&shifted);
+        sp.drawImage(static_cast<int>(wx), static_cast<int>(wy), overlayLayer);
+        sp.end();
+        overlayLayer = shifted;
+    }
+
+    // ── AE Post-Effect on overlay (GPU-accelerated) ──────────
+    if (!m_aeEffectId.isEmpty() && !m_bypassActive && m_gpu.isAvailable()) {
+        double intensity = m_aeEffectIntensity;
+        double p1 = m_aeEffectParam1;
+        double p2 = m_aeEffectParam2;
+
+        // === DISTORTION EFFECTS ===
+        if (m_aeEffectId == "turbulent_displace")
+            overlayLayer = m_gpu.applyTurbulentDisplace(overlayLayer, intensity * 20, p1 * 10, aeTime);
+        else if (m_aeEffectId == "twirl")
+            overlayLayer = m_gpu.applyTwirl(overlayLayer, intensity * 6.28, p1, 0.5, 0.5);
+        else if (m_aeEffectId == "spherize")
+            overlayLayer = m_gpu.applySpherize(overlayLayer, p1, 0.5, 0.5);
+        else if (m_aeEffectId == "bulge")
+            overlayLayer = m_gpu.applyBulge(overlayLayer, p1, intensity, 0.5, 0.5);
+        else if (m_aeEffectId == "ripple")
+            overlayLayer = m_gpu.applyRipple(overlayLayer, intensity * 0.02, p1 * 30, aeTime * 3);
+        else if (m_aeEffectId == "wave_warp")
+            overlayLayer = m_gpu.applyWaveWarp(overlayLayer, intensity * 0.02, p1 * 20, aeTime * 2, p2 * 6.28);
+        else if (m_aeEffectId == "kaleidoscope")
+            overlayLayer = m_gpu.applyKaleidoscope(overlayLayer, std::max(2, static_cast<int>(p1 * 12)), aeTime * 0.5);
+        else if (m_aeEffectId == "mirror")
+            overlayLayer = m_gpu.applyMirror(overlayLayer, p1 * 360, intensity * 50);
+        else if (m_aeEffectId == "pixelate")
+            overlayLayer = m_gpu.applyPixelate(overlayLayer, std::max(2.0, intensity * 30));
+        else if (m_aeEffectId == "mosaic")
+            overlayLayer = m_gpu.applyMosaic(overlayLayer, std::max(1, static_cast<int>(p1 * 20)), std::max(1, static_cast<int>(p2 * 20)));
+        else if (m_aeEffectId == "polar_coords")
+            overlayLayer = m_gpu.applyPolarCoords(overlayLayer, true);
+        else if (m_aeEffectId == "mesh_warp")
+            overlayLayer = m_gpu.applyMeshWarp(overlayLayer, intensity * 10, aeTime);
+        else if (m_aeEffectId == "posterize")
+            overlayLayer = m_gpu.applyPosterize(overlayLayer, std::max(2, static_cast<int>(p1 * 16)));
+        else if (m_aeEffectId == "reshape")
+            overlayLayer = m_gpu.applyReshape(overlayLayer, p1, p2, aeTime);
+
+        // === COLOR CORRECTION EFFECTS ===
+        else if (m_aeEffectId == "curves")
+            overlayLayer = m_gpu.applyCurves(overlayLayer, (p1 - 0.5) * 2, (intensity - 0.5) * 2, (p2 - 0.5) * 2);
+        else if (m_aeEffectId == "levels")
+            overlayLayer = m_gpu.applyLevels(overlayLayer, p1 * 0.3, 0.7 + p2 * 0.3, intensity * 2 + 0.1, 0, 1);
+        else if (m_aeEffectId == "hue_saturation")
+            overlayLayer = m_gpu.applyHueSaturation(overlayLayer, (p1 - 0.5) * 360, (intensity - 0.5) * 2, (p2 - 0.5) * 0.5);
+        else if (m_aeEffectId == "brightness_contrast")
+            overlayLayer = m_gpu.applyBrightContrast(overlayLayer, (intensity - 0.5) * 1.0, (p1 - 0.5) * 2.0);
+        else if (m_aeEffectId == "exposure")
+            overlayLayer = m_gpu.applyExposure(overlayLayer, (intensity - 0.5) * 4, p1 - 0.5, 0.5 + p2);
+        else if (m_aeEffectId == "tint")
+            overlayLayer = m_gpu.applyTint(overlayLayer, m_aeEffectColor1, m_aeEffectColor2, intensity);
+        else if (m_aeEffectId == "tritone")
+            overlayLayer = m_gpu.applyTritone(overlayLayer, m_aeEffectColor1, m_accentColor, m_aeEffectColor2);
+        else if (m_aeEffectId == "colorama")
+            overlayLayer = m_gpu.applyColorama(overlayLayer, aeTime * 0.3, p1 * 360);
+        else if (m_aeEffectId == "leave_color")
+            overlayLayer = m_gpu.applyLeaveColor(overlayLayer, m_aeEffectColor1, intensity * 0.5, p1 * 0.3);
+        else if (m_aeEffectId == "vibrance")
+            overlayLayer = m_gpu.applyVibrance(overlayLayer, (intensity - 0.5) * 2.0);
+        else if (m_aeEffectId == "photo_filter")
+            overlayLayer = m_gpu.applyPhotoFilter(overlayLayer, m_aeEffectColor1, intensity);
+        else if (m_aeEffectId == "gradient_map")
+            overlayLayer = m_gpu.applyGradientMap(overlayLayer, m_aeEffectColor1, m_aeEffectColor2);
+        else if (m_aeEffectId == "black_white")
+            overlayLayer = m_gpu.applyBlackWhite(overlayLayer, 0.4, 0.4, 0.2);
+        else if (m_aeEffectId == "invert")
+            overlayLayer = m_gpu.applyInvert(overlayLayer);
+        else if (m_aeEffectId == "threshold")
+            overlayLayer = m_gpu.applyThreshold(overlayLayer, intensity);
+        else if (m_aeEffectId == "solarize")
+            overlayLayer = m_gpu.applySolarize(overlayLayer, intensity);
+        else if (m_aeEffectId == "color_balance")
+            overlayLayer = m_gpu.applyColorBalance(overlayLayer, (p1 - 0.5) * 0.5, (intensity - 0.5) * 0.5, (p2 - 0.5) * 0.5);
+
+        // === GENERATE EFFECTS ===
+        else if (m_aeEffectId == "fractal_noise")
+            overlayLayer = m_gpu.applyFractalNoise(overlayLayer, p1 * 10 + 1, 3 + p2 * 5, aeTime * 0.5, intensity);
+        else if (m_aeEffectId == "cell_pattern")
+            overlayLayer = m_gpu.applyCellPattern(overlayLayer, p1 * 20 + 2, p2, aeTime);
+        else if (m_aeEffectId == "grid")
+            overlayLayer = m_gpu.applyGrid(overlayLayer, p1 * 100 + 10, p2 * 3 + 1, m_aeEffectColor1, intensity);
+        else if (m_aeEffectId == "gradient_ramp")
+            overlayLayer = m_gpu.applyGradientRamp(overlayLayer, m_aeEffectColor1, m_aeEffectColor2, p1 * 360, intensity);
+        else if (m_aeEffectId == "vegas")
+            overlayLayer = m_gpu.applyVegas(overlayLayer, static_cast<int>(p1 * 20 + 4), p2 * 3 + 1, m_aeEffectColor1, intensity, aeTime);
+        else if (m_aeEffectId == "radio_waves")
+            overlayLayer = m_gpu.applyRadioWaves(overlayLayer, p1 * 5 + 1, intensity, m_aeEffectColor1, aeTime);
+        else if (m_aeEffectId == "audio_spectrum")
+            overlayLayer = m_gpu.applyAudioSpectrum(overlayLayer, m_aeEffectColor1, m_aeEffectColor2, static_cast<int>(p1 * 40 + 10), aeTime);
+        else if (m_aeEffectId == "lens_flare_gen")
+            overlayLayer = m_gpu.applyLensFlareGen(overlayLayer, p1, p2, intensity, m_aeEffectColor1);
+        else if (m_aeEffectId == "light_burst")
+            overlayLayer = m_gpu.applyLightBurst(overlayLayer, 0.5, 0.5, static_cast<int>(p1 * 16 + 4), intensity, aeTime);
+        else if (m_aeEffectId == "beam")
+            overlayLayer = m_gpu.applyBeam(overlayLayer, 0, p1, 1, p2, intensity * 5, m_aeEffectColor1, aeTime);
+        else if (m_aeEffectId == "4color_gradient")
+            overlayLayer = m_gpu.apply4ColorGradient(overlayLayer, m_aeEffectColor1, m_aeEffectColor2, m_accentColor, Qt::white, intensity * 0.5);
+        else if (m_aeEffectId == "fill")
+            overlayLayer = m_gpu.applyFill(overlayLayer, m_aeEffectColor1, intensity);
+        else if (m_aeEffectId == "stroke")
+            overlayLayer = m_gpu.applyStroke(overlayLayer, m_aeEffectColor1, intensity * 10, p1 * 5);
+        else if (m_aeEffectId == "circle_burst")
+            overlayLayer = m_gpu.applyCircleBurst(overlayLayer, static_cast<int>(p1 * 30 + 5), intensity * 200, m_aeEffectColor1, aeTime);
+        else if (m_aeEffectId == "checkerboard")
+            overlayLayer = m_gpu.applyCheckerboard(overlayLayer, p1 * 60 + 5, m_aeEffectColor1, m_aeEffectColor2, intensity);
+
+        // === STYLIZE EFFECTS ===
+        else if (m_aeEffectId == "emboss")
+            overlayLayer = m_gpu.applyEmboss(overlayLayer, p1 * 360, p2 * 5 + 1, intensity);
+        else if (m_aeEffectId == "find_edges")
+            overlayLayer = m_gpu.applyFindEdges(overlayLayer, false);
+        else if (m_aeEffectId == "roughen_edges")
+            overlayLayer = m_gpu.applyRoughenEdges(overlayLayer, intensity * 10, p1 * 5 + 1, aeTime);
+        else if (m_aeEffectId == "scatter")
+            overlayLayer = m_gpu.applyScatter(overlayLayer, intensity * 15);
+        else if (m_aeEffectId == "stylize_glow")
+            overlayLayer = m_gpu.applyStylizeGlow(overlayLayer, p1, p2 * 20, intensity * 3, m_aeEffectColor1);
+        else if (m_aeEffectId == "cartoon")
+            overlayLayer = m_gpu.applyCartoon(overlayLayer, intensity, p1 * 10 + 2);
+        else if (m_aeEffectId == "halftone")
+            overlayLayer = m_gpu.applyHalftone(overlayLayer, p1 * 20 + 2, p2 * 90);
+        else if (m_aeEffectId == "stained_glass")
+            overlayLayer = m_gpu.applyStainedGlass(overlayLayer, p1 * 30 + 3, p2 * 0.1 + 0.01, m_aeEffectColor1);
+        else if (m_aeEffectId == "noise")
+            overlayLayer = m_gpu.applyNoise(overlayLayer, intensity * 0.3, true);
+        else if (m_aeEffectId == "strobe")
+            overlayLayer = m_gpu.applyStrobe(overlayLayer, p1 * 10 + 1, aeTime, m_aeEffectColor1);
+        else if (m_aeEffectId == "motion_tile")
+            overlayLayer = m_gpu.applyMotionTile(overlayLayer, std::max(1, static_cast<int>(p1 * 5 + 1)), std::max(1, static_cast<int>(p2 * 5 + 1)), 0);
+        else if (m_aeEffectId == "cross_hatch")
+            overlayLayer = m_gpu.applyCrossHatch(overlayLayer, p1 * 10 + 2, p2 * 90, intensity);
+        else if (m_aeEffectId == "oil_paint")
+            overlayLayer = m_gpu.applyOilPaint(overlayLayer, intensity * 5 + 1, p1);
+
+        // === PERSPECTIVE EFFECTS ===
+        else if (m_aeEffectId == "cc_sphere")
+            overlayLayer = m_gpu.applyCCSphere(overlayLayer, (p1 - 0.5) * 6.28, (p2 - 0.5) * 6.28, intensity);
+        else if (m_aeEffectId == "cc_cylinder")
+            overlayLayer = m_gpu.applyCCCylinder(overlayLayer, (p1 - 0.5) * 6.28, intensity);
+        else if (m_aeEffectId == "bevel_alpha")
+            overlayLayer = m_gpu.applyBevelAlpha(overlayLayer, intensity * 5, p1 * 360, m_aeEffectColor1);
+        else if (m_aeEffectId == "drop_shadow")
+            overlayLayer = m_gpu.applyDropShadowEffect(overlayLayer, p1 * 360, intensity * 20, p2 * 10, m_aeEffectColor1, 0.7);
+        else if (m_aeEffectId == "radial_shadow")
+            overlayLayer = m_gpu.applyRadialShadow(overlayLayer, 0.5, 0.5, m_aeEffectColor1, intensity);
+        else if (m_aeEffectId == "3d_rotation")
+            overlayLayer = m_gpu.apply3DRotation(overlayLayer, (p1 - 0.5) * 90, (p2 - 0.5) * 90, 0, intensity);
+        else if (m_aeEffectId == "reflection")
+            overlayLayer = m_gpu.applyReflection(overlayLayer, intensity * 0.5, p1, p2 * 20);
+
+        // === TIME EFFECTS (use previous frame) ===
+        else if (m_aeEffectId == "echo")
+            overlayLayer = m_gpu.applyEcho(overlayLayer, m_prevOverlayLayer, 0.033, static_cast<int>(p1 * 8 + 1), intensity, p2 * 0.5 + 0.3);
+        else if (m_aeEffectId == "trails")
+            overlayLayer = m_gpu.applyTrailsEffect(overlayLayer, m_prevOverlayLayer, intensity);
+        else if (m_aeEffectId == "force_motion_blur")
+            overlayLayer = m_gpu.applyForceMotionBlur(overlayLayer, m_prevOverlayLayer, intensity * 180);
+
+        // === MATTE/KEYING ===
+        else if (m_aeEffectId == "luma_key")
+            overlayLayer = m_gpu.applyLumaKey(overlayLayer, intensity, p1 * 0.3, true);
+    }
+
+    // Save overlay frame for time effects (echo, trails, motion blur)
+    m_prevOverlayLayer = overlayLayer.copy();
+
     // ── Step 3: GPU Composite overlay layer onto video ──────
-    // Alpha-blend the overlay layer (text, shapes, nameplates) onto the video+studio frame
-    if (m_gpu.isAvailable()) {
+    // Alpha-blend (or AE blend mode) the overlay onto the video+studio frame
+    if (m_overlayBlendMode != ae::BlendMode::Normal && !m_bypassActive) {
+        // AE Blend Mode compositing
+        output = ae::blendImages(output, overlayLayer, m_overlayBlendMode, 1.0);
+    } else if (m_gpu.isAvailable()) {
         m_gpu.drawImage(output, overlayLayer, 0, 0);
     } else {
         QPainter blend(&output);
@@ -1781,5 +2151,82 @@ void Compositor::drawBreaking(QPainter& p, const TalentOverlay& t, const QSize& 
 }
 
 void Compositor::drawDefault(QPainter& p, const TalentOverlay& t, const QSize& fs, double prog) { drawBFM(p, t, fs, prog); }
+
+// ══════════════════════════════════════════════════════════════
+// AE Effect ID lists for UI
+// ══════════════════════════════════════════════════════════════
+
+QStringList Compositor::allAeEffectIds() {
+    return {
+        // Distortion
+        "turbulent_displace", "twirl", "spherize", "bulge", "ripple",
+        "wave_warp", "kaleidoscope", "mirror", "pixelate", "mosaic",
+        "polar_coords", "mesh_warp", "posterize", "reshape",
+        // Color Correction
+        "curves", "levels", "hue_saturation", "brightness_contrast",
+        "exposure", "tint", "tritone", "colorama", "leave_color",
+        "vibrance", "photo_filter", "gradient_map", "black_white",
+        "invert", "threshold", "solarize", "color_balance",
+        // Generate
+        "fractal_noise", "cell_pattern", "grid", "gradient_ramp",
+        "vegas", "radio_waves", "audio_spectrum", "lens_flare_gen",
+        "light_burst", "beam", "4color_gradient", "fill", "stroke",
+        "circle_burst", "checkerboard",
+        // Stylize
+        "emboss", "find_edges", "roughen_edges", "scatter",
+        "stylize_glow", "cartoon", "halftone", "stained_glass",
+        "noise", "strobe", "motion_tile", "cross_hatch", "oil_paint",
+        // Perspective
+        "cc_sphere", "cc_cylinder", "bevel_alpha", "drop_shadow",
+        "radial_shadow", "3d_rotation", "reflection",
+        // Time
+        "echo", "trails", "force_motion_blur",
+        // Matte
+        "luma_key"
+    };
+}
+
+QStringList Compositor::allAeTextAnimatorIds() {
+    return {
+        // Original 10
+        "typewriter", "bounce_in", "wave_text", "tracking_expand",
+        "fade_up_per_letter", "scale_up_per_letter", "rotate_in_per_letter",
+        "blur_in", "slide_per_letter", "kinetic_pop",
+        // AE Extended 25
+        "matrix_rain", "cascade_reveal", "elastic_drop", "spiral_in",
+        "flip_board", "glow_reveal", "smoke_in", "scatter_assemble",
+        "slot_machine", "stamp_press", "wipe_per_letter", "swing_drop",
+        "neon_flicker", "gravity_crush", "rubber_stretch", "fade_in_random",
+        "curved_path", "zoom_burst", "jitter_shake", "shadow_expand",
+        "range_wipe", "text_shatter", "reflect_reveal", "perspective_tilt",
+        "liquid_fill"
+    };
+}
+
+QStringList Compositor::allAeTransitionIds() {
+    return {
+        // Original 8
+        "wipe_linear", "push_slide", "zoom_through", "glitch_transition",
+        "light_leak", "ink_bleed", "spin_transition", "cross_dissolve",
+        // AE Extended 20
+        "card_wipe", "venetian_blinds", "radial_wipe", "iris_wipe",
+        "block_dissolve", "checker_wipe", "spiral_wipe", "barn_door",
+        "matrix_wipe", "pinwheel", "zigzag_wipe", "diamond_wipe",
+        "heart_wipe", "star_wipe", "clock_wipe", "slide_reveal",
+        "split_wipe", "door_wipe", "ripple_dissolve", "particle_dissolve"
+    };
+}
+
+QStringList Compositor::allAeShapeEffectIds() {
+    return {
+        // Original 6
+        "line_draw_on", "circle_expand", "rectangle_build",
+        "path_trace", "grid_reveal", "hexagon_pattern",
+        // AE Extended 10
+        "trim_path", "repeater", "offset_path", "zig_zag",
+        "pucker_bloat", "round_corners", "wiggle_path",
+        "dashed_path", "taper_stroke", "morph_paths"
+    };
+}
 
 } // namespace prestige

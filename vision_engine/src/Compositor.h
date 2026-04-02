@@ -24,6 +24,7 @@
 #include "DesignTemplates.h"
 #include "VirtualStudio.h"
 #include "GpuEffects.h"
+#include "AEEasing.h"
 
 namespace prestige {
 
@@ -67,9 +68,8 @@ public:
     void setAnimExitFrames(int frames);
     double lastCompositeMs() const { return m_lastCompositeMs; }
 
-    // ── Broadcast overlays (lower third, logo, clock) ────
-    void setLowerThirdText(const QString& title, const QString& subtitle);
-    void setLowerThirdVisible(bool visible);
+    // ── Broadcast overlays (logo, clock, ticker) ─────────
+    // Note: Lower Third was replaced by Show Title + Talent Nameplate system
     void setTickerText(const QString& text);
     void setTickerVisible(bool visible);
     void setLogoImage(const QImage& logo);
@@ -96,6 +96,8 @@ public:
     // ── Social Chat overlay ──────────────────────────────
     void setSocialChatMessages(const QStringList& messages);
     void setSocialChatVisible(bool visible);
+    void setSocialChatPosition(const QString& pos) { m_chatPosition = pos; }
+    void setSocialChatOffset(int x, int y) { m_chatOffX = x; m_chatOffY = y; }
 
     // ── Channel Name ─────────────────────────────────────
     void setChannelName(const QString& name);
@@ -141,6 +143,50 @@ public:
     void setVsLightIntensity(double v) { m_virtualStudio.setLightIntensity(v); }
     void setVsAnimationsEnabled(bool v) { m_virtualStudio.setAnimationsEnabled(v); }
     void setVsCustomBackground(const QString& path) { m_virtualStudio.setCustomBackgroundPath(path); }
+
+    // ══════════════════════════════════════════════════════
+    // AE EFFECTS — Applied to overlay layer in real-time
+    // ══════════════════════════════════════════════════════
+
+    // ── Overlay Blend Mode (AE 27 modes) ────────────────
+    void setOverlayBlendMode(const QString& mode) { m_overlayBlendMode = ae::blendModeByName(mode); m_overlayBlendModeName = mode; }
+    QString overlayBlendMode() const { return m_overlayBlendModeName; }
+
+    // ── Easing Curve (AE Graph Editor) ──────────────────
+    void setEasingCurve(const QString& curve) { m_easingCurve = curve; m_easingFunc = ae::easingByName(curve); }
+    QString easingCurve() const { return m_easingCurve; }
+
+    // ── AE Post-Effects on Overlay Layer ─────────────────
+    // These are applied to the composited overlay BEFORE blending onto video
+    void setAeEffectId(const QString& id) { m_aeEffectId = id; }
+    QString aeEffectId() const { return m_aeEffectId; }
+    void setAeEffectIntensity(double v) { m_aeEffectIntensity = v; }
+    void setAeEffectParam1(double v) { m_aeEffectParam1 = v; }
+    void setAeEffectParam2(double v) { m_aeEffectParam2 = v; }
+    void setAeEffectColor1(const QColor& c) { m_aeEffectColor1 = c; }
+    void setAeEffectColor2(const QColor& c) { m_aeEffectColor2 = c; }
+
+    // ── AE Text Animator Selection ───────────────────────
+    void setTextAnimatorId(const QString& id) { m_textAnimatorId = id; }
+    QString textAnimatorId() const { return m_textAnimatorId; }
+
+    // ── AE Transition Selection ──────────────────────────
+    void setTransitionId(const QString& id) { m_transitionId = id; }
+    QString transitionId() const { return m_transitionId; }
+
+    // ── AE Expression Controls ──────────────────────────
+    void setWiggleEnabled(bool v) { m_wiggleEnabled = v; }
+    void setWiggleFreq(double f) { m_wiggleFreq = f; }
+    void setWiggleAmp(double a) { m_wiggleAmp = a; }
+
+    // ── AE Shape Layer Effect ───────────────────────────
+    void setShapeEffectId(const QString& id) { m_shapeEffectId = id; }
+
+    // ── All AE effect/easing lists for UI ───────────────
+    static QStringList allAeEffectIds();
+    static QStringList allAeTextAnimatorIds();
+    static QStringList allAeTransitionIds();
+    static QStringList allAeShapeEffectIds();
 
     // ── Design Templates ────────────────────────────────
     void setNameplateDesign(const QString& d) { m_npDesign = d; }
@@ -198,6 +244,9 @@ public:
         m_sbColorA = colorA; m_sbColorB = colorB;
         m_sbPosition = position; m_sbMatchTime = matchTime; m_sbPeriod = period;
     }
+    void setScoreboardCards(int yellowA, int yellowB, int redA, int redB) {
+        m_sbYellowA = yellowA; m_sbYellowB = yellowB; m_sbRedA = redA; m_sbRedB = redB;
+    }
 
     // ── Weather overlay ──────────────────────────────────
     void setWeatherVisible(bool v) { m_weatherVisible = v; }
@@ -223,8 +272,6 @@ private:
     double easeOutCubic(double t);
     double easeInCubic(double t);
     AnimType animTypeForStyle(const QString& styleId);
-    void applyAnimation(QPainter& p, const QRectF& plateRect, const QSize& frameSize,
-                        double progress, AnimType type);
 
     // Premium rendering helpers
     void drawGlassRect(QPainter& p, const QRectF& rect, double radius,
@@ -271,11 +318,12 @@ private:
     double        m_animSpeed = 1.0;
     double        m_lastCompositeMs = 0.0;
     QElapsedTimer m_perfTimer;
+    QElapsedTimer m_wallClock;       // Wall clock for frame-rate independent timing
+    double        m_wallTimeSec = 0; // Accumulated wall time in seconds
+    double        m_deltaTime = 0;   // Delta time since last frame (seconds)
+    bool          m_wallClockStarted = false;
 
     // Broadcast overlays
-    QString m_lowerTitle;
-    QString m_lowerSubtitle;
-    bool    m_lowerVisible = false;
     QString m_tickerText;
     bool    m_tickerVisible = false;
     int     m_tickerOffset = 0;
@@ -306,6 +354,8 @@ private:
     // Social chat overlay
     QStringList m_chatMessages;
     bool        m_chatVisible = false;
+    QString     m_chatPosition = "top_right";
+    int         m_chatOffX = 0, m_chatOffY = 0;
 
     // Channel name
     QString     m_channelName;
@@ -363,6 +413,26 @@ private:
     QString m_ckDesign = "ck_shadow_only";
     QString m_wtDesign = "wt_shadow_only";
 
+    // ── AE Effects State ────────────────────────────────
+    ae::BlendMode m_overlayBlendMode = ae::BlendMode::Normal;
+    QString       m_overlayBlendModeName = "normal";
+    QString       m_easingCurve = "ease_out_cubic";
+    ae::EaseFunc  m_easingFunc = ae::easeOutCubic;
+    QString       m_aeEffectId;          // Active post-effect on overlay
+    double        m_aeEffectIntensity = 0.5;
+    double        m_aeEffectParam1 = 0.5;
+    double        m_aeEffectParam2 = 0.5;
+    QColor        m_aeEffectColor1 = QColor("#E30613");
+    QColor        m_aeEffectColor2 = QColor("#FFFFFF");
+    QString       m_textAnimatorId;       // Active text animator
+    QString       m_transitionId;         // Active transition
+    bool          m_wiggleEnabled = false;
+    double        m_wiggleFreq = 3.0;
+    double        m_wiggleAmp = 5.0;
+    QString       m_shapeEffectId;        // Active shape layer effect
+    int           m_aeFrameCount = 0;     // Frame counter for time-based effects
+    QImage        m_prevOverlayLayer;     // Previous frame for time effects
+
     // GPU Effects Engine
     GpuEffects m_gpu;
 
@@ -379,8 +449,8 @@ private:
     QString m_goalAnimTeam;
     QString m_goalAnimPlayer;
     QString m_goalAnimEffect = "kinetic_pop";
-    int     m_goalAnimDuration = 5;
-    int     m_goalAnimFrame = 0;
+    int     m_goalAnimDuration = 5;     // Duration in seconds
+    double  m_goalAnimTime = 0;         // Accumulated time (seconds, wall-clock)
     QString m_sportEvent;
     int     m_sportEventFrame = 0;
 
@@ -421,6 +491,8 @@ private:
     QString m_sbPosition = "top_left";
     QString m_sbMatchTime = "00:00";
     int     m_sbPeriod = 1;
+    int     m_sbYellowA = 0, m_sbYellowB = 0;
+    int     m_sbRedA = 0, m_sbRedB = 0;
 
     // Weather
     bool    m_weatherVisible = false;

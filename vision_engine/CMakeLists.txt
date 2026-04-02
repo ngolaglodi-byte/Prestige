@@ -14,6 +14,12 @@ set(VISION_SOURCES
     src/BroadcastEffects.cpp
     src/GpuEffects.cpp
     src/DesignTemplates.cpp
+    # AE Effects Engine (220+ After Effects effects)
+    src/AEEasing.cpp
+    src/AEGpuEffects.cpp
+    src/AEBroadcastEffects.cpp
+    # 3D PBR Studio Renderer
+    src/Studio3DRenderer.cpp
 )
 
 set(VISION_HEADERS
@@ -29,6 +35,8 @@ set(VISION_HEADERS
     src/BroadcastEffects.h
     src/GpuEffects.h
     src/DesignTemplates.h
+    src/AEEasing.h
+    src/Studio3DRenderer.h
 )
 
 qt_add_executable(prestige_vision WIN32 ${VISION_SOURCES} ${VISION_HEADERS})
@@ -77,6 +85,20 @@ target_link_libraries(prestige_vision PRIVATE
     prestige_broadcast_sdk
     prestige_ai_module
 )
+
+# ── Qt 3D (PBR Virtual Studio — optional) ────────────────────
+find_package(Qt6 REQUIRED COMPONENTS 3DCore 3DRender 3DExtras QUIET)
+if(TARGET Qt6::3DCore AND TARGET Qt6::3DRender AND TARGET Qt6::3DExtras)
+    target_link_libraries(prestige_vision PRIVATE
+        Qt6::3DCore
+        Qt6::3DRender
+        Qt6::3DExtras
+    )
+    target_compile_definitions(prestige_vision PRIVATE PRESTIGE_HAVE_QT3D)
+    message(STATUS "Qt 3D found — PBR virtual studios ENABLED")
+else()
+    message(STATUS "Qt 3D not found — using enhanced 2D fallback studios")
+endif()
 
 # ── ZeroMQ ──────────────────────────────────────────────────
 if(ZMQ_FOUND)

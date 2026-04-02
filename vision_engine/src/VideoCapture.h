@@ -52,6 +52,9 @@ public:
 
     // Get the latest captured frame (thread-safe copy)
     QImage latestFrame() const;
+
+    // Deinterlace: bob deinterlacing (line doubling — SMPTE RP 220 compliant)
+    static QImage deinterlace(const QImage& interlacedFrame, bool topFieldFirst = true);
     qint64 latestFrameId() const { return m_frameId; }
     qint64 latestTimestampMs() const { return m_captureTimestampMs; }
 

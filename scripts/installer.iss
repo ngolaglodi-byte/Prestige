@@ -8,7 +8,7 @@
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Prestige Technologie Company"
 #define MyAppURL "https://github.com/ngolaglodi-byte/Prestige"
-#define MyAppExeName "prestige_control.exe"
+#define MyAppExeName "PrestigeAI.exe"
 
 [Setup]
 AppId={{B8F3A2D1-7E4C-4A9B-8D5F-1C2E3F4A5B6C}

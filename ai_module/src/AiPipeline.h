@@ -31,6 +31,9 @@ public:
 
     TalentDatabase* talentDatabase() { return &m_talentDb; }
 
+    // Call every render frame for smooth interpolated positions (thread-safe)
+    QList<TrackedFace> predictNow();
+
 public slots:
     // Called with each captured frame
     void processFrame(const QImage& frame, qint64 frameId, qint64 timestampMs);

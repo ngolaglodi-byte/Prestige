@@ -13,7 +13,7 @@ namespace prestige { namespace ai {
 
 AiPipeline::AiPipeline(QObject* parent)
     : QObject(parent)
-    , m_tracker(0.3f)
+    , m_tracker(0.5f)  // EMA 0.5: balanced response speed vs jitter suppression (was 0.3)
 {
 }
 
@@ -58,6 +58,14 @@ bool AiPipeline::initialize(const QString& modelsDir, const QString& talentsDbPa
     }
 
     return true; // Always succeed — stub mode is valid
+}
+
+QList<TrackedFace> AiPipeline::predictNow()
+{
+    // Called at render rate (60fps) for smooth interpolated overlay positions
+    // Thread-safe: tracker predict() uses velocity extrapolation
+    QMutexLocker lock(&m_frameMutex);
+    return m_tracker.predict();
 }
 
 void AiPipeline::processFrame(const QImage& frame, qint64 frameId, qint64 timestampMs)

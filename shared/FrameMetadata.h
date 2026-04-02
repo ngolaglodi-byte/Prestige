@@ -18,6 +18,21 @@ struct FrameMetadata {
     int     fps         = 25;
     bool    interlaced  = false;
     QString colorSpace  = QStringLiteral("BT.709");
+    // Timecode (SMPTE 12M — LTC/VITC)
+    int     tcHours     = -1;  // -1 = no timecode
+    int     tcMinutes   = 0;
+    int     tcSeconds   = 0;
+    int     tcFrames    = 0;
+    bool    tcDropFrame = false;  // Drop-frame timecode (29.97fps)
+    QString timecodeString() const {
+        if (tcHours < 0) return QString();
+        return QStringLiteral("%1:%2:%3%4%5")
+            .arg(tcHours, 2, 10, QLatin1Char('0'))
+            .arg(tcMinutes, 2, 10, QLatin1Char('0'))
+            .arg(tcSeconds, 2, 10, QLatin1Char('0'))
+            .arg(tcDropFrame ? QLatin1String(";") : QLatin1String(":"))
+            .arg(tcFrames, 2, 10, QLatin1Char('0'));
+    }
 };
 
 struct CaptureStats {

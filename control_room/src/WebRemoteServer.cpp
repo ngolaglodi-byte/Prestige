@@ -96,16 +96,23 @@ void WebRemoteServer::handleConnection()
 static QByteArray makeJsonResponse(const QByteArray& json, int statusCode = 200)
 {
     QByteArray statusLine;
-    if (statusCode == 200)
-        statusLine = "HTTP/1.1 200 OK\r\n";
-    else if (statusCode == 404)
-        statusLine = "HTTP/1.1 404 Not Found\r\n";
-    else
-        statusLine = "HTTP/1.1 200 OK\r\n";
+    switch (statusCode) {
+    case 200: statusLine = "HTTP/1.1 200 OK\r\n"; break;
+    case 400: statusLine = "HTTP/1.1 400 Bad Request\r\n"; break;
+    case 401: statusLine = "HTTP/1.1 401 Unauthorized\r\n"; break;
+    case 403: statusLine = "HTTP/1.1 403 Forbidden\r\n"; break;
+    case 404: statusLine = "HTTP/1.1 404 Not Found\r\n"; break;
+    case 405: statusLine = "HTTP/1.1 405 Method Not Allowed\r\n"; break;
+    case 429: statusLine = "HTTP/1.1 429 Too Many Requests\r\n"; break;
+    case 500: statusLine = "HTTP/1.1 500 Internal Server Error\r\n"; break;
+    default:  statusLine = "HTTP/1.1 200 OK\r\n"; break;
+    }
 
     return statusLine +
            "Content-Type: application/json; charset=utf-8\r\n"
            "Access-Control-Allow-Origin: *\r\n"
+           "Access-Control-Allow-Headers: Authorization, Content-Type, X-API-Key\r\n"
+           "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
            "Content-Length: " + QByteArray::number(json.size()) + "\r\n"
            "Connection: close\r\n\r\n" + json;
 }
@@ -123,6 +130,42 @@ void WebRemoteServer::handleRequest(QTcpSocket* socket, const QByteArray& reques
     QString firstLine = reqStr.section("\r\n", 0, 0);
     QString method = firstLine.section(' ', 0, 0);
     QString path = firstLine.section(' ', 1, 1);
+
+    // ── CORS preflight ──────────────────────────────────
+    if (method == "OPTIONS") {
+        socket->write(makeJsonResponse("{}", 200));
+        socket->flush();
+        socket->disconnectFromHost();
+        return;
+    }
+
+    // ── API Key Authentication ──────────────────────────
+    // Check X-API-Key header or Authorization: Bearer <key>
+    if (m_authEnabled && !m_apiKey.isEmpty() && path.startsWith("/api/")) {
+        bool authenticated = false;
+        // Check X-API-Key header
+        int apiKeyIdx = reqStr.indexOf("X-API-Key: ");
+        if (apiKeyIdx >= 0) {
+            QString providedKey = reqStr.mid(apiKeyIdx + 11).section("\r\n", 0, 0).trimmed();
+            if (providedKey == m_apiKey) authenticated = true;
+        }
+        // Check Authorization: Bearer <key>
+        if (!authenticated) {
+            int authIdx = reqStr.indexOf("Authorization: Bearer ");
+            if (authIdx >= 0) {
+                QString bearerKey = reqStr.mid(authIdx + 22).section("\r\n", 0, 0).trimmed();
+                if (bearerKey == m_apiKey) authenticated = true;
+            }
+        }
+        if (!authenticated) {
+            QByteArray resp = makeJsonResponse(
+                R"({"error":"Unauthorized","message":"Provide X-API-Key header or Authorization: Bearer <key>"})", 401);
+            socket->write(resp);
+            socket->flush();
+            socket->disconnectFromHost();
+            return;
+        }
+    }
 
     // Extract body (after \r\n\r\n)
     QByteArray body;

@@ -30,6 +30,7 @@ public:
     virtual bool open(const OutputConfig& config, int width, int height, int fps) = 0;
     virtual void close() = 0;
     virtual bool writePacket(const QByteArray& data, qint64 pts, qint64 dts, bool isKeyframe) = 0;
+    virtual bool writeAudioPacket(const QByteArray& data, qint64 pts, qint64 dts) { Q_UNUSED(data) Q_UNUSED(pts) Q_UNUSED(dts) return false; }
     virtual bool isOpen() const = 0;
     virtual OutputStats stats() const = 0;
 };
@@ -50,6 +51,9 @@ public:
     // Send a composited frame to all active outputs
     // First call auto-initializes encoders at the frame's resolution (4K/1080p/etc)
     void sendFrame(const QImage& compositedFrame);
+
+    // Send audio samples (PCM S16 interleaved) to all active outputs
+    void sendAudio(const QByteArray& pcmData);
 
     int activeCount() const;
     OutputStats stats(OutputType type) const;
@@ -86,6 +90,7 @@ public:
     bool open(const OutputConfig& config, int width, int height, int fps) override;
     void close() override;
     bool writePacket(const QByteArray& data, qint64 pts, qint64 dts, bool isKeyframe) override;
+    bool writeAudioPacket(const QByteArray& data, qint64 pts, qint64 dts) override;
     bool isOpen() const override;
     OutputStats stats() const override;
 

@@ -20,11 +20,11 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.7.3'
+        version: '6.8.2'
         host: mac
         target: desktop
         arch: clang_64
-        modules: qtmultimedia qtshadertools
+        modules: qtmultimedia qtshadertools qt3d
         cache: true
 
     - name: Install dependencies
@@ -84,10 +84,19 @@ jobs:
         install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/prestige_vision" 2>/dev/null || true
         install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/prestige_control" 2>/dev/null || true
 
-        # AI Models (ONNX files — same models, no Python needed)
+        # AI Models (ONNX files — no Python, runs natively via C++ ONNX Runtime)
         mkdir -p "$APP/Contents/Resources/models/buffalo_l"
         if [ -d "ai_engine/models/buffalo_l" ]; then
             cp ai_engine/models/buffalo_l/*.onnx "$APP/Contents/Resources/models/buffalo_l/" 2>/dev/null || true
+        fi
+
+        # Launcher script (starts Vision+AI then Control Room)
+        cp scripts/launcher.sh "$APP/Contents/MacOS/PrestigeAI"
+        chmod +x "$APP/Contents/MacOS/PrestigeAI"
+
+        # Studio presets
+        if [ -d "resources/studios" ]; then
+            cp -R resources/studios "$APP/Contents/Resources/"
         fi
 
     - name: Bundle Qt frameworks

@@ -204,6 +204,19 @@ class SetupController : public QObject {
     Q_PROPERTY(QString clockDesign READ clockDesign WRITE setClockDesign NOTIFY brandingChanged)
     Q_PROPERTY(QString weatherDesign READ weatherDesign WRITE setWeatherDesign NOTIFY brandingChanged)
 
+    // ── AE Effects System ────────────────────────────────
+    Q_PROPERTY(QString easingCurve READ easingCurve WRITE setEasingCurve NOTIFY aeEffectsChanged)
+    Q_PROPERTY(QString overlayBlendMode READ overlayBlendMode WRITE setOverlayBlendMode NOTIFY aeEffectsChanged)
+    Q_PROPERTY(QString aeEffectId READ aeEffectId WRITE setAeEffectId NOTIFY aeEffectsChanged)
+    Q_PROPERTY(double aeEffectIntensity READ aeEffectIntensity WRITE setAeEffectIntensity NOTIFY aeEffectsChanged)
+    Q_PROPERTY(double aeEffectParam1 READ aeEffectParam1 WRITE setAeEffectParam1 NOTIFY aeEffectsChanged)
+    Q_PROPERTY(double aeEffectParam2 READ aeEffectParam2 WRITE setAeEffectParam2 NOTIFY aeEffectsChanged)
+    Q_PROPERTY(QColor aeEffectColor1 READ aeEffectColor1 WRITE setAeEffectColor1 NOTIFY aeEffectsChanged)
+    Q_PROPERTY(QColor aeEffectColor2 READ aeEffectColor2 WRITE setAeEffectColor2 NOTIFY aeEffectsChanged)
+    Q_PROPERTY(bool wiggleEnabled READ wiggleEnabled WRITE setWiggleEnabled NOTIFY aeEffectsChanged)
+    Q_PROPERTY(double wiggleFreq READ wiggleFreq WRITE setWiggleFreq NOTIFY aeEffectsChanged)
+    Q_PROPERTY(double wiggleAmp READ wiggleAmp WRITE setWiggleAmp NOTIFY aeEffectsChanged)
+
     // Sport system — team logos + goal animation
     Q_PROPERTY(QString teamLogoA READ teamLogoA WRITE setTeamLogoA NOTIFY brandingChanged)
     Q_PROPERTY(QString teamLogoB READ teamLogoB WRITE setTeamLogoB NOTIFY brandingChanged)
@@ -547,6 +560,30 @@ public:
     QString sportEvent() const { return m_sportEvent; }
     void setSportEvent(const QString& v) { if (m_sportEvent != v) { m_sportEvent = v; emit brandingChanged(); } }
 
+    // ── AE Effects getters/setters ─────────────────────
+    QString easingCurve() const { return m_easingCurve; }
+    void setEasingCurve(const QString& v) { if (m_easingCurve != v) { m_easingCurve = v; emit aeEffectsChanged(); } }
+    QString overlayBlendMode() const { return m_overlayBlendMode; }
+    void setOverlayBlendMode(const QString& v) { if (m_overlayBlendMode != v) { m_overlayBlendMode = v; emit aeEffectsChanged(); } }
+    QString aeEffectId() const { return m_aeEffectId; }
+    void setAeEffectId(const QString& v) { if (m_aeEffectId != v) { m_aeEffectId = v; emit aeEffectsChanged(); } }
+    double aeEffectIntensity() const { return m_aeEffectIntensity; }
+    void setAeEffectIntensity(double v) { if (m_aeEffectIntensity != v) { m_aeEffectIntensity = v; emit aeEffectsChanged(); } }
+    double aeEffectParam1() const { return m_aeEffectParam1; }
+    void setAeEffectParam1(double v) { if (m_aeEffectParam1 != v) { m_aeEffectParam1 = v; emit aeEffectsChanged(); } }
+    double aeEffectParam2() const { return m_aeEffectParam2; }
+    void setAeEffectParam2(double v) { if (m_aeEffectParam2 != v) { m_aeEffectParam2 = v; emit aeEffectsChanged(); } }
+    QColor aeEffectColor1() const { return m_aeEffectColor1; }
+    void setAeEffectColor1(const QColor& v) { if (m_aeEffectColor1 != v) { m_aeEffectColor1 = v; emit aeEffectsChanged(); } }
+    QColor aeEffectColor2() const { return m_aeEffectColor2; }
+    void setAeEffectColor2(const QColor& v) { if (m_aeEffectColor2 != v) { m_aeEffectColor2 = v; emit aeEffectsChanged(); } }
+    bool wiggleEnabled() const { return m_wiggleEnabled; }
+    void setWiggleEnabled(bool v) { if (m_wiggleEnabled != v) { m_wiggleEnabled = v; emit aeEffectsChanged(); } }
+    double wiggleFreq() const { return m_wiggleFreq; }
+    void setWiggleFreq(double v) { if (m_wiggleFreq != v) { m_wiggleFreq = v; emit aeEffectsChanged(); } }
+    double wiggleAmp() const { return m_wiggleAmp; }
+    void setWiggleAmp(double v) { if (m_wiggleAmp != v) { m_wiggleAmp = v; emit aeEffectsChanged(); } }
+
     Q_INVOKABLE void loadAnimatedLogo(const QString& path);
     Q_INVOKABLE bool isReadyToGo() const;
     Q_INVOKABLE void saveProfile();
@@ -568,6 +605,7 @@ signals:
     void showTitleChanged();
     void timingChanged();
     void virtualStudioChanged();
+    void aeEffectsChanged();
 
 private:
     ProfileManager* m_profiles;
@@ -732,6 +770,19 @@ private:
     double  m_vsLightIntensity = 1.0;
     bool    m_vsAnimEnabled = true;
     QString m_vsCustomBg;
+
+    // AE Effects
+    QString m_easingCurve = "ease_out_cubic";
+    QString m_overlayBlendMode = "normal";
+    QString m_aeEffectId;
+    double  m_aeEffectIntensity = 0.5;
+    double  m_aeEffectParam1 = 0.5;
+    double  m_aeEffectParam2 = 0.5;
+    QColor  m_aeEffectColor1 = QColor("#E30613");
+    QColor  m_aeEffectColor2 = QColor("#FFFFFF");
+    bool    m_wiggleEnabled = false;
+    double  m_wiggleFreq = 3.0;
+    double  m_wiggleAmp = 5.0;
 };
 
 } // namespace prestige

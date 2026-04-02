@@ -34,6 +34,7 @@ public:
 signals:
     void messageReceived(const prestige::DetectionMessage& msg);
     void subtitleReceived(const QString& text, const QString& language, double confidence);
+    void socialChatReceived(const QString& platform, const QString& author, const QString& message, const QString& color);
     void connectedChanged(bool connected);
     void syncUpdated();
     void errorOccurred(const QString& error);

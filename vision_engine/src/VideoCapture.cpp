@@ -342,4 +342,38 @@ void VideoCapture::onVideoFrameChanged(const QVideoFrame& vframe)
     emit frameCaptured(image, m_frameId, m_captureTimestampMs);
 }
 
+// ── Deinterlace (Bob method — SMPTE RP 220) ─────────────────
+QImage VideoCapture::deinterlace(const QImage& interlacedFrame, bool topFieldFirst) {
+    if (interlacedFrame.isNull()) return interlacedFrame;
+    int w = interlacedFrame.width(), h = interlacedFrame.height();
+    QImage result(w, h, interlacedFrame.format());
+
+    // Bob deinterlacing: take one field and interpolate missing lines
+    int startLine = topFieldFirst ? 0 : 1;
+    for (int y = 0; y < h; ++y) {
+        int srcY;
+        if (y % 2 == startLine) {
+            // This field's line — copy directly
+            srcY = y;
+        } else {
+            // Missing line — average of above and below
+            srcY = y; // Will be interpolated below
+        }
+        memcpy(result.scanLine(y), interlacedFrame.constScanLine(srcY), interlacedFrame.bytesPerLine());
+    }
+
+    // Interpolate missing field lines
+    for (int y = (startLine == 0 ? 1 : 0); y < h; y += 2) {
+        if (y == 0 || y >= h - 1) continue;
+        const uchar* above = interlacedFrame.constScanLine(y - 1);
+        const uchar* below = interlacedFrame.constScanLine(y + 1);
+        uchar* dst = result.scanLine(y);
+        int bytes = interlacedFrame.bytesPerLine();
+        for (int b = 0; b < bytes; ++b) {
+            dst[b] = static_cast<uchar>((above[b] + below[b]) / 2);
+        }
+    }
+    return result;
+}
+
 } // namespace prestige

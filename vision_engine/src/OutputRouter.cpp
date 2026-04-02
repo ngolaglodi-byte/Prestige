@@ -10,6 +10,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QStandardPaths>
+#include <QThread>
 #include <QLibrary>
 
 #ifdef PRESTIGE_HAVE_FFMPEG
@@ -63,7 +64,12 @@ bool OutputRouter::initializeEntry(OutputEntry& entry, int width, int height)
     entry.encoder = std::make_unique<VideoEncoder>(this);
     EncoderConfig encConfig;
     encConfig.resolution = {width, height};
-    encConfig.fps = entry.fps;
+    encConfig.fpsNum = entry.fps;
+    encConfig.fpsDen = 1;
+    // Detect NTSC fractional rates
+    if (entry.fps == 30) { encConfig.fpsNum = 30000; encConfig.fpsDen = 1001; }  // 29.97
+    else if (entry.fps == 60) { encConfig.fpsNum = 60000; encConfig.fpsDen = 1001; }  // 59.94
+    else if (entry.fps == 24) { encConfig.fpsNum = 24000; encConfig.fpsDen = 1001; }  // 23.976
     encConfig.bitrateMbps = entry.bitrateMbps;
     encConfig.lowLatency = true;
 
@@ -180,6 +186,24 @@ void OutputRouter::sendFrame(const QImage& compositedFrame)
     }
 }
 
+void OutputRouter::sendAudio(const QByteArray& pcmData)
+{
+    if (pcmData.isEmpty()) return;
+
+    for (auto& [key, entry] : m_outputs) {
+        if (!entry->active || !entry->initialized || !entry->encoder)
+            continue;
+
+        // Encode audio via the entry's encoder
+        auto audioPackets = entry->encoder->encodeAudio(pcmData);
+        for (const auto& pkt : audioPackets) {
+            if (entry->stream) {
+                entry->stream->writeAudioPacket(pkt.data, pkt.pts, pkt.dts);
+            }
+        }
+    }
+}
+
 int OutputRouter::activeCount() const
 {
     int count = 0;
@@ -201,13 +225,16 @@ OutputStats OutputRouter::stats(OutputType type) const
 
 struct FfmpegOutputStream::Impl {
 #ifdef PRESTIGE_HAVE_FFMPEG
-    AVFormatContext* fmtCtx   = nullptr;
-    AVStream*        stream   = nullptr;
+    AVFormatContext* fmtCtx       = nullptr;
+    AVStream*        stream       = nullptr;  // Video stream
+    AVStream*        audioStream  = nullptr;  // Audio stream (AAC)
 #endif
     OutputConfig     config;
     OutputStats      outputStats;
-    bool             opened   = false;
-    qint64           ptsBase  = 0;
+    bool             opened       = false;
+    qint64           ptsBase      = 0;
+    int              fps          = 25;
+    bool             hasAudio     = false;
 };
 
 FfmpegOutputStream::FfmpegOutputStream(QObject* parent)
@@ -224,6 +251,7 @@ FfmpegOutputStream::~FfmpegOutputStream()
 bool FfmpegOutputStream::open(const OutputConfig& config, int width, int height, int fps)
 {
     m_impl->config = config;
+    m_impl->fps = fps;
 
 #ifdef PRESTIGE_HAVE_FFMPEG
     const char* url = config.url.toUtf8().constData();
@@ -260,16 +288,57 @@ bool FfmpegOutputStream::open(const OutputConfig& config, int width, int height,
     codecpar->bit_rate = static_cast<int64_t>(config.bitrateMbps) * 1000000;
     m_impl->stream->time_base = {1, fps};
 
+    // Add audio stream (AAC, 48kHz stereo — broadcast standard)
+    m_impl->audioStream = avformat_new_stream(m_impl->fmtCtx, nullptr);
+    if (m_impl->audioStream) {
+        auto* apar = m_impl->audioStream->codecpar;
+        apar->codec_type = AVMEDIA_TYPE_AUDIO;
+        apar->codec_id = AV_CODEC_ID_AAC;
+        apar->sample_rate = 48000;
+        apar->ch_layout = AV_CHANNEL_LAYOUT_STEREO;
+        apar->bit_rate = 128000;
+        apar->frame_size = 1024;
+        m_impl->audioStream->time_base = {1, 48000};
+        m_impl->hasAudio = true;
+    }
+
+    // ── SRT options (encryption + latency — SRT Alliance spec) ──
+    AVDictionary* options = nullptr;
+    if (config.url.startsWith("srt://")) {
+        av_dict_set(&options, "latency", "200000", 0);       // 200ms default (configurable)
+        av_dict_set(&options, "mode", "caller", 0);           // SRT caller mode
+        av_dict_set(&options, "transtype", "live", 0);        // Live transmission
+        // Encryption: set passphrase via URL query param or here
+        // e.g. srt://host:port?passphrase=mykey&pbkeylen=16
+    }
+
+    // ── RTMP options (reconnection + low latency) ──
+    if (config.url.startsWith("rtmp://") || config.url.startsWith("rtmps://")) {
+        av_dict_set(&options, "rtmp_live", "live", 0);
+        av_dict_set(&options, "rw_timeout", "5000000", 0);    // 5s read/write timeout
+        av_dict_set(&options, "tcp_nodelay", "1", 0);         // Low latency TCP
+    }
+
     // Open output URL
     if (!(m_impl->fmtCtx->oformat->flags & AVFMT_NOFILE)) {
-        ret = avio_open(&m_impl->fmtCtx->pb, urlBytes.constData(), AVIO_FLAG_WRITE);
+        ret = avio_open2(&m_impl->fmtCtx->pb, urlBytes.constData(), AVIO_FLAG_WRITE, nullptr, &options);
         if (ret < 0) {
-            qWarning() << "[Output] Failed to open" << config.url;
-            avformat_free_context(m_impl->fmtCtx);
-            m_impl->fmtCtx = nullptr;
-            return false;
+            qWarning() << "[Output] Failed to open" << config.url << "— will retry";
+            // Retry once after 2 seconds (RTMP reconnection)
+            if (config.url.startsWith("rtmp")) {
+                QThread::msleep(2000);
+                ret = avio_open2(&m_impl->fmtCtx->pb, urlBytes.constData(), AVIO_FLAG_WRITE, nullptr, &options);
+            }
+            if (ret < 0) {
+                qWarning() << "[Output] Retry failed for" << config.url;
+                av_dict_free(&options);
+                avformat_free_context(m_impl->fmtCtx);
+                m_impl->fmtCtx = nullptr;
+                return false;
+            }
         }
     }
+    av_dict_free(&options);
 
     // Write header
     ret = avformat_write_header(m_impl->fmtCtx, nullptr);
@@ -317,7 +386,7 @@ bool FfmpegOutputStream::writePacket(const QByteArray& data, qint64 pts, qint64 
     pkt->stream_index = 0;
     if (isKeyframe) pkt->flags |= AV_PKT_FLAG_KEY;
 
-    av_packet_rescale_ts(pkt, {1, 25}, m_impl->stream->time_base);
+    av_packet_rescale_ts(pkt, {1, m_impl->fps}, m_impl->stream->time_base);
 
     int ret = av_interleaved_write_frame(m_impl->fmtCtx, pkt);
     av_packet_free(&pkt);
@@ -329,6 +398,30 @@ bool FfmpegOutputStream::writePacket(const QByteArray& data, qint64 pts, qint64 
     return false;
 #else
     Q_UNUSED(data) Q_UNUSED(pts) Q_UNUSED(dts) Q_UNUSED(isKeyframe)
+    return false;
+#endif
+}
+
+bool FfmpegOutputStream::writeAudioPacket(const QByteArray& data, qint64 pts, qint64 dts)
+{
+#ifdef PRESTIGE_HAVE_FFMPEG
+    if (!m_impl->opened || !m_impl->fmtCtx || !m_impl->audioStream)
+        return false;
+
+    AVPacket* pkt = av_packet_alloc();
+    pkt->data = reinterpret_cast<uint8_t*>(const_cast<char*>(data.constData()));
+    pkt->size = data.size();
+    pkt->pts = pts;
+    pkt->dts = dts;
+    pkt->stream_index = m_impl->audioStream->index;
+
+    av_packet_rescale_ts(pkt, {1, 48000}, m_impl->audioStream->time_base);
+
+    int ret = av_interleaved_write_frame(m_impl->fmtCtx, pkt);
+    av_packet_free(&pkt);
+    return ret >= 0;
+#else
+    Q_UNUSED(data) Q_UNUSED(pts) Q_UNUSED(dts)
     return false;
 #endif
 }
@@ -345,6 +438,7 @@ struct FileOutputStream::Impl {
 #endif
     OutputStats      outputStats;
     bool             opened = false;
+    int              fps    = 25;
 };
 
 FileOutputStream::FileOutputStream(QObject* parent)
@@ -360,6 +454,7 @@ FileOutputStream::~FileOutputStream()
 
 bool FileOutputStream::open(const OutputConfig& config, int width, int height, int fps)
 {
+    m_impl->fps = fps;
 #ifdef PRESTIGE_HAVE_FFMPEG
     QString path = config.url;
     if (path.isEmpty()) {
@@ -422,7 +517,7 @@ bool FileOutputStream::writePacket(const QByteArray& data, qint64 pts, qint64 dt
     pkt->size = data.size();
     pkt->pts = pts; pkt->dts = dts; pkt->stream_index = 0;
     if (isKeyframe) pkt->flags |= AV_PKT_FLAG_KEY;
-    av_packet_rescale_ts(pkt, {1, 25}, m_impl->stream->time_base);
+    av_packet_rescale_ts(pkt, {1, m_impl->fps}, m_impl->stream->time_base);
 
     int ret = av_interleaved_write_frame(m_impl->fmtCtx, pkt);
     av_packet_free(&pkt);
