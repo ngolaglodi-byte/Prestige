@@ -87,7 +87,7 @@ Item {
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
             Slider {
-                from: 12; to: 36; stepSize: 1
+                from: 10; to: 60; stepSize: 1
                 value: subtitleController.fontSize
                 Layout.fillWidth: true
                 onMoved: subtitleController.fontSize = value

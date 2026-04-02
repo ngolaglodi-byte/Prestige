@@ -109,7 +109,7 @@ void Compositor::setShowTitleLoopAnim(const QString& anim) { m_showTitleLoopAnim
 
 // Broadcast overlay layer setters
 void Compositor::setChannelLogoPosition(const QString& pos) { m_logoPosition = pos; }
-void Compositor::setChannelLogoSize(int heightPx) { m_logoSizeH = qBound(30, heightPx, 120); }
+void Compositor::setChannelLogoSize(int heightPx) { m_logoSizeH = qBound(20, heightPx, 300); }
 void Compositor::setShowChannelNameText(bool show) { m_showNameText = show; }
 void Compositor::setKeepLogoDuringAds(bool keep) { m_keepLogoDuringAds = keep; }
 void Compositor::setShowTitle(const QString& title, const QString& subtitle) { m_showTitleText = title; m_showSubtitleText = subtitle; }

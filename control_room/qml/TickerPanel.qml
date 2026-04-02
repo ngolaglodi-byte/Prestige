@@ -130,7 +130,7 @@ Item {
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
-            Slider { from: 10; to: 24; stepSize: 1; value: setupController.tickerFontSize; Layout.fillWidth: true; onMoved: { tk.fontSize = value; setupController.tickerFontSize = value } }
+            Slider { from: 8; to: 48; stepSize: 1; value: setupController.tickerFontSize; Layout.fillWidth: true; onMoved: { tk.fontSize = value; setupController.tickerFontSize = value } }
             Label { text: tk.fontSize + "px"; color: window.darkMode ? "#888" : "#555"; font.pixelSize: 11 }
         }
 
