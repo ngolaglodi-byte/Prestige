@@ -27,6 +27,56 @@ SetupController::SetupController(ProfileManager* profiles, QObject* parent)
         m_profile = all.first();
     }
     m_profiles->loadProfile(m_profile.id);
+
+    // Sync profile → local members on startup
+    m_channelLogoPath = m_profile.channelLogoPath;
+    m_channelLogoPosition = m_profile.channelLogoPosition;
+    m_channelLogoSize = m_profile.channelLogoSize;
+    m_showChannelNameText = m_profile.showChannelNameText;
+    m_keepLogoDuringAds = m_profile.keepLogoDuringAds;
+    m_channelNameShape = m_profile.channelNameShape;
+    m_channelNameBgColor = m_profile.channelNameBgColor;
+    m_channelNameTextColor = m_profile.channelNameTextColor;
+    m_channelNameBorderColor = m_profile.channelNameBorderColor;
+    m_channelNameFontSize = m_profile.channelNameFontSize;
+    m_logoEntryAnim = m_profile.logoEntryAnim;
+    m_nameEntryAnim = m_profile.nameEntryAnim;
+    m_logoLoopAnim = m_profile.logoLoopAnim;
+    m_nameLoopAnim = m_profile.nameLoopAnim;
+    m_showTitle = m_profile.showTitle;
+    m_showSubtitle = m_profile.showSubtitle;
+    m_showTitleEnabled = m_profile.showTitleEnabled;
+    m_showTitlePosition = m_profile.showTitlePosition;
+    m_showTitleShape = m_profile.showTitleShape;
+    m_showTitleBgColor = m_profile.showTitleBgColor;
+    m_showTitleTextColor = m_profile.showTitleTextColor;
+    m_showTitleBorderColor = m_profile.showTitleBorderColor;
+    m_showTitleFontSize = m_profile.showTitleFontSize;
+    m_scoreboardVisible = m_profile.scoreboardVisible;
+    m_weatherVisible = m_profile.weatherVisible;
+    m_clockVisible = m_profile.clockVisible;
+    m_clockFormat = m_profile.clockFormat;
+    m_tickerVisible = m_profile.tickerVisible;
+    m_nameplateScale = m_profile.nameplateScale;
+    m_scoreboardScale = m_profile.scoreboardScale;
+    m_weatherScale = m_profile.weatherScale;
+    m_clockScale = m_profile.clockScale;
+    m_countdownScale = m_profile.countdownScale;
+    m_qrCodeScale = m_profile.qrCodeScale;
+    m_vsEnabled = m_profile.virtualStudioEnabled;
+    m_vsStudioId = m_profile.virtualStudioId;
+    m_vsChromaKey = m_profile.chromaKeyEnabled;
+    m_vsChromaColor = m_profile.chromaKeyColor;
+    m_vsChromaTol = m_profile.chromaKeyTolerance;
+    m_vsChromaSmooth = m_profile.chromaKeySmooth;
+    m_teamLogoA = m_profile.teamLogoA;
+    m_teamLogoB = m_profile.teamLogoB;
+    m_goalAnimText = m_profile.goalAnimText;
+    m_goalAnimEffect = m_profile.goalAnimEffect;
+    m_goalAnimDuration = m_profile.goalAnimDuration;
+    m_socialOutputsJson = m_profile.socialOutputsJson;
+    m_outputFps = m_profile.outputFps;
+    m_outputBitrate = m_profile.outputBitrate;
 }
 
 QString SetupController::currentProfileName() const
@@ -386,6 +436,56 @@ bool SetupController::isReadyToGo() const
 
 void SetupController::saveProfile()
 {
+    // Sync ALL local m_* members → m_profile before saving
+    m_profile.channelLogoPath = m_channelLogoPath;
+    m_profile.channelLogoPosition = m_channelLogoPosition;
+    m_profile.channelLogoSize = m_channelLogoSize;
+    m_profile.showChannelNameText = m_showChannelNameText;
+    m_profile.keepLogoDuringAds = m_keepLogoDuringAds;
+    m_profile.channelNameShape = m_channelNameShape;
+    m_profile.channelNameBgColor = m_channelNameBgColor;
+    m_profile.channelNameTextColor = m_channelNameTextColor;
+    m_profile.channelNameBorderColor = m_channelNameBorderColor;
+    m_profile.channelNameFontSize = m_channelNameFontSize;
+    m_profile.logoEntryAnim = m_logoEntryAnim;
+    m_profile.nameEntryAnim = m_nameEntryAnim;
+    m_profile.logoLoopAnim = m_logoLoopAnim;
+    m_profile.nameLoopAnim = m_nameLoopAnim;
+    m_profile.showTitle = m_showTitle;
+    m_profile.showSubtitle = m_showSubtitle;
+    m_profile.showTitleEnabled = m_showTitleEnabled;
+    m_profile.showTitlePosition = m_showTitlePosition;
+    m_profile.showTitleShape = m_showTitleShape;
+    m_profile.showTitleBgColor = m_showTitleBgColor;
+    m_profile.showTitleTextColor = m_showTitleTextColor;
+    m_profile.showTitleBorderColor = m_showTitleBorderColor;
+    m_profile.showTitleFontSize = m_showTitleFontSize;
+    m_profile.scoreboardVisible = m_scoreboardVisible;
+    m_profile.weatherVisible = m_weatherVisible;
+    m_profile.clockVisible = m_clockVisible;
+    m_profile.clockFormat = m_clockFormat;
+    m_profile.tickerVisible = m_tickerVisible;
+    m_profile.nameplateScale = m_nameplateScale;
+    m_profile.scoreboardScale = m_scoreboardScale;
+    m_profile.weatherScale = m_weatherScale;
+    m_profile.clockScale = m_clockScale;
+    m_profile.countdownScale = m_countdownScale;
+    m_profile.qrCodeScale = m_qrCodeScale;
+    m_profile.virtualStudioEnabled = m_vsEnabled;
+    m_profile.virtualStudioId = m_vsStudioId;
+    m_profile.chromaKeyEnabled = m_vsChromaKey;
+    m_profile.chromaKeyColor = m_vsChromaColor;
+    m_profile.chromaKeyTolerance = m_vsChromaTol;
+    m_profile.chromaKeySmooth = m_vsChromaSmooth;
+    m_profile.teamLogoA = m_teamLogoA;
+    m_profile.teamLogoB = m_teamLogoB;
+    m_profile.goalAnimText = m_goalAnimText;
+    m_profile.goalAnimEffect = m_goalAnimEffect;
+    m_profile.goalAnimDuration = m_goalAnimDuration;
+    m_profile.socialOutputsJson = m_socialOutputsJson;
+    m_profile.outputFps = m_outputFps;
+    m_profile.outputBitrate = m_outputBitrate;
+
     m_profiles->save(m_profile);
     qInfo() << "[SetupController] Profile saved:" << m_profile.name;
 }
@@ -404,10 +504,64 @@ void SetupController::loadProfile(const QString& id)
 {
     m_profiles->loadProfile(id);
     m_profile = m_profiles->current();
+
+    // Sync ALL m_profile fields → local m_* members
+    m_channelLogoPath = m_profile.channelLogoPath;
+    m_channelLogoPosition = m_profile.channelLogoPosition;
+    m_channelLogoSize = m_profile.channelLogoSize;
+    m_showChannelNameText = m_profile.showChannelNameText;
+    m_keepLogoDuringAds = m_profile.keepLogoDuringAds;
+    m_channelNameShape = m_profile.channelNameShape;
+    m_channelNameBgColor = m_profile.channelNameBgColor;
+    m_channelNameTextColor = m_profile.channelNameTextColor;
+    m_channelNameBorderColor = m_profile.channelNameBorderColor;
+    m_channelNameFontSize = m_profile.channelNameFontSize;
+    m_logoEntryAnim = m_profile.logoEntryAnim;
+    m_nameEntryAnim = m_profile.nameEntryAnim;
+    m_logoLoopAnim = m_profile.logoLoopAnim;
+    m_nameLoopAnim = m_profile.nameLoopAnim;
+    m_showTitle = m_profile.showTitle;
+    m_showSubtitle = m_profile.showSubtitle;
+    m_showTitleEnabled = m_profile.showTitleEnabled;
+    m_showTitlePosition = m_profile.showTitlePosition;
+    m_showTitleShape = m_profile.showTitleShape;
+    m_showTitleBgColor = m_profile.showTitleBgColor;
+    m_showTitleTextColor = m_profile.showTitleTextColor;
+    m_showTitleBorderColor = m_profile.showTitleBorderColor;
+    m_showTitleFontSize = m_profile.showTitleFontSize;
+    m_scoreboardVisible = m_profile.scoreboardVisible;
+    m_weatherVisible = m_profile.weatherVisible;
+    m_clockVisible = m_profile.clockVisible;
+    m_clockFormat = m_profile.clockFormat;
+    m_tickerVisible = m_profile.tickerVisible;
+    m_nameplateScale = m_profile.nameplateScale;
+    m_scoreboardScale = m_profile.scoreboardScale;
+    m_weatherScale = m_profile.weatherScale;
+    m_clockScale = m_profile.clockScale;
+    m_countdownScale = m_profile.countdownScale;
+    m_qrCodeScale = m_profile.qrCodeScale;
+    m_vsEnabled = m_profile.virtualStudioEnabled;
+    m_vsStudioId = m_profile.virtualStudioId;
+    m_vsChromaKey = m_profile.chromaKeyEnabled;
+    m_vsChromaColor = m_profile.chromaKeyColor;
+    m_vsChromaTol = m_profile.chromaKeyTolerance;
+    m_vsChromaSmooth = m_profile.chromaKeySmooth;
+    m_teamLogoA = m_profile.teamLogoA;
+    m_teamLogoB = m_profile.teamLogoB;
+    m_goalAnimText = m_profile.goalAnimText;
+    m_goalAnimEffect = m_profile.goalAnimEffect;
+    m_goalAnimDuration = m_profile.goalAnimDuration;
+    m_socialOutputsJson = m_profile.socialOutputsJson;
+    m_outputFps = m_profile.outputFps;
+    m_outputBitrate = m_profile.outputBitrate;
+
     emit profileChanged();
     emit styleChanged();
     emit sourceChanged();
     emit outputsChanged();
+    emit brandingChanged();
+    emit showTitleChanged();
+    emit virtualStudioChanged();
 }
 
 QVariantList SetupController::availableProfiles()

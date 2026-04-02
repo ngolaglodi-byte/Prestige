@@ -82,38 +82,45 @@ MainWindow::MainWindow(QObject* parent)
         m_liveController->updateRealStats(m_preview->fps(), 0);
     });
 
+    // Debounced config publisher — coalesces rapid signal bursts into single ZMQ publish
+    auto* configDebounce = new QTimer(this);
+    configDebounce->setSingleShot(true);
+    configDebounce->setInterval(5); // 5ms debounce — fast enough for real-time, prevents duplicate sends
+    connect(configDebounce, &QTimer::timeout, this, [this]() { publishConfig(); });
+    auto schedulePublish = [configDebounce]() { configDebounce->start(); };
+
     // Publish config to Vision Engine when style/animation changes
-    connect(m_setupController, &SetupController::styleChanged, this, &MainWindow::publishConfig);
-    connect(m_setupController, &SetupController::animationChanged, this, &MainWindow::publishConfig);
+    connect(m_setupController, &SetupController::styleChanged, this, schedulePublish);
+    connect(m_setupController, &SetupController::animationChanged, this, schedulePublish);
 
     // Publish config when ticker/subtitle settings change
-    connect(m_rssFetcher, &RssFetcher::headlinesChanged, this, &MainWindow::publishConfig);
-    connect(m_subtitleCtrl, &SubtitleController::configChanged, this, &MainWindow::publishConfig);
+    connect(m_rssFetcher, &RssFetcher::headlinesChanged, this, schedulePublish);
+    connect(m_subtitleCtrl, &SubtitleController::configChanged, this, schedulePublish);
 
     // Publish config when recording or countdown state changes
-    connect(m_liveController, &LiveController::recordingChanged, this, &MainWindow::publishConfig);
-    connect(m_liveController, &LiveController::countdownChanged, this, &MainWindow::publishConfig);
-    connect(m_liveController, &LiveController::qrCodeChanged, this, &MainWindow::publishConfig);
+    connect(m_liveController, &LiveController::recordingChanged, this, schedulePublish);
+    connect(m_liveController, &LiveController::countdownChanged, this, schedulePublish);
+    connect(m_liveController, &LiveController::qrCodeChanged, this, schedulePublish);
 
     // Publish config when social chat config changes
-    connect(m_socialChatCtrl, &SocialChatController::configChanged, this, &MainWindow::publishConfig);
+    connect(m_socialChatCtrl, &SocialChatController::configChanged, this, schedulePublish);
 
     // Publish config when graphics queue item is taken
-    connect(m_graphicsQueue, &GraphicsQueue::itemTaken, this, &MainWindow::publishConfig);
-    connect(m_graphicsQueue, &GraphicsQueue::queueChanged, this, &MainWindow::publishConfig);
+    connect(m_graphicsQueue, &GraphicsQueue::itemTaken, this, schedulePublish);
+    connect(m_graphicsQueue, &GraphicsQueue::queueChanged, this, schedulePublish);
 
     // Publish config when channel name changes
-    connect(m_config, &ConfigManager::channelNameChanged, this, &MainWindow::publishConfig);
+    connect(m_config, &ConfigManager::channelNameChanged, this, schedulePublish);
 
     // Publish config when branding/show title/timing changes
-    connect(m_setupController, &SetupController::brandingChanged, this, &MainWindow::publishConfig);
-    connect(m_setupController, &SetupController::showTitleChanged, this, &MainWindow::publishConfig);
-    connect(m_setupController, &SetupController::timingChanged, this, &MainWindow::publishConfig);
-    connect(m_setupController, &SetupController::sourceChanged, this, &MainWindow::publishConfig);
-    connect(m_setupController, &SetupController::outputsChanged, this, &MainWindow::publishConfig);
-    connect(m_setupController, &SetupController::overlayTimingChanged, this, &MainWindow::publishConfig);
-    connect(m_setupController, &SetupController::virtualStudioChanged, this, &MainWindow::publishConfig);
-    connect(m_weatherFetcher, &WeatherFetcher::weatherChanged, this, &MainWindow::publishConfig);
+    connect(m_setupController, &SetupController::brandingChanged, this, schedulePublish);
+    connect(m_setupController, &SetupController::showTitleChanged, this, schedulePublish);
+    connect(m_setupController, &SetupController::timingChanged, this, schedulePublish);
+    connect(m_setupController, &SetupController::sourceChanged, this, schedulePublish);
+    connect(m_setupController, &SetupController::outputsChanged, this, schedulePublish);
+    connect(m_setupController, &SetupController::overlayTimingChanged, this, schedulePublish);
+    connect(m_setupController, &SetupController::virtualStudioChanged, this, schedulePublish);
+    connect(m_weatherFetcher, &WeatherFetcher::weatherChanged, this, schedulePublish);
 
     // Auto-save profile when branding/settings change (debounced via timer)
     auto* autoSaveTimer = new QTimer(this);
@@ -128,9 +135,9 @@ MainWindow::MainWindow(QObject* parent)
     connect(m_setupController, &SetupController::virtualStudioChanged, this, triggerAutoSave);
 
     // Publish config when broadcast overlay cycle state changes
-    connect(m_liveController, &LiveController::showTitleVisibleChanged, this, &MainWindow::publishConfig);
-    connect(m_liveController, &LiveController::talentVisibleChanged, this, &MainWindow::publishConfig);
-    connect(m_liveController, &LiveController::bypassChanged, this, &MainWindow::publishConfig);
+    connect(m_liveController, &LiveController::showTitleVisibleChanged, this, schedulePublish);
+    connect(m_liveController, &LiveController::talentVisibleChanged, this, schedulePublish);
+    connect(m_liveController, &LiveController::bypassChanged, this, schedulePublish);
 
     // Init config publisher ZMQ
 #ifdef PRESTIGE_HAVE_ZMQ
@@ -153,10 +160,10 @@ MainWindow::MainWindow(QObject* parent)
     qInfo() << "[ControlRoom] Always-On Passthrough: pipeline running from startup";
 
     // Publish initial config after short delay to ensure Vision Engine is ready
-    QTimer::singleShot(1500, this, &MainWindow::publishConfig);
+    QTimer::singleShot(1500, this, schedulePublish);
     // Also re-publish periodically during first 10s for reliability
-    QTimer::singleShot(3000, this, &MainWindow::publishConfig);
-    QTimer::singleShot(6000, this, &MainWindow::publishConfig);
+    QTimer::singleShot(3000, this, schedulePublish);
+    QTimer::singleShot(6000, this, schedulePublish);
 }
 
 MainWindow::~MainWindow()
