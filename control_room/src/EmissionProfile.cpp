@@ -46,6 +46,65 @@ QJsonObject EmissionProfile::toJson() const
     obj["single_face_delay_ms"]  = singleFaceDelayMs;
     obj["multi_face_delay_ms"]   = multiFaceDelayMs;
     obj["overlay_hide_delay_ms"] = overlayHideDelayMs;
+    obj["social_outputs_json"]   = socialOutputsJson;
+    obj["output_fps"]            = outputFps;
+    obj["output_bitrate"]        = outputBitrate;
+
+    // Channel branding
+    obj["channel_logo_path"]     = channelLogoPath;
+    obj["channel_logo_position"] = channelLogoPosition;
+    obj["channel_logo_size"]     = channelLogoSize;
+    obj["show_channel_name"]     = showChannelNameText;
+    obj["keep_logo_ads"]         = keepLogoDuringAds;
+    obj["name_shape"]            = channelNameShape;
+    obj["name_bg_color"]         = channelNameBgColor;
+    obj["name_text_color"]       = channelNameTextColor;
+    obj["name_border_color"]     = channelNameBorderColor;
+    obj["name_font_size"]        = channelNameFontSize;
+    obj["logo_entry_anim"]       = logoEntryAnim;
+    obj["name_entry_anim"]       = nameEntryAnim;
+    obj["logo_loop_anim"]        = logoLoopAnim;
+    obj["name_loop_anim"]        = nameLoopAnim;
+
+    // Show title
+    obj["p_show_title"]          = showTitle;
+    obj["p_show_subtitle"]       = showSubtitle;
+    obj["show_title_enabled"]    = showTitleEnabled;
+    obj["show_title_position"]   = showTitlePosition;
+    obj["show_title_shape"]      = showTitleShape;
+    obj["show_title_bg_color"]   = showTitleBgColor;
+    obj["show_title_text_color"] = showTitleTextColor;
+    obj["show_title_border_color"]= showTitleBorderColor;
+    obj["show_title_font_size"]  = showTitleFontSize;
+
+    // Visibility + scales
+    obj["scoreboard_visible"]    = scoreboardVisible;
+    obj["weather_visible"]       = weatherVisible;
+    obj["clock_visible"]         = clockVisible;
+    obj["clock_format"]          = clockFormat;
+    obj["ticker_visible"]        = tickerVisible;
+    obj["nameplate_scale"]       = nameplateScale;
+    obj["scoreboard_scale"]      = scoreboardScale;
+    obj["weather_scale"]         = weatherScale;
+    obj["clock_scale"]           = clockScale;
+    obj["countdown_scale"]       = countdownScale;
+    obj["qr_code_scale"]         = qrCodeScale;
+
+    // Virtual Studio
+    obj["vs_enabled"]            = virtualStudioEnabled;
+    obj["vs_studio_id"]          = virtualStudioId;
+    obj["chroma_key_enabled"]    = chromaKeyEnabled;
+    obj["chroma_key_color"]      = chromaKeyColor;
+    obj["chroma_key_tolerance"]  = chromaKeyTolerance;
+    obj["chroma_key_smooth"]     = chromaKeySmooth;
+
+    // Sport
+    obj["team_logo_a"]           = teamLogoA;
+    obj["team_logo_b"]           = teamLogoB;
+    obj["goal_anim_text"]        = goalAnimText;
+    obj["goal_anim_effect"]      = goalAnimEffect;
+    obj["goal_anim_duration"]    = goalAnimDuration;
+
     obj["created_at"]          = createdAt.toString(Qt::ISODate);
     obj["last_used"]           = lastUsed.toString(Qt::ISODate);
     return obj;
@@ -80,6 +139,65 @@ EmissionProfile EmissionProfile::fromJson(const QJsonObject& obj)
     p.singleFaceDelayMs   = obj["single_face_delay_ms"].toInt(1000);
     p.multiFaceDelayMs    = obj["multi_face_delay_ms"].toInt(500);
     p.overlayHideDelayMs  = obj["overlay_hide_delay_ms"].toInt(2000);
+    p.socialOutputsJson   = obj["social_outputs_json"].toString();
+    p.outputFps           = obj["output_fps"].toInt(25);
+    p.outputBitrate       = obj["output_bitrate"].toInt(8);
+
+    // Channel branding
+    p.channelLogoPath     = obj["channel_logo_path"].toString();
+    p.channelLogoPosition = obj["channel_logo_position"].toString("top_right");
+    p.channelLogoSize     = obj["channel_logo_size"].toInt(60);
+    p.showChannelNameText = obj["show_channel_name"].toBool(true);
+    p.keepLogoDuringAds   = obj["keep_logo_ads"].toBool(true);
+    p.channelNameShape    = obj["name_shape"].toString("rectangle");
+    p.channelNameBgColor  = obj["name_bg_color"].toString("#CC0000");
+    p.channelNameTextColor= obj["name_text_color"].toString("#FFFFFF");
+    p.channelNameBorderColor = obj["name_border_color"].toString("#FFFFFF");
+    p.channelNameFontSize = obj["name_font_size"].toInt(14);
+    p.logoEntryAnim       = obj["logo_entry_anim"].toString("fade");
+    p.nameEntryAnim       = obj["name_entry_anim"].toString("slide_left");
+    p.logoLoopAnim        = obj["logo_loop_anim"].toString("pulse");
+    p.nameLoopAnim        = obj["name_loop_anim"].toString("none");
+
+    // Show title
+    p.showTitle           = obj["p_show_title"].toString();
+    p.showSubtitle        = obj["p_show_subtitle"].toString();
+    p.showTitleEnabled    = obj["show_title_enabled"].toBool(true);
+    p.showTitlePosition   = obj["show_title_position"].toString("bottom_left");
+    p.showTitleShape      = obj["show_title_shape"].toString("rectangle");
+    p.showTitleBgColor    = obj["show_title_bg_color"].toString("#1A1A2E");
+    p.showTitleTextColor  = obj["show_title_text_color"].toString("#FFFFFF");
+    p.showTitleBorderColor= obj["show_title_border_color"].toString("#5B4FDB");
+    p.showTitleFontSize   = obj["show_title_font_size"].toInt(16);
+
+    // Visibility + scales
+    p.scoreboardVisible   = obj["scoreboard_visible"].toBool(false);
+    p.weatherVisible      = obj["weather_visible"].toBool(false);
+    p.clockVisible        = obj["clock_visible"].toBool(false);
+    p.clockFormat         = obj["clock_format"].toString("HH:mm:ss");
+    p.tickerVisible       = obj["ticker_visible"].toBool(false);
+    p.nameplateScale      = obj["nameplate_scale"].toDouble(1.0);
+    p.scoreboardScale     = obj["scoreboard_scale"].toDouble(1.0);
+    p.weatherScale        = obj["weather_scale"].toDouble(1.0);
+    p.clockScale          = obj["clock_scale"].toDouble(1.0);
+    p.countdownScale      = obj["countdown_scale"].toDouble(1.0);
+    p.qrCodeScale         = obj["qr_code_scale"].toDouble(1.0);
+
+    // Virtual Studio
+    p.virtualStudioEnabled = obj["vs_enabled"].toBool(false);
+    p.virtualStudioId     = obj["vs_studio_id"].toInt(0);
+    p.chromaKeyEnabled    = obj["chroma_key_enabled"].toBool(false);
+    p.chromaKeyColor      = obj["chroma_key_color"].toString("green");
+    p.chromaKeyTolerance  = obj["chroma_key_tolerance"].toDouble(0.35);
+    p.chromaKeySmooth     = obj["chroma_key_smooth"].toDouble(0.05);
+
+    // Sport
+    p.teamLogoA           = obj["team_logo_a"].toString();
+    p.teamLogoB           = obj["team_logo_b"].toString();
+    p.goalAnimText        = obj["goal_anim_text"].toString("GOAL!");
+    p.goalAnimEffect      = obj["goal_anim_effect"].toString("kinetic_pop");
+    p.goalAnimDuration    = obj["goal_anim_duration"].toInt(5);
+
     p.createdAt           = QDateTime::fromString(obj["created_at"].toString(), Qt::ISODate);
     p.lastUsed            = QDateTime::fromString(obj["last_used"].toString(), Qt::ISODate);
 

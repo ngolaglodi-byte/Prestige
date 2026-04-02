@@ -152,8 +152,13 @@ int main(int argc, char* argv[])
 
     // ── Social Chat (C++) ─────────────────────────────────────
     prestige::ai::TwitchChat twitchChat;
+    // Twitch/YouTube chat → Compositor social chat overlay
+    QStringList chatBuffer;
     QObject::connect(&twitchChat, &prestige::ai::TwitchChat::messageReceived,
-        [](const QString& author, const QString& msg, const QString&) {
+        [&compositor, &chatBuffer](const QString& author, const QString& msg, const QString&) {
+            chatBuffer.append(author + ": " + msg);
+            if (chatBuffer.size() > 5) chatBuffer.removeFirst(); // Keep last 5 messages
+            compositor.setSocialChatMessages(chatBuffer);
             qInfo() << "[Chat]" << author << ":" << msg;
         });
 

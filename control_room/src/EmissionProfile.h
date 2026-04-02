@@ -43,18 +43,80 @@ struct EmissionProfile {
     // Talents assignés
     QStringList talentIds;
 
-    // Réseaux sociaux (clés de stream RTMP)
-    QJsonObject socialMediaConfigs;  // {"youtube": {"enabled":true,"key":"xxx"}, ...}
+    // Réseaux sociaux
+    QJsonObject socialMediaConfigs;
+    QString     socialOutputsJson;
 
-    // Multi-face overlay (when 2+ faces detected)
-    QString     multiFaceName;          // e.g. "JT 20h — Le Débat"
-    QString     multiFaceRole;          // e.g. "En direct"
-    QString     multiFaceStyleId;       // Style for multi-face (can differ from single)
+    // Multi-face overlay
+    QString     multiFaceName;
+    QString     multiFaceRole;
+    QString     multiFaceStyleId;
 
-    // Overlay timing (milliseconds delay before overlay appears)
-    int         singleFaceDelayMs = 1000;  // Delay for single face overlay
-    int         multiFaceDelayMs  = 500;   // Delay for multi-face overlay
-    int         overlayHideDelayMs = 2000; // Delay before hiding after face lost
+    // Overlay timing
+    int         singleFaceDelayMs = 1000;
+    int         multiFaceDelayMs  = 500;
+    int         overlayHideDelayMs = 2000;
+
+    // Output quality
+    int         outputFps = 25;
+    int         outputBitrate = 8;
+
+    // Channel branding (persisted)
+    QString     channelLogoPath;
+    QString     channelLogoPosition = "top_right";
+    int         channelLogoSize = 60;
+    bool        showChannelNameText = true;
+    bool        keepLogoDuringAds = true;
+    QString     channelNameShape = "rectangle";
+    QString     channelNameBgColor = "#CC0000";
+    QString     channelNameTextColor = "#FFFFFF";
+    QString     channelNameBorderColor = "#FFFFFF";
+    int         channelNameFontSize = 14;
+    QString     logoEntryAnim = "fade";
+    QString     nameEntryAnim = "slide_left";
+    QString     logoLoopAnim = "pulse";
+    QString     nameLoopAnim = "none";
+
+    // Show title (persisted)
+    QString     showTitle;
+    QString     showSubtitle;
+    bool        showTitleEnabled = true;
+    QString     showTitlePosition = "bottom_left";
+    QString     showTitleShape = "rectangle";
+    QString     showTitleBgColor = "#1A1A2E";
+    QString     showTitleTextColor = "#FFFFFF";
+    QString     showTitleBorderColor = "#5B4FDB";
+    int         showTitleFontSize = 16;
+
+    // Overlay visibility
+    bool        scoreboardVisible = false;
+    bool        weatherVisible = false;
+    bool        clockVisible = false;
+    QString     clockFormat = "HH:mm:ss";
+    bool        tickerVisible = false;
+
+    // Overlay scales
+    double      nameplateScale = 1.0;
+    double      scoreboardScale = 1.0;
+    double      weatherScale = 1.0;
+    double      clockScale = 1.0;
+    double      countdownScale = 1.0;
+    double      qrCodeScale = 1.0;
+
+    // Virtual Studio
+    bool        virtualStudioEnabled = false;
+    int         virtualStudioId = 0;
+    bool        chromaKeyEnabled = false;
+    QString     chromaKeyColor = "green";
+    double      chromaKeyTolerance = 0.35;
+    double      chromaKeySmooth = 0.05;
+
+    // Sport system
+    QString     teamLogoA;
+    QString     teamLogoB;
+    QString     goalAnimText = "GOAL!";
+    QString     goalAnimEffect = "kinetic_pop";
+    int         goalAnimDuration = 5;
 
     QDateTime   createdAt;
     QDateTime   lastUsed;

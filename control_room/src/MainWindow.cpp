@@ -115,6 +115,18 @@ MainWindow::MainWindow(QObject* parent)
     connect(m_setupController, &SetupController::virtualStudioChanged, this, &MainWindow::publishConfig);
     connect(m_weatherFetcher, &WeatherFetcher::weatherChanged, this, &MainWindow::publishConfig);
 
+    // Auto-save profile when branding/settings change (debounced via timer)
+    auto* autoSaveTimer = new QTimer(this);
+    autoSaveTimer->setSingleShot(true);
+    autoSaveTimer->setInterval(2000); // Save 2s after last change
+    connect(autoSaveTimer, &QTimer::timeout, this, [this]() { m_setupController->saveProfile(); });
+    auto triggerAutoSave = [autoSaveTimer]() { autoSaveTimer->start(); };
+    connect(m_setupController, &SetupController::brandingChanged, this, triggerAutoSave);
+    connect(m_setupController, &SetupController::styleChanged, this, triggerAutoSave);
+    connect(m_setupController, &SetupController::showTitleChanged, this, triggerAutoSave);
+    connect(m_setupController, &SetupController::outputsChanged, this, triggerAutoSave);
+    connect(m_setupController, &SetupController::virtualStudioChanged, this, triggerAutoSave);
+
     // Publish config when broadcast overlay cycle state changes
     connect(m_liveController, &LiveController::showTitleVisibleChanged, this, &MainWindow::publishConfig);
     connect(m_liveController, &LiveController::talentVisibleChanged, this, &MainWindow::publishConfig);
