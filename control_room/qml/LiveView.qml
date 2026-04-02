@@ -154,11 +154,13 @@ Item {
             }
 
             // ── WYSIWYG Preview Overlays ─────────────────
-            // Shows exactly what the viewer sees on TV
+            // Only shown when Vision Engine is NOT connected (design mode).
+            // When Vision Engine sends composited frames, overlays are already
+            // rendered in the frame by the Compositor — hide QML overlays to avoid doubles.
             Item {
                 id: wysiwygOverlay
                 anchors.fill: parent
-                visible: true  // Always visible to show branding even without Vision Engine
+                visible: !previewMonitor.active  // Hidden when Vision Engine is sending composited frames
 
                 // Standard broadcast proportions (based on 1920x1080 reference)
                 property real pw: parent.width   // Preview width
