@@ -274,6 +274,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 it->second(painter, *talent, output.size(), easedProg);
 
                 // Broadcast lower third effects (drawn around the nameplate)
+                double scale = output.width() / 1920.0;
                 QRectF plateRect = calcPlate(*talent, output.size(),
                     output.width() * 0.198, 64);
                 if (m_animTypeStr == "line_draw")
