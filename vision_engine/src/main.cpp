@@ -261,6 +261,13 @@ int main(int argc, char* argv[])
             int outFps = obj["output_fps"].toInt(25);
             int outBitrate = obj["output_bitrate"].toInt(8);
 
+            // Sync composite timer to output FPS
+            int timerMs = qMax(8, 1000 / qMax(1, outFps)); // e.g., 25fps → 40ms, 60fps → 16ms
+            QMetaObject::invokeMethod(&compositeTimer, [&compositeTimer, timerMs]() {
+                if (compositeTimer.interval() != timerMs)
+                    compositeTimer.setInterval(timerMs);
+            }, Qt::QueuedConnection);
+
             // Social media RTMP outputs
             QStringList socialUrls;
             auto socialArr = obj["social_outputs"].toArray();

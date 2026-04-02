@@ -157,14 +157,23 @@ Item {
             Label{text:setupController.goalAnimDuration+"s";color:window.darkMode?"#888":"#555";font.pixelSize:10;Layout.preferredWidth:24}
         }
 
-        // GOAL buttons (1-click: increment score + trigger animation)
+        // GOAL buttons (1-click: increment score + trigger animation + auto-reset)
+        Timer {
+            id: goalResetTimer; interval: setupController.goalAnimDuration * 1000; repeat: false
+            onTriggered: setupController.goalAnimActive = false
+        }
+        Timer {
+            id: sportEventResetTimer; interval: 4500; repeat: false
+            onTriggered: setupController.sportEvent = ""
+        }
         RowLayout { spacing: 8; Layout.alignment: Qt.AlignHCenter; Layout.topMargin: 4
             Rectangle {
                 Layout.preferredWidth:120;Layout.preferredHeight:40;radius:8;color:sb.colorA
                 Label{anchors.centerIn:parent;text:"\u26BD GOAL "+sb.teamA;color:"white";font.pixelSize:11;font.bold:true}
                 MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{
                     sb.scoreA++;setupController.scoreboardScoreA=sb.scoreA;
-                    setupController.goalAnimTeam="a";setupController.goalAnimActive=true
+                    setupController.goalAnimTeam="a";setupController.goalAnimActive=true;
+                    goalResetTimer.restart()
                 }}
             }
             Rectangle {
@@ -172,7 +181,8 @@ Item {
                 Label{anchors.centerIn:parent;text:"\u26BD GOAL "+sb.teamB;color:"white";font.pixelSize:11;font.bold:true}
                 MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{
                     sb.scoreB++;setupController.scoreboardScoreB=sb.scoreB;
-                    setupController.goalAnimTeam="b";setupController.goalAnimActive=true
+                    setupController.goalAnimTeam="b";setupController.goalAnimActive=true;
+                    goalResetTimer.restart()
                 }}
             }
         }
@@ -195,7 +205,7 @@ Item {
                 Rectangle {
                     width: evtLbl.implicitWidth+14; height:28; radius:6; color:modelData.c
                     Label{id:evtLbl;anchors.centerIn:parent;text:modelData.label;color:"white";font.pixelSize:9;font.bold:true}
-                    MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:setupController.sportEvent=modelData.evt}
+                    MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{setupController.sportEvent=modelData.evt;sportEventResetTimer.restart()}}
                 }
             }
         }

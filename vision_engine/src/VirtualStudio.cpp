@@ -36,7 +36,7 @@ void VirtualStudio::setCustomBackgroundPath(const QString& path)
 QImage VirtualStudio::process(const QImage& rawFrame)
 {
     if (!m_enabled || rawFrame.isNull())
-        return rawFrame.copy();
+        return rawFrame; // Zero-cost passthrough — no copy when disabled
 
     m_frameCounter++;
 

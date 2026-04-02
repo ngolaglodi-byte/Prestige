@@ -113,6 +113,7 @@ MainWindow::MainWindow(QObject* parent)
     connect(m_setupController, &SetupController::outputsChanged, this, &MainWindow::publishConfig);
     connect(m_setupController, &SetupController::overlayTimingChanged, this, &MainWindow::publishConfig);
     connect(m_setupController, &SetupController::virtualStudioChanged, this, &MainWindow::publishConfig);
+    connect(m_weatherFetcher, &WeatherFetcher::weatherChanged, this, &MainWindow::publishConfig);
 
     // Publish config when broadcast overlay cycle state changes
     connect(m_liveController, &LiveController::showTitleVisibleChanged, this, &MainWindow::publishConfig);
