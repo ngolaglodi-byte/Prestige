@@ -118,6 +118,37 @@ struct EmissionProfile {
     QString     goalAnimEffect = "kinetic_pop";
     int         goalAnimDuration = 5;
 
+    // Scoreboard detailed data
+    QString     scoreboardTeamA = "HOME";
+    QString     scoreboardTeamB = "AWAY";
+    QString     scoreboardColorA = "#CC0000";
+    QString     scoreboardColorB = "#0066CC";
+    QString     scoreboardPosition = "top_left";
+
+    // Ticker config
+    QString     tickerBgColor = "#CC0000";
+    QString     tickerTextColor = "#FFFFFF";
+    int         tickerFontSize = 14;
+    int         tickerSpeed = 2;
+    QString     tickerManualText;
+
+    // Show title animations
+    QString     showTitleEntryAnim = "slide_up";
+    QString     showTitleLoopAnim = "none";
+
+    // Talent timing
+    int         talentDisplayDurationSec = 8;
+    int         titleReappearDelaySec = 2;
+
+    // Virtual Studio colors
+    QString     vsPrimaryColor;
+    QString     vsSecondaryColor;
+    QString     vsAccentColor;
+    QString     vsFloorColor;
+    double      vsLightIntensity = 1.0;
+    bool        vsAnimationsEnabled = true;
+    QString     vsCustomBackground;
+
     QDateTime   createdAt;
     QDateTime   lastUsed;
 

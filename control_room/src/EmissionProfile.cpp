@@ -105,6 +105,37 @@ QJsonObject EmissionProfile::toJson() const
     obj["goal_anim_effect"]      = goalAnimEffect;
     obj["goal_anim_duration"]    = goalAnimDuration;
 
+    // Scoreboard data
+    obj["p_sb_team_a"]           = scoreboardTeamA;
+    obj["p_sb_team_b"]           = scoreboardTeamB;
+    obj["p_sb_color_a"]          = scoreboardColorA;
+    obj["p_sb_color_b"]          = scoreboardColorB;
+    obj["p_sb_position"]         = scoreboardPosition;
+
+    // Ticker config
+    obj["p_ticker_bg"]           = tickerBgColor;
+    obj["p_ticker_text"]         = tickerTextColor;
+    obj["p_ticker_font"]         = tickerFontSize;
+    obj["p_ticker_speed"]        = tickerSpeed;
+    obj["p_ticker_manual"]       = tickerManualText;
+
+    // Show title animations
+    obj["st_entry_anim"]         = showTitleEntryAnim;
+    obj["st_loop_anim"]          = showTitleLoopAnim;
+
+    // Talent timing
+    obj["talent_display_sec"]    = talentDisplayDurationSec;
+    obj["title_reappear_sec"]    = titleReappearDelaySec;
+
+    // VS colors
+    obj["vs_primary_color"]      = vsPrimaryColor;
+    obj["vs_secondary_color"]    = vsSecondaryColor;
+    obj["vs_accent_color"]       = vsAccentColor;
+    obj["vs_floor_color"]        = vsFloorColor;
+    obj["vs_light_intensity"]    = vsLightIntensity;
+    obj["vs_animations_enabled"] = vsAnimationsEnabled;
+    obj["vs_custom_bg"]          = vsCustomBackground;
+
     obj["created_at"]          = createdAt.toString(Qt::ISODate);
     obj["last_used"]           = lastUsed.toString(Qt::ISODate);
     return obj;
@@ -197,6 +228,37 @@ EmissionProfile EmissionProfile::fromJson(const QJsonObject& obj)
     p.goalAnimText        = obj["goal_anim_text"].toString("GOAL!");
     p.goalAnimEffect      = obj["goal_anim_effect"].toString("kinetic_pop");
     p.goalAnimDuration    = obj["goal_anim_duration"].toInt(5);
+
+    // Scoreboard data
+    p.scoreboardTeamA     = obj["p_sb_team_a"].toString("HOME");
+    p.scoreboardTeamB     = obj["p_sb_team_b"].toString("AWAY");
+    p.scoreboardColorA    = obj["p_sb_color_a"].toString("#CC0000");
+    p.scoreboardColorB    = obj["p_sb_color_b"].toString("#0066CC");
+    p.scoreboardPosition  = obj["p_sb_position"].toString("top_left");
+
+    // Ticker config
+    p.tickerBgColor       = obj["p_ticker_bg"].toString("#CC0000");
+    p.tickerTextColor     = obj["p_ticker_text"].toString("#FFFFFF");
+    p.tickerFontSize      = obj["p_ticker_font"].toInt(14);
+    p.tickerSpeed         = obj["p_ticker_speed"].toInt(2);
+    p.tickerManualText    = obj["p_ticker_manual"].toString();
+
+    // Show title animations
+    p.showTitleEntryAnim  = obj["st_entry_anim"].toString("slide_up");
+    p.showTitleLoopAnim   = obj["st_loop_anim"].toString("none");
+
+    // Talent timing
+    p.talentDisplayDurationSec = obj["talent_display_sec"].toInt(8);
+    p.titleReappearDelaySec    = obj["title_reappear_sec"].toInt(2);
+
+    // VS colors
+    p.vsPrimaryColor      = obj["vs_primary_color"].toString();
+    p.vsSecondaryColor    = obj["vs_secondary_color"].toString();
+    p.vsAccentColor       = obj["vs_accent_color"].toString();
+    p.vsFloorColor        = obj["vs_floor_color"].toString();
+    p.vsLightIntensity    = obj["vs_light_intensity"].toDouble(1.0);
+    p.vsAnimationsEnabled = obj["vs_animations_enabled"].toBool(true);
+    p.vsCustomBackground  = obj["vs_custom_bg"].toString();
 
     p.createdAt           = QDateTime::fromString(obj["created_at"].toString(), Qt::ISODate);
     p.lastUsed            = QDateTime::fromString(obj["last_used"].toString(), Qt::ISODate);

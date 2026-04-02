@@ -77,6 +77,33 @@ SetupController::SetupController(ProfileManager* profiles, QObject* parent)
     m_socialOutputsJson = m_profile.socialOutputsJson;
     m_outputFps = m_profile.outputFps;
     m_outputBitrate = m_profile.outputBitrate;
+    // Scoreboard data
+    m_scoreboardTeamA = m_profile.scoreboardTeamA;
+    m_scoreboardTeamB = m_profile.scoreboardTeamB;
+    m_scoreboardColorA = m_profile.scoreboardColorA;
+    m_scoreboardColorB = m_profile.scoreboardColorB;
+    m_scoreboardPosition = m_profile.scoreboardPosition;
+    // Ticker config
+    m_tickerBgColor = m_profile.tickerBgColor;
+    m_tickerTextColor = m_profile.tickerTextColor;
+    m_tickerFontSize = m_profile.tickerFontSize;
+    m_tickerSpeed = m_profile.tickerSpeed;
+    m_tickerManualText = m_profile.tickerManualText;
+    // Show title animations
+    m_showTitleEntryAnim = m_profile.showTitleEntryAnim;
+    m_showTitleLoopAnim = m_profile.showTitleLoopAnim;
+    // Talent timing
+    m_talentDisplayDurationSec = m_profile.talentDisplayDurationSec;
+    m_titleReappearDelaySec = m_profile.titleReappearDelaySec;
+    // VS colors
+    m_vsPrimary = m_profile.vsPrimaryColor.isEmpty() ? QColor() : QColor(m_profile.vsPrimaryColor);
+    m_vsSecondary = m_profile.vsSecondaryColor.isEmpty() ? QColor() : QColor(m_profile.vsSecondaryColor);
+    m_vsAccent = m_profile.vsAccentColor.isEmpty() ? QColor() : QColor(m_profile.vsAccentColor);
+    m_vsFloor = m_profile.vsFloorColor.isEmpty() ? QColor() : QColor(m_profile.vsFloorColor);
+    m_vsLightIntensity = m_profile.vsLightIntensity;
+    m_vsAnimEnabled = m_profile.vsAnimationsEnabled;
+    m_vsCustomBg = m_profile.vsCustomBackground;
+    m_srtUrl = m_profile.srtUrl;
 }
 
 QString SetupController::currentProfileName() const
@@ -485,6 +512,33 @@ void SetupController::saveProfile()
     m_profile.socialOutputsJson = m_socialOutputsJson;
     m_profile.outputFps = m_outputFps;
     m_profile.outputBitrate = m_outputBitrate;
+    // Scoreboard data
+    m_profile.scoreboardTeamA = m_scoreboardTeamA;
+    m_profile.scoreboardTeamB = m_scoreboardTeamB;
+    m_profile.scoreboardColorA = m_scoreboardColorA;
+    m_profile.scoreboardColorB = m_scoreboardColorB;
+    m_profile.scoreboardPosition = m_scoreboardPosition;
+    // Ticker config
+    m_profile.tickerBgColor = m_tickerBgColor;
+    m_profile.tickerTextColor = m_tickerTextColor;
+    m_profile.tickerFontSize = m_tickerFontSize;
+    m_profile.tickerSpeed = m_tickerSpeed;
+    m_profile.tickerManualText = m_tickerManualText;
+    // Show title animations
+    m_profile.showTitleEntryAnim = m_showTitleEntryAnim;
+    m_profile.showTitleLoopAnim = m_showTitleLoopAnim;
+    // Talent timing
+    m_profile.talentDisplayDurationSec = m_talentDisplayDurationSec;
+    m_profile.titleReappearDelaySec = m_titleReappearDelaySec;
+    // VS colors
+    m_profile.vsPrimaryColor = m_vsPrimary.isValid() ? m_vsPrimary.name() : "";
+    m_profile.vsSecondaryColor = m_vsSecondary.isValid() ? m_vsSecondary.name() : "";
+    m_profile.vsAccentColor = m_vsAccent.isValid() ? m_vsAccent.name() : "";
+    m_profile.vsFloorColor = m_vsFloor.isValid() ? m_vsFloor.name() : "";
+    m_profile.vsLightIntensity = m_vsLightIntensity;
+    m_profile.vsAnimationsEnabled = m_vsAnimEnabled;
+    m_profile.vsCustomBackground = m_vsCustomBg;
+    m_profile.srtUrl = m_srtUrl;
 
     m_profiles->save(m_profile);
     qInfo() << "[SetupController] Profile saved:" << m_profile.name;
