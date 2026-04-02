@@ -380,6 +380,23 @@ int main(int argc, char* argv[])
                 }, Qt::QueuedConnection);
             }
 
+            // Sport system
+            QString teamLogoA = obj["team_logo_a"].toString();
+            QString teamLogoB = obj["team_logo_b"].toString();
+            bool goalActive = obj["goal_anim_active"].toBool(false);
+            QString goalText = obj["goal_anim_text"].toString("GOAL!");
+            QString goalTeam = obj["goal_anim_team"].toString();
+            QString goalPlayer = obj["goal_anim_player"].toString();
+            QString goalEffect = obj["goal_anim_effect"].toString("kinetic_pop");
+            int goalDuration = obj["goal_anim_duration"].toInt(5);
+            QString sportEvt = obj["sport_event"].toString();
+            QMetaObject::invokeMethod(&compositor, [&compositor, teamLogoA, teamLogoB, goalActive, goalText, goalTeam, goalPlayer, goalEffect, goalDuration, sportEvt]() {
+                compositor.setTeamLogoA(teamLogoA);
+                compositor.setTeamLogoB(teamLogoB);
+                compositor.setGoalAnim(goalActive, goalText, goalTeam, goalPlayer, goalEffect, goalDuration);
+                if (!sportEvt.isEmpty()) compositor.setSportEvent(sportEvt);
+            }, Qt::QueuedConnection);
+
             // Virtual Studio config
             bool vsEnabled = obj["virtual_studio_enabled"].toBool(false);
             int vsStudioId = obj["virtual_studio_id"].toInt(0);

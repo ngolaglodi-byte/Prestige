@@ -140,6 +140,13 @@ public:
     void setVsAnimationsEnabled(bool v) { m_virtualStudio.setAnimationsEnabled(v); }
     void setVsCustomBackground(const QString& path) { m_virtualStudio.setCustomBackgroundPath(path); }
 
+    // ── Sport system ─────────────────────────────────────
+    void setTeamLogoA(const QString& path);
+    void setTeamLogoB(const QString& path);
+    void setGoalAnim(bool active, const QString& text, const QString& team,
+                     const QString& player, const QString& effect, int duration);
+    void setSportEvent(const QString& event);
+
     // ── Overlay scale factors ─────────────────────────────
     void setNameplateScale(double s) { m_nameplateScale = s; }
     void setScoreboardScale(double s) { m_scoreboardScale = s; }
@@ -338,6 +345,21 @@ private:
 
     // Virtual Studio
     VirtualStudio m_virtualStudio;
+
+    // Sport system
+    QImage  m_teamLogoImgA;
+    QImage  m_teamLogoImgB;
+    QString m_teamLogoPathA;
+    QString m_teamLogoPathB;
+    bool    m_goalAnimActive = false;
+    QString m_goalAnimText = "GOAL!";
+    QString m_goalAnimTeam;
+    QString m_goalAnimPlayer;
+    QString m_goalAnimEffect = "kinetic_pop";
+    int     m_goalAnimDuration = 5;
+    int     m_goalAnimFrame = 0;
+    QString m_sportEvent;
+    int     m_sportEventFrame = 0;
 
     // Overlay scale factors
     double m_nameplateScale = 1.0;

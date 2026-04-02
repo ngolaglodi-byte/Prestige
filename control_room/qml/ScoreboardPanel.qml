@@ -95,6 +95,111 @@ Item {
                 onCurrentIndexChanged:{var pos=["top_left","top_right","bottom_left","bottom_right"];setupController.scoreboardPosition=pos[currentIndex]}}
         }
         Switch{text:"Afficher";checked:setupController.scoreboardVisible;onToggled:setupController.scoreboardVisible=checked;leftPadding:8}
+
+        // ── Team Logos ──────────────────────────────────
+        Rectangle{Layout.fillWidth:true;Layout.preferredHeight:1;color:window.darkMode?"#222":"#CCC";Layout.leftMargin:8;Layout.rightMargin:8}
+        Label{text:"Logos des equipes";font.pixelSize:10;color:window.darkMode?"#AAA":"#444";leftPadding:8}
+        RowLayout { spacing: 4; Layout.leftMargin: 8; Layout.rightMargin: 8
+            Label{text:"Equipe A:";color:window.darkMode?"#999":"#666";font.pixelSize:10;Layout.preferredWidth:60}
+            TextField {
+                Layout.fillWidth:true; text:setupController.teamLogoA; placeholderText:"Chemin logo (PNG)"
+                onTextEdited: setupController.teamLogoA = text
+                font.pixelSize:10;color:window.darkMode?"#CCC":"#333"
+                background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}
+            }
+        }
+        RowLayout { spacing: 4; Layout.leftMargin: 8; Layout.rightMargin: 8
+            Label{text:"Equipe B:";color:window.darkMode?"#999":"#666";font.pixelSize:10;Layout.preferredWidth:60}
+            TextField {
+                Layout.fillWidth:true; text:setupController.teamLogoB; placeholderText:"Chemin logo (PNG)"
+                onTextEdited: setupController.teamLogoB = text
+                font.pixelSize:10;color:window.darkMode?"#CCC":"#333"
+                background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}
+            }
+        }
+
+        // ── GOAL Animation ─────────────────────────────
+        Rectangle{Layout.fillWidth:true;Layout.preferredHeight:1;color:window.darkMode?"#222":"#CCC";Layout.leftMargin:8;Layout.rightMargin:8}
+        Label{text:"Animation GOAL";font.pixelSize:10;font.bold:true;color:window.darkMode?"#AAA":"#444";leftPadding:8}
+
+        RowLayout { spacing: 4; Layout.leftMargin: 8; Layout.rightMargin: 8
+            Label{text:"Texte:";color:window.darkMode?"#999":"#666";font.pixelSize:10}
+            TextField {
+                id: goalTextField; Layout.fillWidth:true; text:setupController.goalAnimText; placeholderText:"GOAL!"
+                onTextEdited: setupController.goalAnimText = text
+                font.pixelSize:10;color:window.darkMode?"#CCC":"#333"
+                background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}
+            }
+        }
+        RowLayout { spacing: 4; Layout.leftMargin: 8; Layout.rightMargin: 8
+            Label{text:"Joueur:";color:window.darkMode?"#999":"#666";font.pixelSize:10}
+            TextField {
+                id: goalPlayerField; Layout.fillWidth:true; placeholderText:"Nom du buteur"
+                onTextEdited: setupController.goalAnimPlayer = text
+                font.pixelSize:10;color:window.darkMode?"#CCC":"#333"
+                background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}
+            }
+        }
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label{text:"Effet:";color:window.darkMode?"#999":"#666";font.pixelSize:10}
+            ComboBox {
+                model:["Kinetic Pop","Bounce In","Wave","Scale Up"]
+                property var vals:["kinetic_pop","bounce_in","wave_text","scale_up_letter"]
+                currentIndex:Math.max(0,vals.indexOf(setupController.goalAnimEffect))
+                onActivated:setupController.goalAnimEffect=vals[currentIndex]
+                Layout.fillWidth:true
+                background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}
+            }
+        }
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label{text:"Duree:";color:window.darkMode?"#999":"#666";font.pixelSize:10}
+            Slider{from:2;to:15;stepSize:1;value:setupController.goalAnimDuration;Layout.fillWidth:true;onMoved:setupController.goalAnimDuration=value}
+            Label{text:setupController.goalAnimDuration+"s";color:window.darkMode?"#888":"#555";font.pixelSize:10;Layout.preferredWidth:24}
+        }
+
+        // GOAL buttons (1-click: increment score + trigger animation)
+        RowLayout { spacing: 8; Layout.alignment: Qt.AlignHCenter; Layout.topMargin: 4
+            Rectangle {
+                Layout.preferredWidth:120;Layout.preferredHeight:40;radius:8;color:sb.colorA
+                Label{anchors.centerIn:parent;text:"\u26BD GOAL "+sb.teamA;color:"white";font.pixelSize:11;font.bold:true}
+                MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{
+                    sb.scoreA++;setupController.scoreboardScoreA=sb.scoreA;
+                    setupController.goalAnimTeam="a";setupController.goalAnimActive=true
+                }}
+            }
+            Rectangle {
+                Layout.preferredWidth:120;Layout.preferredHeight:40;radius:8;color:sb.colorB
+                Label{anchors.centerIn:parent;text:"\u26BD GOAL "+sb.teamB;color:"white";font.pixelSize:11;font.bold:true}
+                MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{
+                    sb.scoreB++;setupController.scoreboardScoreB=sb.scoreB;
+                    setupController.goalAnimTeam="b";setupController.goalAnimActive=true
+                }}
+            }
+        }
+
+        // ── Sport Events ───────────────────────────────
+        Rectangle{Layout.fillWidth:true;Layout.preferredHeight:1;color:window.darkMode?"#222":"#CCC";Layout.leftMargin:8;Layout.rightMargin:8}
+        Label{text:"Evenements";font.pixelSize:10;color:window.darkMode?"#AAA":"#444";leftPadding:8}
+        Flow { spacing: 4; Layout.leftMargin: 8; Layout.rightMargin: 8; Layout.fillWidth: true
+            Repeater {
+                model: [
+                    {label:"\uD83D\uDFE8 Jaune",evt:"yellow_card",c:"#CCAA00"},
+                    {label:"\uD83D\uDFE5 Rouge",evt:"red_card",c:"#CC0000"},
+                    {label:"\u23F8 Mi-temps",evt:"halftime",c:"#555"},
+                    {label:"\u2194 Remplacement",evt:"substitution",c:"#0088CC"},
+                    {label:"PEN Penalty",evt:"penalty",c:"#CC0000"},
+                    {label:"CK Corner",evt:"corner",c:"#666"},
+                    {label:"VAR",evt:"var",c:"#0055AA"},
+                    {label:"\u23F9 Fin",evt:"full_time",c:"#888"}
+                ]
+                Rectangle {
+                    width: evtLbl.implicitWidth+14; height:28; radius:6; color:modelData.c
+                    Label{id:evtLbl;anchors.centerIn:parent;text:modelData.label;color:"white";font.pixelSize:9;font.bold:true}
+                    MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:setupController.sportEvent=modelData.evt}
+                }
+            }
+        }
+
         Item{implicitHeight:10}
     }
     }

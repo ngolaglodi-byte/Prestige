@@ -546,6 +546,17 @@ void MainWindow::publishConfig()
     obj["scoreboard_match_time"] = m_setupController->scoreboardMatchTime();
     obj["scoreboard_period"] = m_setupController->scoreboardPeriod();
 
+    // Sport system
+    obj["team_logo_a"] = m_setupController->teamLogoA();
+    obj["team_logo_b"] = m_setupController->teamLogoB();
+    obj["goal_anim_active"] = m_setupController->goalAnimActive();
+    obj["goal_anim_text"] = m_setupController->goalAnimText();
+    obj["goal_anim_team"] = m_setupController->goalAnimTeam();
+    obj["goal_anim_player"] = m_setupController->goalAnimPlayer();
+    obj["goal_anim_effect"] = m_setupController->goalAnimEffect();
+    obj["goal_anim_duration"] = m_setupController->goalAnimDuration();
+    obj["sport_event"] = m_setupController->sportEvent();
+
     // Weather data
     obj["weather_visible"] = m_setupController->weatherVisible();
     obj["weather_city"] = m_weatherFetcher->city();

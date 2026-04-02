@@ -129,6 +129,33 @@ void Compositor::setSubtitleText(const QString& text)
 }
 void Compositor::setSubtitleVisible(bool v) { m_subtitleVisible = v; }
 void Compositor::setSubtitleFontSize(int s) { m_subtitleFontSize = qBound(10, s, 60); }
+
+void Compositor::setTeamLogoA(const QString& path) {
+    if (m_teamLogoPathA == path) return;
+    m_teamLogoPathA = path;
+    m_teamLogoImgA = path.isEmpty() ? QImage() : QImage(path);
+    if (!m_teamLogoImgA.isNull()) qInfo() << "[Compositor] Team A logo loaded:" << path;
+}
+void Compositor::setTeamLogoB(const QString& path) {
+    if (m_teamLogoPathB == path) return;
+    m_teamLogoPathB = path;
+    m_teamLogoImgB = path.isEmpty() ? QImage() : QImage(path);
+    if (!m_teamLogoImgB.isNull()) qInfo() << "[Compositor] Team B logo loaded:" << path;
+}
+void Compositor::setGoalAnim(bool active, const QString& text, const QString& team,
+                              const QString& player, const QString& effect, int duration) {
+    if (active && !m_goalAnimActive) m_goalAnimFrame = 0; // Reset on new goal
+    m_goalAnimActive = active;
+    m_goalAnimText = text;
+    m_goalAnimTeam = team;
+    m_goalAnimPlayer = player;
+    m_goalAnimEffect = effect;
+    m_goalAnimDuration = duration;
+}
+void Compositor::setSportEvent(const QString& event) {
+    if (!event.isEmpty()) m_sportEventFrame = 0; // Reset on new event
+    m_sportEvent = event;
+}
 void Compositor::setSubtitlePosition(const QString& p) { m_subtitlePosition = p; }
 void Compositor::setSubtitleBgOpacity(double o) { m_subtitleBgOpacity = qBound(0.0, o, 1.0); }
 void Compositor::setSubtitleTextColor(const QColor& c) { m_subtitleTextColor = c; }
@@ -256,6 +283,123 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     int fw = output.width();
     int fh = output.height();
     double scale = fw / 1920.0;
+
+    // ── Sport: Team logos in scoreboard ─────────────────────
+    // (rendered inside the scoreboard section below)
+
+    // ── Sport: GOAL Animation (full-screen overlay) ──────
+    if (m_goalAnimActive && m_goalAnimFrame < m_goalAnimDuration * 25) {
+        m_goalAnimFrame++;
+        double totalFrames = m_goalAnimDuration * 25.0;
+        double prog = m_goalAnimFrame / totalFrames;
+        double entryProg = std::min(1.0, m_goalAnimFrame / 20.0); // 20 frames entry
+        double exitProg = std::max(0.0, (m_goalAnimFrame - totalFrames + 15) / 15.0); // 15 frames exit
+
+        // Semi-transparent overlay
+        painter.save();
+        double overlayAlpha = (entryProg - exitProg) * 0.7;
+        painter.fillRect(0, 0, fw, fh, QColor(0, 0, 0, static_cast<int>(overlayAlpha * 255)));
+
+        // Team color burst from center
+        QColor teamColor = (m_goalAnimTeam == "a") ? m_sbColorA : m_sbColorB;
+        QRadialGradient burst(fw / 2, fh / 2, fw * 0.6 * easeOutCubic(entryProg));
+        burst.setColorAt(0, QColor(teamColor.red(), teamColor.green(), teamColor.blue(), static_cast<int>(100 * (1.0 - exitProg))));
+        burst.setColorAt(1, QColor(0, 0, 0, 0));
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(burst);
+        painter.drawRect(0, 0, fw, fh);
+
+        // GOAL text (centered, large)
+        double textScale = easeOutCubic(entryProg) * (1.0 - exitProg * 0.3);
+        int goalFontSize = qMax(30, static_cast<int>(80 * scale * textScale));
+        QFont goalFont("Helvetica Neue", goalFontSize, QFont::Black);
+        painter.setFont(goalFont);
+
+        // Apply text effect
+        QRectF textRect(0, fh * 0.3, fw, fh * 0.2);
+        if (m_goalAnimEffect == "kinetic_pop") {
+            fx::kineticPop(painter, m_goalAnimText, textRect, entryProg, goalFont, Qt::white);
+        } else if (m_goalAnimEffect == "bounce_in") {
+            fx::bounceIn(painter, m_goalAnimText, textRect, entryProg, goalFont, Qt::white);
+        } else if (m_goalAnimEffect == "wave_text") {
+            fx::waveText(painter, m_goalAnimText, textRect, entryProg, goalFont, Qt::white);
+        } else if (m_goalAnimEffect == "scale_up_letter") {
+            fx::scaleUpPerLetter(painter, m_goalAnimText, textRect, entryProg, goalFont, Qt::white);
+        } else {
+            // Default: simple scale + fade
+            painter.setPen(Qt::white);
+            painter.setOpacity(entryProg * (1.0 - exitProg));
+            painter.drawText(textRect, Qt::AlignHCenter | Qt::AlignVCenter, m_goalAnimText);
+        }
+
+        // Player name (below goal text)
+        if (!m_goalAnimPlayer.isEmpty()) {
+            int playerFontSize = qMax(14, static_cast<int>(28 * scale * textScale));
+            QFont playerFont("Helvetica Neue", playerFontSize, QFont::Bold);
+            painter.setFont(playerFont);
+            painter.setPen(QColor(teamColor.red(), teamColor.green(), teamColor.blue(), static_cast<int>(255 * entryProg * (1.0 - exitProg))));
+            painter.setOpacity(entryProg * (1.0 - exitProg));
+            painter.drawText(QRectF(0, fh * 0.5, fw, fh * 0.1), Qt::AlignHCenter | Qt::AlignVCenter, m_goalAnimPlayer);
+        }
+
+        // Team logo (if available)
+        const QImage& goalLogo = (m_goalAnimTeam == "a") ? m_teamLogoImgA : m_teamLogoImgB;
+        if (!goalLogo.isNull()) {
+            int logoH = static_cast<int>(80 * scale * textScale);
+            QImage scaledLogo = goalLogo.scaledToHeight(logoH, Qt::SmoothTransformation);
+            int logoX = (fw - scaledLogo.width()) / 2;
+            int logoY = static_cast<int>(fh * 0.18);
+            painter.setOpacity(entryProg * (1.0 - exitProg));
+            painter.drawImage(logoX, logoY, scaledLogo);
+        }
+
+        // Particles
+        fx::sparkles(painter, QRectF(0, 0, fw, fh), 40, m_goalAnimFrame * 0.06, teamColor);
+
+        painter.restore();
+    } else if (m_goalAnimActive && m_goalAnimFrame >= m_goalAnimDuration * 25) {
+        m_goalAnimActive = false;
+        m_goalAnimFrame = 0;
+    }
+
+    // ── Sport: Event overlay (card, halftime, etc.) ──────
+    if (!m_sportEvent.isEmpty() && m_sportEventFrame < 100) { // ~4 sec at 25fps
+        m_sportEventFrame++;
+        double prog = std::min(1.0, m_sportEventFrame / 15.0);
+        double fade = (m_sportEventFrame > 85) ? (100 - m_sportEventFrame) / 15.0 : 1.0;
+
+        QColor eventColor;
+        QString eventIcon;
+        if (m_sportEvent == "yellow_card") { eventColor = QColor(255, 200, 0); eventIcon = "\xF0\x9F\x9F\xA8"; }
+        else if (m_sportEvent == "red_card") { eventColor = QColor(220, 0, 0); eventIcon = "\xF0\x9F\x9F\xA5"; }
+        else if (m_sportEvent == "halftime") { eventColor = QColor(100, 100, 120); eventIcon = "HT"; }
+        else if (m_sportEvent == "substitution") { eventColor = QColor(0, 150, 200); eventIcon = "\xE2\x86\x94"; }
+        else if (m_sportEvent == "penalty") { eventColor = QColor(200, 0, 0); eventIcon = "PEN"; }
+        else if (m_sportEvent == "corner") { eventColor = QColor(100, 100, 100); eventIcon = "CK"; }
+        else if (m_sportEvent == "full_time") { eventColor = QColor(200, 200, 200); eventIcon = "FT"; }
+        else if (m_sportEvent == "var") { eventColor = QColor(0, 100, 200); eventIcon = "VAR"; }
+        else { eventColor = m_accentColor; eventIcon = m_sportEvent; }
+
+        int evW = static_cast<int>(200 * scale * easeOutCubic(prog));
+        int evH = static_cast<int>(44 * scale);
+        int evX = (fw - evW) / 2;
+        int evY = static_cast<int>(fh * 0.12);
+
+        painter.save();
+        painter.setOpacity(fade);
+        // Background pill
+        drawGlassRect(painter, QRectF(evX, evY, evW, evH), evH / 2.0, eventColor, 0.75);
+        // Icon + text
+        QFont evFont("Helvetica Neue", qMax(12, static_cast<int>(16 * scale)), QFont::Bold);
+        painter.setFont(evFont);
+        painter.setPen(Qt::white);
+        painter.drawText(QRectF(evX, evY, evW, evH), Qt::AlignCenter, eventIcon);
+        painter.restore();
+    }
+    if (!m_sportEvent.isEmpty() && m_sportEventFrame >= 100) {
+        m_sportEvent.clear();
+        m_sportEventFrame = 0;
+    }
 
     // Legacy Lower Third — REMOVED
     // Replaced by Show Title system (setShowTitle/setShowTitleVisible)
@@ -1062,6 +1206,13 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         QFont scoreFont("Helvetica Neue", fntScore, QFont::Bold);
         QFont timeFont("Menlo", fntTime, QFont::Bold);
 
+        // Team A logo (if available)
+        if (!m_teamLogoImgA.isNull()) {
+            int tLogoH = static_cast<int>(sbH * 0.35);
+            QImage tLogoA = m_teamLogoImgA.scaledToHeight(tLogoH, Qt::SmoothTransformation);
+            painter.drawImage(static_cast<int>(sbX + sbW * 0.25 - tLogoA.width() / 2), static_cast<int>(sbY + sbH * 0.05), tLogoA);
+        }
+
         // Team A color accent bar
         painter.setPen(Qt::NoPen);
         painter.setBrush(m_sbColorA);
@@ -1079,6 +1230,13 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         // Center separator line
         painter.setPen(QPen(QColor(255, 255, 255, 30), 1));
         painter.drawLine(QPointF(sbX + sbW / 2.0, sbY + sbH * 0.15), QPointF(sbX + sbW / 2.0, sbY + sbH * 0.85));
+
+        // Team B logo (if available)
+        if (!m_teamLogoImgB.isNull()) {
+            int tLogoH = static_cast<int>(sbH * 0.35);
+            QImage tLogoB = m_teamLogoImgB.scaledToHeight(tLogoH, Qt::SmoothTransformation);
+            painter.drawImage(static_cast<int>(sbX + sbW * 0.75 - tLogoB.width() / 2), static_cast<int>(sbY + sbH * 0.05), tLogoB);
+        }
 
         // Team B color accent bar
         painter.setPen(Qt::NoPen);

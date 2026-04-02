@@ -195,6 +195,17 @@ class SetupController : public QObject {
     Q_PROPERTY(int scoreboardRedA READ scoreboardRedA WRITE setScoreboardRedA NOTIFY brandingChanged)
     Q_PROPERTY(int scoreboardRedB READ scoreboardRedB WRITE setScoreboardRedB NOTIFY brandingChanged)
 
+    // Sport system — team logos + goal animation
+    Q_PROPERTY(QString teamLogoA READ teamLogoA WRITE setTeamLogoA NOTIFY brandingChanged)
+    Q_PROPERTY(QString teamLogoB READ teamLogoB WRITE setTeamLogoB NOTIFY brandingChanged)
+    Q_PROPERTY(bool goalAnimActive READ goalAnimActive WRITE setGoalAnimActive NOTIFY brandingChanged)
+    Q_PROPERTY(QString goalAnimText READ goalAnimText WRITE setGoalAnimText NOTIFY brandingChanged)
+    Q_PROPERTY(QString goalAnimTeam READ goalAnimTeam WRITE setGoalAnimTeam NOTIFY brandingChanged)
+    Q_PROPERTY(QString goalAnimPlayer READ goalAnimPlayer WRITE setGoalAnimPlayer NOTIFY brandingChanged)
+    Q_PROPERTY(QString goalAnimEffect READ goalAnimEffect WRITE setGoalAnimEffect NOTIFY brandingChanged)
+    Q_PROPERTY(int goalAnimDuration READ goalAnimDuration WRITE setGoalAnimDuration NOTIFY brandingChanged)
+    Q_PROPERTY(QString sportEvent READ sportEvent WRITE setSportEvent NOTIFY brandingChanged)
+
 public:
     explicit SetupController(ProfileManager* profiles, QObject* parent = nullptr);
 
@@ -491,6 +502,26 @@ public:
     int scoreboardRedB() const { return m_scoreboardRedB; }
     void setScoreboardRedB(int v);
 
+    // Sport system
+    QString teamLogoA() const { return m_teamLogoA; }
+    void setTeamLogoA(const QString& v) { if (m_teamLogoA != v) { m_teamLogoA = v; emit brandingChanged(); } }
+    QString teamLogoB() const { return m_teamLogoB; }
+    void setTeamLogoB(const QString& v) { if (m_teamLogoB != v) { m_teamLogoB = v; emit brandingChanged(); } }
+    bool goalAnimActive() const { return m_goalAnimActive; }
+    void setGoalAnimActive(bool v) { if (m_goalAnimActive != v) { m_goalAnimActive = v; emit brandingChanged(); } }
+    QString goalAnimText() const { return m_goalAnimText; }
+    void setGoalAnimText(const QString& v) { if (m_goalAnimText != v) { m_goalAnimText = v; emit brandingChanged(); } }
+    QString goalAnimTeam() const { return m_goalAnimTeam; }
+    void setGoalAnimTeam(const QString& v) { if (m_goalAnimTeam != v) { m_goalAnimTeam = v; emit brandingChanged(); } }
+    QString goalAnimPlayer() const { return m_goalAnimPlayer; }
+    void setGoalAnimPlayer(const QString& v) { if (m_goalAnimPlayer != v) { m_goalAnimPlayer = v; emit brandingChanged(); } }
+    QString goalAnimEffect() const { return m_goalAnimEffect; }
+    void setGoalAnimEffect(const QString& v) { if (m_goalAnimEffect != v) { m_goalAnimEffect = v; emit brandingChanged(); } }
+    int goalAnimDuration() const { return m_goalAnimDuration; }
+    void setGoalAnimDuration(int v) { if (m_goalAnimDuration != v) { m_goalAnimDuration = qBound(2, v, 15); emit brandingChanged(); } }
+    QString sportEvent() const { return m_sportEvent; }
+    void setSportEvent(const QString& v) { if (m_sportEvent != v) { m_sportEvent = v; emit brandingChanged(); } }
+
     Q_INVOKABLE void loadAnimatedLogo(const QString& path);
     Q_INVOKABLE bool isReadyToGo() const;
     Q_INVOKABLE void saveProfile();
@@ -635,6 +666,17 @@ private:
     int     m_scoreboardYellowB = 0;
     int     m_scoreboardRedA = 0;
     int     m_scoreboardRedB = 0;
+
+    // Sport system
+    QString m_teamLogoA;
+    QString m_teamLogoB;
+    bool    m_goalAnimActive = false;
+    QString m_goalAnimText = "GOAL!";
+    QString m_goalAnimTeam;    // "a" or "b"
+    QString m_goalAnimPlayer;
+    QString m_goalAnimEffect = "kinetic_pop";
+    int     m_goalAnimDuration = 5;
+    QString m_sportEvent;
 
     // Output extras
     QString m_srtUrl;
