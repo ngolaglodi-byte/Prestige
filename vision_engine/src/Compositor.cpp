@@ -1193,6 +1193,92 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         painter.drawText(textX, tempY + tempFm.ascent(), tempStr);
     }
 
+    // ── Global Broadcast Effects (applied over entire frame) ──
+    // These are ambient/continuous effects based on the selected animation type
+    QRectF fullFrame(0, 0, fw, fh);
+    QRectF overlayZone(0, fh * 0.65, fw, fh * 0.35); // Lower third area
+    double phase = m_loopFrame * 0.04;
+
+    // Particle effects (ambient)
+    if (m_animTypeStr == "sparkles")
+        fx::sparkles(painter, overlayZone, 25, phase, m_accentColor);
+    else if (m_animTypeStr == "bokeh")
+        fx::bokeh(painter, fullFrame, 15, phase, m_accentColor);
+    else if (m_animTypeStr == "dust")
+        fx::dustParticles(painter, fullFrame, 30, phase);
+    else if (m_animTypeStr == "fire_embers")
+        fx::fireEmbers(painter, overlayZone, 20, phase);
+    else if (m_animTypeStr == "confetti")
+        fx::confetti(painter, fullFrame, 40, phase);
+    else if (m_animTypeStr == "snow")
+        fx::snow(painter, fullFrame, 50, phase);
+    else if (m_animTypeStr == "rising_particles")
+        fx::risingParticles(painter, overlayZone, 20, phase, m_accentColor);
+
+    // Shape/Line effects (decorative overlay accents)
+    if (m_animTypeStr == "hexagon_pattern")
+        fx::hexagonPattern(painter, QRectF(0, 0, fw, fh * 0.65), std::min(1.0, m_loopFrame / 60.0), m_accentColor, 30 * scale);
+    else if (m_animTypeStr == "grid_reveal")
+        fx::gridReveal(painter, overlayZone, std::min(1.0, m_loopFrame / 40.0), m_accentColor, 8, 3);
+    else if (m_animTypeStr == "circle_expand") {
+        double pulse = 0.5 + 0.5 * std::sin(phase);
+        fx::circleExpand(painter, QPointF(fw * 0.5, fh * 0.5), fh * 0.3, pulse, m_accentColor);
+    }
+    else if (m_animTypeStr == "rectangle_build")
+        fx::rectangleBuild(painter, overlayZone.adjusted(20, 10, -20, -10), std::min(1.0, m_loopFrame / 50.0), m_accentColor, 2 * scale);
+    else if (m_animTypeStr == "line_draw_on") {
+        double p = std::min(1.0, m_loopFrame / 30.0);
+        fx::lineDrawOn(painter, QPointF(0, fh * 0.65), QPointF(fw, fh * 0.65), p, m_accentColor, 2 * scale);
+    }
+    else if (m_animTypeStr == "path_trace") {
+        std::vector<QPointF> pts = {{0, fh*0.65}, {fw*0.2, fh*0.62}, {fw*0.5, fh*0.66}, {fw*0.8, fh*0.63}, {(double)fw, fh*0.65}};
+        fx::pathTrace(painter, pts, std::min(1.0, m_loopFrame / 40.0), m_accentColor, 2 * scale);
+    }
+
+    // Blur/Focus effects (applied as overlay layer)
+    if (m_animTypeStr == "radial_blur")
+        fx::radialBlur(painter, overlayZone, 0.7, m_accentColor);
+    else if (m_animTypeStr == "defocus")
+        fx::defocus(painter, overlayZone, 0.6, m_accentColor);
+
+    // Color/Style effects (ambient styling)
+    if (m_animTypeStr == "color_sweep")
+        fx::colorSweep(painter, QRectF(0, fh * 0.93, fw, fh * 0.07), std::fmod(m_loopFrame / 100.0, 1.0), m_accentColor, m_accentColor.lighter(150));
+    else if (m_animTypeStr == "gradient_shift")
+        fx::gradientShift(painter, QRectF(0, fh * 0.93, fw, fh * 0.07), phase, m_accentColor, m_accentColor.darker(150));
+    else if (m_animTypeStr == "duotone")
+        fx::duotone(painter, fullFrame, QColor(0, 0, 30, 15), QColor(m_accentColor.red(), m_accentColor.green(), m_accentColor.blue(), 10));
+    else if (m_animTypeStr == "shadow_drop_animate")
+        fx::shadowDropAnimate(painter, overlayZone.adjusted(fw*0.05, 10, -fw*0.05, -10), 1.0, QColor(0, 0, 0));
+
+    // Transition effects (applied when animating in overlays)
+    if (m_animTypeStr == "light_leak")
+        fx::lightLeak(painter, output.size(), std::fmod(m_loopFrame / 150.0, 1.0), m_accentColor);
+
+    // Distortion effects (ambient)
+    if (m_animTypeStr == "wave_distort")
+        fx::waveDistort(painter, overlayZone, phase, 5 * scale);
+    else if (m_animTypeStr == "pixel_sort")
+        fx::pixelSort(painter, overlayZone, 0.8);
+    else if (m_animTypeStr == "vhs_effect")
+        fx::vhsEffect(painter, fullFrame, 0.3, m_loopFrame);
+    else if (m_animTypeStr == "chromatic_aberration") {
+        // Applied to channel name if visible
+        if (!m_channelName.isEmpty() && m_showNameText) {
+            QFont f("Helvetica Neue", static_cast<int>(m_nameFontSize * scale), QFont::Bold);
+            fx::chromaticAberration(painter, m_channelName, QRectF(fw * 0.05, fh * 0.05, fw * 0.3, fh * 0.04), f, Qt::white, 2 * scale);
+        }
+    }
+
+    // Glow effects not yet connected (lens_flare, light_rays as ambient)
+    if (m_animTypeStr == "lens_flare") {
+        double flareX = fw * (0.7 + 0.1 * std::sin(phase * 0.3));
+        fx::lensFlare(painter, QPointF(flareX, fh * 0.15), fh * 0.12, m_accentColor);
+    }
+    else if (m_animTypeStr == "light_rays") {
+        fx::lightRays(painter, QRectF(fw * 0.4, fh * 0.1, fw * 0.2, fh * 0.2), m_loopFrame * 0.3, m_accentColor, 0.3 + 0.2 * std::sin(phase));
+    }
+
     painter.end();
     m_lastCompositeMs = m_perfTimer.nsecsElapsed() / 1000000.0;
     emit frameComposited(output);

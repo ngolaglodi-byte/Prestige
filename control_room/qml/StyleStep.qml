@@ -201,19 +201,29 @@ Item {
                         Layout.fillWidth: true
                         model: [
                             "— Classiques —", "Glisser gauche", "Glisser droite", "Monter", "Fondu+zoom", "Balayage", "Fondu", "Iris", "Glitch",
-                            "— Text —", "Typewriter", "Bounce In", "Wave", "Tracking Expand", "Fade Up Letter", "Scale Up Letter", "Rotate In Letter", "Blur In", "Slide Per Letter", "Kinetic Pop",
-                            "— Lower Third —", "Line Draw", "Bar Slide", "Shape Morph", "Split Reveal", "Bracket Expand", "Underline Grow", "Box Wipe", "Corner Build",
-                            "— Logo —", "Fade Glow", "Light Streak", "Particle Form", "Scale Bounce", "Shatter In", "Blur Zoom", "Rotate 3D", "Pulse Reveal",
-                            "— Glow —", "Neon Glow", "Bloom", "Shimmer", "Edge Glow",
-                            "— Distortion —", "Glitch RGB", "Chromatic Aberration", "VHS Effect"
+                            "— Text (10) —", "Typewriter", "Bounce In", "Wave", "Tracking Expand", "Fade Up Letter", "Scale Up Letter", "Rotate In Letter", "Blur In", "Slide Per Letter", "Kinetic Pop",
+                            "— Lower Third (8) —", "Line Draw", "Bar Slide", "Shape Morph", "Split Reveal", "Bracket Expand", "Underline Grow", "Box Wipe", "Corner Build",
+                            "— Logo Reveals (8) —", "Fade Glow", "Light Streak", "Particle Form", "Scale Bounce", "Shatter In", "Blur Zoom", "Rotate 3D", "Pulse Reveal",
+                            "— Transitions (8) —", "Wipe Linear", "Push Slide", "Zoom Through", "Glitch Transition", "Light Leak", "Ink Bleed", "Spin", "Cross Dissolve",
+                            "— Glow & Light (6) —", "Neon Glow", "Bloom", "Light Rays", "Lens Flare", "Shimmer", "Edge Glow",
+                            "— Distortion (5) —", "Glitch RGB", "Chromatic Aberration", "Wave Distort", "Pixel Sort", "VHS Effect",
+                            "— Particles (7) —", "Sparkles", "Bokeh", "Dust", "Fire Embers", "Confetti", "Snow", "Rising Particles",
+                            "— Shape/Line (6) —", "Line Draw On", "Circle Expand", "Rectangle Build", "Path Trace", "Grid Reveal", "Hexagon Pattern",
+                            "— Blur/Focus (5) —", "Gaussian Blur In", "Radial Blur", "Directional Blur", "Tilt Shift", "Defocus",
+                            "— Color/Style (5) —", "Color Sweep", "Gradient Shift", "Duotone", "Shadow Drop", "Outline Stroke"
                         ]
                         property var values: [
                             "", "slide_left", "slide_right", "slide_up", "fade_scale", "wipe", "fade", "iris", "glitch",
                             "", "typewriter", "bounce_in", "wave_text", "tracking_expand", "fade_up_letter", "scale_up_letter", "rotate_in_letter", "blur_in", "slide_per_letter", "kinetic_pop",
                             "", "line_draw", "bar_slide", "shape_morph", "split_reveal", "bracket_expand", "underline_grow", "box_wipe", "corner_build",
                             "", "fade_glow", "light_streak", "particle_form", "scale_bounce", "shatter_in", "blur_zoom", "rotate_3d", "pulse_reveal",
-                            "", "neon_glow", "bloom", "shimmer", "edge_glow",
-                            "", "glitch_rgb", "chromatic_aberration", "vhs_effect"
+                            "", "wipe_linear", "push_slide", "zoom_through", "glitch_transition", "light_leak", "ink_bleed", "spin_transition", "cross_dissolve",
+                            "", "neon_glow", "bloom", "light_rays", "lens_flare", "shimmer", "edge_glow",
+                            "", "glitch_rgb", "chromatic_aberration", "wave_distort", "pixel_sort", "vhs_effect",
+                            "", "sparkles", "bokeh", "dust", "fire_embers", "confetti", "snow", "rising_particles",
+                            "", "line_draw_on", "circle_expand", "rectangle_build", "path_trace", "grid_reveal", "hexagon_pattern",
+                            "", "gaussian_blur_in", "radial_blur", "directional_blur", "tilt_shift", "defocus",
+                            "", "color_sweep", "gradient_shift", "duotone", "shadow_drop_animate", "outline_stroke"
                         ]
                         currentIndex: Math.max(0, values.indexOf(setupController.animationType))
                         onActivated: { if (values[currentIndex] !== "") setupController.animationType = values[currentIndex] }
