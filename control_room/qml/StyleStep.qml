@@ -199,10 +199,24 @@ Item {
                     ComboBox {
                         id: animCombo
                         Layout.fillWidth: true
-                        model: ["Glisser gauche","Glisser droite","Monter","Fondu+zoom","Balayage","Fondu","Iris","Glitch"]
-                        property var values: ["slide_left","slide_right","slide_up","fade_scale","wipe","fade","iris","glitch"]
+                        model: [
+                            "— Classiques —", "Glisser gauche", "Glisser droite", "Monter", "Fondu+zoom", "Balayage", "Fondu", "Iris", "Glitch",
+                            "— Text —", "Typewriter", "Bounce In", "Wave", "Tracking Expand", "Fade Up Letter", "Scale Up Letter", "Rotate In Letter", "Blur In", "Slide Per Letter", "Kinetic Pop",
+                            "— Lower Third —", "Line Draw", "Bar Slide", "Shape Morph", "Split Reveal", "Bracket Expand", "Underline Grow", "Box Wipe", "Corner Build",
+                            "— Logo —", "Fade Glow", "Light Streak", "Particle Form", "Scale Bounce", "Shatter In", "Blur Zoom", "Rotate 3D", "Pulse Reveal",
+                            "— Glow —", "Neon Glow", "Bloom", "Shimmer", "Edge Glow",
+                            "— Distortion —", "Glitch RGB", "Chromatic Aberration", "VHS Effect"
+                        ]
+                        property var values: [
+                            "", "slide_left", "slide_right", "slide_up", "fade_scale", "wipe", "fade", "iris", "glitch",
+                            "", "typewriter", "bounce_in", "wave_text", "tracking_expand", "fade_up_letter", "scale_up_letter", "rotate_in_letter", "blur_in", "slide_per_letter", "kinetic_pop",
+                            "", "line_draw", "bar_slide", "shape_morph", "split_reveal", "bracket_expand", "underline_grow", "box_wipe", "corner_build",
+                            "", "fade_glow", "light_streak", "particle_form", "scale_bounce", "shatter_in", "blur_zoom", "rotate_3d", "pulse_reveal",
+                            "", "neon_glow", "bloom", "shimmer", "edge_glow",
+                            "", "glitch_rgb", "chromatic_aberration", "vhs_effect"
+                        ]
                         currentIndex: Math.max(0, values.indexOf(setupController.animationType))
-                        onActivated: setupController.animationType = values[currentIndex]
+                        onActivated: { if (values[currentIndex] !== "") setupController.animationType = values[currentIndex] }
                         background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
                         contentItem: Label { text: animCombo.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
                     }

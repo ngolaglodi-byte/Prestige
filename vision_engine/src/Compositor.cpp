@@ -225,6 +225,27 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 painter.save();
                 painter.setOpacity(easedProg);  // Global opacity animation
                 it->second(painter, *talent, output.size(), easedProg);
+
+                // Broadcast lower third effects (drawn around the nameplate)
+                QRectF plateRect = calcPlate(*talent, output.size(),
+                    output.width() * 0.198, 64);
+                if (m_animTypeStr == "line_draw")
+                    fx::lineDraw(painter, plateRect, easedProg, m_accentColor, scale);
+                else if (m_animTypeStr == "bar_slide")
+                    fx::barSlide(painter, plateRect, easedProg, m_accentColor, scale);
+                else if (m_animTypeStr == "shape_morph")
+                    fx::shapeMorph(painter, plateRect, easedProg, m_accentColor, scale);
+                else if (m_animTypeStr == "split_reveal")
+                    fx::splitReveal(painter, plateRect, easedProg, m_accentColor, scale);
+                else if (m_animTypeStr == "bracket_expand")
+                    fx::bracketExpand(painter, plateRect, easedProg, m_accentColor, scale);
+                else if (m_animTypeStr == "underline_grow")
+                    fx::underlineGrow(painter, plateRect, easedProg, m_accentColor, scale);
+                else if (m_animTypeStr == "box_wipe")
+                    fx::boxWipe(painter, plateRect, easedProg, m_accentColor, scale);
+                else if (m_animTypeStr == "corner_build")
+                    fx::cornerBuild(painter, plateRect, easedProg, m_accentColor, scale);
+
                 painter.restore();
             }
         }
@@ -410,6 +431,22 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 } else if (m_logoEntryAnimType == "wipe") {
                     // Handled via clip rect below
                 }
+                // Broadcast effects (logo reveals)
+                else if (m_logoEntryAnimType == "fade_glow" || m_logoEntryAnimType == "light_streak" ||
+                         m_logoEntryAnimType == "particle_form" || m_logoEntryAnimType == "pulse_reveal") {
+                    logoOpacity = p * 0.9;
+                    logoScale = 0.9 + p * 0.1;
+                } else if (m_logoEntryAnimType == "scale_bounce") {
+                    logoScale = easeOutCubic(p) * 1.0;
+                    logoOpacity = p;
+                } else if (m_logoEntryAnimType == "shatter_in") {
+                    logoOpacity = p;
+                } else if (m_logoEntryAnimType == "blur_zoom") {
+                    logoScale = 1.5 - 0.5 * easeOutCubic(p);
+                    logoOpacity = p;
+                } else if (m_logoEntryAnimType == "rotate_3d") {
+                    logoOpacity = p;
+                }
             }
 
             // Apply logo loop animation (only after entry complete)
@@ -420,6 +457,15 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                     logoOffY = static_cast<int>(std::abs(loopPhase) * 3.0 * scale);
                 } else if (m_logoLoopAnimType == "rotate") {
                     // Handled via painter rotation below
+                }
+                // Broadcast loop effects
+                else if (m_logoLoopAnimType == "neon_glow" || m_logoLoopAnimType == "shimmer" ||
+                         m_logoLoopAnimType == "edge_glow" || m_logoLoopAnimType == "bloom") {
+                    // These are drawn as post-effects after the logo is rendered
+                }
+                else if (m_logoLoopAnimType == "sparkles" || m_logoLoopAnimType == "bokeh" ||
+                         m_logoLoopAnimType == "rising_particles") {
+                    // Particle effects drawn after logo
                 }
             }
 
@@ -478,6 +524,40 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 painter.drawRect(QRectF(drawX, drawY, scaledLogo.width(), scaledLogo.height()));
             }
 
+            // Broadcast entry effects (drawn over logo during entry)
+            if (m_logoEntryProgress < 1.0) {
+                QRectF logoRect(drawX, drawY, scaledLogo.width(), scaledLogo.height());
+                if (m_logoEntryAnimType == "fade_glow")
+                    fx::fadeGlow(painter, logoRect, m_logoEntryProgress, m_accentColor);
+                else if (m_logoEntryAnimType == "light_streak")
+                    fx::lightStreak(painter, logoRect, m_logoEntryProgress, m_accentColor);
+                else if (m_logoEntryAnimType == "particle_form")
+                    fx::particleForm(painter, logoRect, m_logoEntryProgress, m_accentColor, m_loopFrame);
+                else if (m_logoEntryAnimType == "pulse_reveal")
+                    fx::pulseReveal(painter, logoRect, m_logoEntryProgress, m_accentColor);
+                else if (m_logoEntryAnimType == "shatter_in")
+                    fx::shatterIn(painter, logoRect, m_logoEntryProgress);
+            }
+
+            // Broadcast loop effects (drawn over logo continuously)
+            if (m_logoEntryProgress >= 1.0 && m_logoLoopAnimType != "none") {
+                QRectF logoRect(drawX, drawY, scaledLogo.width(), scaledLogo.height());
+                if (m_logoLoopAnimType == "neon_glow")
+                    fx::neonGlow(painter, logoRect, m_accentColor, 0.6 + loopPhase * 0.3);
+                else if (m_logoLoopAnimType == "edge_glow")
+                    fx::edgeGlow(painter, logoRect, m_accentColor, 4 + loopPhase * 2);
+                else if (m_logoLoopAnimType == "bloom")
+                    fx::bloom(painter, logoRect, m_accentColor, 0.5 + loopPhase * 0.3);
+                else if (m_logoLoopAnimType == "sparkles")
+                    fx::sparkles(painter, logoRect, 15, m_loopFrame * 0.05, m_accentColor);
+                else if (m_logoLoopAnimType == "bokeh")
+                    fx::bokeh(painter, logoRect.adjusted(-20, -20, 20, 20), 8, m_loopFrame * 0.03, m_accentColor);
+                else if (m_logoLoopAnimType == "rising_particles")
+                    fx::risingParticles(painter, logoRect.adjusted(-10, -20, 10, 0), 12, m_loopFrame * 0.04, m_accentColor);
+                else if (m_logoLoopAnimType == "light_rays")
+                    fx::lightRays(painter, logoRect, m_loopFrame * 0.5, m_accentColor, 0.4 + loopPhase * 0.2);
+            }
+
             painter.restore();
 
             // Channel name text next to logo — with entry/loop animations and shape
@@ -514,6 +594,14 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                         nameOpacity = p;
                     } else if (m_nameEntryAnimType == "wipe") {
                         // Handled via clip rect
+                    }
+                    // Broadcast text entry effects
+                    else if (m_nameEntryAnimType == "typewriter" || m_nameEntryAnimType == "bounce_in" ||
+                             m_nameEntryAnimType == "wave_text" || m_nameEntryAnimType == "kinetic_pop" ||
+                             m_nameEntryAnimType == "tracking_expand" || m_nameEntryAnimType == "fade_up_letter" ||
+                             m_nameEntryAnimType == "scale_up_letter" || m_nameEntryAnimType == "blur_in" ||
+                             m_nameEntryAnimType == "slide_per_letter" || m_nameEntryAnimType == "rotate_in_letter") {
+                        nameOpacity = 1.0; // Text effects handle their own opacity per-letter
                     }
                 }
 
@@ -612,9 +700,43 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                     painter.setClipping(false);
                 }
 
-                // Draw text
-                painter.setPen(m_nameTextColor);
-                painter.drawText(nameRect, Qt::AlignCenter, m_channelName);
+                // Draw text — use broadcast text effect if selected, otherwise standard
+                if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "typewriter") {
+                    fx::typewriter(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "bounce_in") {
+                    fx::bounceIn(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "wave_text") {
+                    fx::waveText(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "kinetic_pop") {
+                    fx::kineticPop(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "tracking_expand") {
+                    fx::trackingExpand(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "fade_up_letter") {
+                    fx::fadeUpPerLetter(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "scale_up_letter") {
+                    fx::scaleUpPerLetter(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "blur_in") {
+                    fx::blurIn(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "slide_per_letter") {
+                    fx::slidePerLetter(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "rotate_in_letter") {
+                    fx::rotateInPerLetter(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else {
+                    painter.setPen(m_nameTextColor);
+                    painter.drawText(nameRect, Qt::AlignCenter, m_channelName);
+                }
+
+                // Broadcast loop effects on channel name
+                if (m_nameEntryProgress >= 1.0 && m_nameLoopAnimType != "none") {
+                    if (m_nameLoopAnimType == "neon_glow")
+                        fx::neonGlow(painter, nameRect, m_accentColor, 0.5 + loopPhase * 0.3);
+                    else if (m_nameLoopAnimType == "shimmer")
+                        fx::shimmer(painter, nameRect, m_loopFrame * 0.04, m_accentColor);
+                    else if (m_nameLoopAnimType == "edge_glow")
+                        fx::edgeGlow(painter, nameRect, m_accentColor, 3 + loopPhase * 2);
+                    else if (m_nameLoopAnimType == "glitch_rgb")
+                        fx::glitchRGB(painter, nameRect, 0.3 + loopPhase * 0.2, m_loopFrame);
+                }
 
                 painter.restore();
             }
