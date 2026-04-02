@@ -238,6 +238,88 @@ Item {
                     onTriggered: phase += 0.1
                 }
 
+                // Chromatic aberration preview
+                Row {
+                    visible: setupController.animationType === "chromatic_aberration"
+                    x: plate.x; y: plate.y; z: plate.z + 1
+                    Text { text: getName(root.previewStyleId); color: Qt.rgba(1,0,0,0.25); font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true; x: 3 }
+                    Text { text: getName(root.previewStyleId); color: Qt.rgba(0,1,1,0.25); font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true; x: -3 }
+                }
+
+                // Blur preview
+                Rectangle {
+                    visible: setupController.animationType === "gaussian_blur_in" || setupController.animationType === "radial_blur" || setupController.animationType === "directional_blur" || setupController.animationType === "defocus" || setupController.animationType === "blur_in"
+                    x: plate.x - 4; y: plate.y - 4; width: plate.width + 8; height: plate.height + 8
+                    radius: 8; color: "transparent"; border.color: Qt.rgba(1,1,1,0.1); border.width: 1
+                    Rectangle { anchors.fill: parent; radius: 8; color: Qt.rgba(1,1,1,0.05) }
+                }
+
+                // Color sweep / gradient preview
+                Rectangle {
+                    visible: setupController.animationType === "color_sweep" || setupController.animationType === "gradient_shift" || setupController.animationType === "duotone"
+                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; radius: 4
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0; color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.15) }
+                        GradientStop { position: Math.abs(Math.sin(glowTimer.phase * 0.5)); color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.3) }
+                        GradientStop { position: 1; color: "transparent" }
+                    }
+                }
+
+                // Fire / confetti / snow particles preview
+                Repeater {
+                    model: setupController.animationType === "fire_embers" ? 10 : (setupController.animationType === "confetti" ? 15 : (setupController.animationType === "snow" ? 20 : (setupController.animationType === "dust" ? 8 : 0)))
+                    Rectangle {
+                        property real rx: Math.random()
+                        property real ry: Math.random()
+                        x: plate.x + rx * plate.width
+                        y: setupController.animationType === "snow" ? (plate.y - 20 + ((ry * plate.height + glowTimer.phase * 30) % (plate.height + 40))) :
+                           setupController.animationType === "fire_embers" ? (plate.y + plate.height - ((ry * plate.height + glowTimer.phase * 25) % plate.height)) :
+                           (plate.y + ry * plate.height)
+                        width: setupController.animationType === "confetti" ? 4 : 3; height: width; radius: setupController.animationType === "confetti" ? 1 : width / 2
+                        color: setupController.animationType === "fire_embers" ? (index % 2 === 0 ? "#FF8C00" : "#FF4500") :
+                               setupController.animationType === "snow" ? "white" :
+                               setupController.animationType === "confetti" ? ["#FF0000","#00CC00","#0066FF","#FFCC00","#FF00CC","#00FFFF"][index % 6] :
+                               Qt.rgba(0.8, 0.8, 0.7, 0.4)
+                        opacity: 0.3 + 0.4 * Math.sin(glowTimer.phase * 3 + index * 1.2)
+                    }
+                }
+
+                // Lower third animation preview (line draw, bar slide, etc.)
+                Rectangle {
+                    visible: ["line_draw","bar_slide","underline_grow","split_reveal"].indexOf(setupController.animationType) >= 0
+                    x: plate.x; y: plate.y + plate.height - 2
+                    width: plate.width * Math.min(1, glowTimer.phase % 3 / 2); height: 2
+                    color: setupController.accentColor
+                }
+                // Bracket / corner / box preview
+                Rectangle {
+                    visible: ["bracket_expand","corner_build","box_wipe","shape_morph"].indexOf(setupController.animationType) >= 0
+                    x: plate.x - 3; y: plate.y - 3; width: plate.width + 6; height: plate.height + 6
+                    radius: 2; color: "transparent"; border.color: setupController.accentColor; border.width: 1.5
+                    opacity: 0.5 + 0.3 * Math.sin(glowTimer.phase)
+                }
+
+                // Transition preview (wipe, dissolve, etc.)
+                Rectangle {
+                    visible: ["wipe_linear","push_slide","zoom_through","ink_bleed","spin_transition","cross_dissolve"].indexOf(setupController.animationType) >= 0
+                    x: plate.x; y: plate.y; width: plate.width * Math.abs(Math.sin(glowTimer.phase * 0.3)); height: plate.height
+                    color: Qt.rgba(0, 0, 0, 0.3); radius: 2
+                }
+
+                // Light leak / lens flare preview
+                Rectangle {
+                    visible: setupController.animationType === "light_leak" || setupController.animationType === "lens_flare" || setupController.animationType === "light_rays"
+                    x: plate.x + plate.width * (0.3 + 0.4 * Math.sin(glowTimer.phase * 0.4)); y: plate.y - 10
+                    width: 30; height: plate.height + 20; radius: 15
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0; color: "transparent" }
+                        GradientStop { position: 0.5; color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.2) }
+                        GradientStop { position: 1; color: "transparent" }
+                    }
+                }
+
                 // Effect name badge
                 Rectangle {
                     visible: setupController.animationType !== "slide_left" && setupController.animationType !== ""
