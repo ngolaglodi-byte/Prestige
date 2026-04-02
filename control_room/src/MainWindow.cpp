@@ -188,6 +188,12 @@ void MainWindow::startSubProcesses()
     // Dev layout: control_room/ and vision_engine/ are siblings
     if (!QFileInfo(visionExe).exists())
         visionExe = appDir + "/../vision_engine/prestige_vision";
+    // Dev layout: build/control_room/app and build/vision_engine/
+    if (!QFileInfo(visionExe).exists())
+        visionExe = appDir + "/../../vision_engine/prestige_vision";
+    // Dev layout: macOS app bundle (Contents/MacOS → build/vision_engine)
+    if (!QFileInfo(visionExe).exists())
+        visionExe = appDir + "/../../../../vision_engine/prestige_vision";
 #endif
 
     if (QFileInfo(visionExe).exists()) {
