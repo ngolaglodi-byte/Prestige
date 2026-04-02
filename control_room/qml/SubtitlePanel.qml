@@ -123,6 +123,7 @@ Item {
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: subtitleController.textColor = modelData }
                 }
             }
+            ColorPickerButton { currentColor: subtitleController.textColor; onColorSelected: function(c) { subtitleController.textColor = c } }
         }
 
         // ── Live Preview ──────────────────────────────────────

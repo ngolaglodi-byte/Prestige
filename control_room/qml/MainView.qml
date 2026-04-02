@@ -758,6 +758,7 @@ ApplicationWindow {
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameBgColor = modelData }
                                     }
                                 }
+                                ColorPickerButton { currentColor: setupController.channelNameBgColor; onColorSelected: function(c) { setupController.channelNameBgColor = c } }
                             }
                             RowLayout {
                                 spacing: 8; Layout.leftMargin: 8
@@ -769,6 +770,7 @@ ApplicationWindow {
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameTextColor = modelData }
                                     }
                                 }
+                                ColorPickerButton { currentColor: setupController.channelNameTextColor; onColorSelected: function(c) { setupController.channelNameTextColor = c } }
                             }
                             RowLayout {
                                 spacing: 8; Layout.leftMargin: 8
@@ -781,6 +783,7 @@ ApplicationWindow {
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.channelNameBorderColor = modelData }
                                     }
                                 }
+                                ColorPickerButton { currentColor: setupController.channelNameBorderColor; onColorSelected: function(c) { setupController.channelNameBorderColor = c } }
                             }
                             RowLayout {
                                 spacing: 8; Layout.leftMargin: 8
@@ -861,6 +864,7 @@ ApplicationWindow {
                                 Repeater { model: ["#1A1A2E","#CC0000","#0066CC","#000000","#1DB954","#5B4FDB"]
                                     Rectangle { width: 20; height: 20; radius: 4; color: modelData; border.color: modelData === setupController.showTitleBgColor ? "white" : "transparent"; border.width: 2
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleBgColor = modelData } } }
+                                ColorPickerButton { currentColor: setupController.showTitleBgColor; onColorSelected: function(c) { setupController.showTitleBgColor = c } }
                             }
                             // Text color
                             RowLayout { spacing: 4; Layout.leftMargin: 8
@@ -868,6 +872,7 @@ ApplicationWindow {
                                 Repeater { model: ["#FFFFFF","#FFFF00","#00FF00","#00CCFF"]
                                     Rectangle { width: 20; height: 20; radius: 4; color: modelData; border.color: modelData === setupController.showTitleTextColor ? "white" : "transparent"; border.width: 2
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleTextColor = modelData } } }
+                                ColorPickerButton { currentColor: setupController.showTitleTextColor; onColorSelected: function(c) { setupController.showTitleTextColor = c } }
                             }
                             // Border color
                             RowLayout { spacing: 4; Layout.leftMargin: 8
@@ -875,6 +880,7 @@ ApplicationWindow {
                                 Repeater { model: ["#5B4FDB","#FFFFFF","#CC0000","#FFD700","transparent"]
                                     Rectangle { width: 20; height: 20; radius: 4; color: modelData === "transparent" ? "#333" : modelData; border.color: modelData === setupController.showTitleBorderColor ? "white" : "transparent"; border.width: 2
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.showTitleBorderColor = modelData } } }
+                                ColorPickerButton { currentColor: setupController.showTitleBorderColor; onColorSelected: function(c) { setupController.showTitleBorderColor = c } }
                             }
                             // Font size
                             RowLayout { spacing: 4; Layout.leftMargin: 8

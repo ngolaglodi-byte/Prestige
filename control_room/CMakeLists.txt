@@ -85,6 +85,7 @@ qt_add_qml_module(prestige_control
         qml/ThemeManager.qml
         qml/SocialChatPanel.qml
         qml/VirtualStudioPanel.qml
+        qml/ColorPickerButton.qml
 )
 
 target_link_libraries(prestige_control PRIVATE

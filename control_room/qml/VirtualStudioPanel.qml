@@ -118,6 +118,7 @@ Item {
                 Rectangle { width: 22; height: 22; radius: 4; color: modelData; border.color: modelData === (setupController.vsPrimaryColor ? setupController.vsPrimaryColor.toString() : "") ? "white" : "transparent"; border.width: 2
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.vsPrimaryColor = modelData } }
             }
+            ColorPickerButton { currentColor: setupController.vsPrimaryColor || "#0A0F23"; onColorSelected: function(c) { setupController.vsPrimaryColor = c } }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Accent:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11; Layout.preferredWidth: 70 }
@@ -126,6 +127,7 @@ Item {
                 Rectangle { width: 22; height: 22; radius: 4; color: modelData; border.color: modelData === (setupController.vsAccentColor ? setupController.vsAccentColor.toString() : "") ? "white" : "transparent"; border.width: 2
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.vsAccentColor = modelData } }
             }
+            ColorPickerButton { currentColor: setupController.vsAccentColor || "#5B4FDB"; onColorSelected: function(c) { setupController.vsAccentColor = c } }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Sol:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11; Layout.preferredWidth: 70 }
@@ -134,6 +136,7 @@ Item {
                 Rectangle { width: 22; height: 22; radius: 4; color: modelData; border.color: modelData === (setupController.vsFloorColor ? setupController.vsFloorColor.toString() : "") ? "white" : "transparent"; border.width: 2
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.vsFloorColor = modelData } }
             }
+            ColorPickerButton { currentColor: setupController.vsFloorColor || "#121830"; onColorSelected: function(c) { setupController.vsFloorColor = c } }
         }
 
         // Reset colors button

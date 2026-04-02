@@ -31,7 +31,7 @@ Item {
                 background: Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"} }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
-            Rectangle { Layout.preferredWidth:18;Layout.preferredHeight:18;radius:4;color:sb.colorA; MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{var c=sb.colorA==="#CC0000"?"#FF6B00":"#CC0000";sb.colorA=c;setupController.scoreboardColorA=c}} }
+            ColorPickerButton { Layout.preferredWidth:22;Layout.preferredHeight:22; currentColor: sb.colorA; onColorSelected: function(c) { sb.colorA=c; setupController.scoreboardColorA=c } }
             TextField {
                 Layout.fillWidth:true;text:sb.teamA
                 onTextChanged: { sb.teamA=text; setupController.scoreboardTeamA=text }
@@ -45,7 +45,7 @@ Item {
                 font.pixelSize:10;color:window.darkMode?"#FFF":"#1A1A1A"
                 background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}
             }
-            Rectangle { Layout.preferredWidth:18;Layout.preferredHeight:18;radius:4;color:sb.colorB; MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{var c=sb.colorB==="#0066CC"?"#1DB954":"#0066CC";sb.colorB=c;setupController.scoreboardColorB=c}} }
+            ColorPickerButton { Layout.preferredWidth:22;Layout.preferredHeight:22; currentColor: sb.colorB; onColorSelected: function(c) { sb.colorB=c; setupController.scoreboardColorB=c } }
         }
         RowLayout { spacing: 6; Layout.alignment: Qt.AlignHCenter
             Rectangle{Layout.preferredWidth:26;Layout.preferredHeight:26;radius:6;color:"#CC0000";Label{anchors.centerIn:parent;text:"-";color:"white";font.pixelSize:14;font.bold:true}

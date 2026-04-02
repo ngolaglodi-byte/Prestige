@@ -111,6 +111,7 @@ Item {
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { tk.bgColor = modelData; setupController.tickerBgColor = modelData } }
                 }
             }
+            ColorPickerButton { currentColor: setupController.tickerBgColor; onColorSelected: function(c) { tk.bgColor = c; setupController.tickerBgColor = c } }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Texte:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
@@ -122,6 +123,7 @@ Item {
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { tk.textColor = modelData; setupController.tickerTextColor = modelData } }
                 }
             }
+            ColorPickerButton { currentColor: setupController.tickerTextColor; onColorSelected: function(c) { tk.textColor = c; setupController.tickerTextColor = c } }
         }
         RowLayout { spacing: 4; Layout.leftMargin: 8
             Label { text: "Vitesse:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }

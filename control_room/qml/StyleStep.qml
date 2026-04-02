@@ -189,7 +189,10 @@ Item {
                     id: configCol; Layout.fillWidth: true; spacing: 10
 
                     Label { text: window.t("accent_color"); font.pixelSize: 13; color: window.darkMode ? "#AAA" : "#444" }
-                    Row { spacing: 5; Repeater { model: ["#E30613","#5B4FDB","#0066CC","#1DB954","#FF6B00","#C8A84E","#00E5FF","#FFF"]; Rectangle { width: 22; height: 22; radius: 11; color: modelData; border.color: modelData===setupController.accentColor.toString()?"white":"transparent"; border.width: 2; MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.accentColor=modelData } } } }
+                    Row { spacing: 5
+                        Repeater { model: ["#E30613","#5B4FDB","#0066CC","#1DB954","#FF6B00","#C8A84E","#00E5FF","#FFF"]; Rectangle { width: 22; height: 22; radius: 11; color: modelData; border.color: modelData===setupController.accentColor.toString()?"white":"transparent"; border.width: 2; MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.accentColor=modelData } } }
+                        ColorPickerButton { currentColor: setupController.accentColor; onColorSelected: function(c) { setupController.accentColor = c } }
+                    }
 
                     Label { text: window.t("opacity"); font.pixelSize: 13; color: window.darkMode ? "#AAA" : "#444" }
                     RowLayout { Slider { from:0.4;to:1;value:setupController.backgroundOpacity;Layout.preferredWidth:140;onMoved:setupController.backgroundOpacity=value } Label { text: Math.round(setupController.backgroundOpacity*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11 } }
