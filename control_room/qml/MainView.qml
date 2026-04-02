@@ -1466,9 +1466,6 @@ ApplicationWindow {
             border.color: Qt.rgba(1, 1, 1, 0.06)
             layer.enabled: false
             // MultiEffect removed — not available in all Qt builds
-            // Shadow simulated with border
-                shadowHorizontalOffset: 0
-            }
         }
 
         Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.6) }
