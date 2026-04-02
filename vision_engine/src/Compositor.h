@@ -20,6 +20,7 @@
 #include <map>
 
 #include "TalentData.h"
+#include "BroadcastEffects.h"
 #include "VirtualStudio.h"
 
 namespace prestige {
