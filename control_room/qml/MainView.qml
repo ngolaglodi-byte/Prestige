@@ -676,7 +676,7 @@ ApplicationWindow {
                                 Rectangle {
                                     Layout.preferredWidth: 90; Layout.preferredHeight: 30; radius: 4; color: "#5B4FDB"
                                     Label { anchors.centerIn: parent; text: window.t("browse"); color: "white"; font.pixelSize: 11 }
-                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: logoFileDialogLoader.active = true }
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: logoPathField.forceActiveFocus() }
                                 }
                             }
                             RowLayout {
@@ -1464,12 +1464,9 @@ ApplicationWindow {
             color: window.darkMode ? "#12121A" : "#FFFFFF"
             radius: 16
             border.color: Qt.rgba(1, 1, 1, 0.06)
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                shadowEnabled: true
-                shadowColor: Qt.rgba(0, 0, 0, 0.5)
-                shadowBlur: 1.0
-                shadowVerticalOffset: 8
+            layer.enabled: false
+            // MultiEffect removed — not available in all Qt builds
+            // Shadow simulated with border
                 shadowHorizontalOffset: 0
             }
         }
@@ -1544,8 +1541,8 @@ ApplicationWindow {
         background: Rectangle {
             color: window.darkMode ? "#12121A" : "#FFFFFF"; radius: 16
             border.color: Qt.rgba(1,1,1,0.06)
-            layer.enabled: true
-            layer.effect: MultiEffect { shadowEnabled: true; shadowColor: Qt.rgba(0,0,0,0.5); shadowBlur: 1.0; shadowVerticalOffset: 8 }
+            layer.enabled: false
+            // MultiEffect removed — not available in all Qt builds
         }
 
         Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.6) }
@@ -2147,29 +2144,7 @@ ApplicationWindow {
             }
     }
 
-    // ── Logo File Dialog ────────────────────────────────────
-    Loader {
-        id: logoFileDialogLoader
-        active: false
-        sourceComponent: Component {
-            Item {
-                id: dialogHost
-                Component.onCompleted: {
-                    var dlg = Qt.createQmlObject('
-                        import QtQuick 2.15;
-                        import Qt.labs.platform 1.1 as Platform;
-                        Platform.FileDialog {
-                            id: innerDlg;
-                            title: "Choisir un logo";
-                            nameFilters: ["Images (*.png *.jpg *.jpeg *.gif *.bmp *.svg)"];
-                            onAccepted: { setupController.channelLogoPath = file.toString(); logoFileDialogLoader.active = false; }
-                            onRejected: { logoFileDialogLoader.active = false; }
-                            Component.onCompleted: open()
-                        }', dialogHost, "logoFileDialog");
-                }
-            }
-        }
-    }
+    // Logo path is set via TextField in the branding section (no external dialog dependency)
 
     // ── License Info Dialog ────────────────────────────────
     Dialog {
