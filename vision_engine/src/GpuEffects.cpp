@@ -8,6 +8,7 @@
 #include <QOpenGLExtraFunctions>
 #include <QPainter>
 #include <QPen>
+#include <QSurfaceFormat>
 #include <QBrush>
 #include <QFont>
 #include <QFontMetrics>
@@ -358,10 +359,15 @@ GpuEffects::~GpuEffects()
 bool GpuEffects::initialize()
 {
     m_surface = std::make_unique<QOffscreenSurface>();
+    QSurfaceFormat fmt;
+    fmt.setVersion(3, 3);
+    fmt.setProfile(QSurfaceFormat::CoreProfile);
+    fmt.setRenderableType(QSurfaceFormat::OpenGL);
+    m_surface->setFormat(fmt);
     m_surface->create();
 
     m_context = std::make_unique<QOpenGLContext>();
-    m_context->setFormat(m_surface->requestedFormat());
+    m_context->setFormat(fmt);
     if (!m_context->create()) {
         qWarning() << "[GpuEffects] Failed to create OpenGL context";
         return false;

@@ -10,6 +10,7 @@
 #include <QPen>
 #include <QFontMetrics>
 #include <cmath>
+#include <algorithm>
 
 namespace prestige {
 
