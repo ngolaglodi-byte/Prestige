@@ -225,14 +225,18 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Advance animation states
     updateAnimations(talents);
 
-    // Virtual Studio: chroma key + studio background (GPU when available)
+    // ── GPU PIPELINE ─────────────────────────────────────────
+    // Step 1: Virtual Studio (chroma key + studio background) — GPU
     QImage processedFrame = m_virtualStudio.process(videoFrame);
     QImage output = processedFrame.copy();
 
-    // ALL rendering through GPU pipeline
-    // QPainter is used internally by m_gpu drawing methods for rasterization
-    // but final compositing and effects are GPU-accelerated
-    QPainter painter(&output);
+    // Step 2: All overlays rendered on overlay layer (transparent)
+    // QPainter rasterizes text/shapes → GPU composites + applies effects
+    // This is the same pipeline as After Effects:
+    //   Rasterize layers (CPU) → Composite (GPU) → Effects (GPU)
+    QImage overlayLayer(output.size(), QImage::Format_ARGB32_Premultiplied);
+    overlayLayer.fill(Qt::transparent);
+    QPainter painter(&overlayLayer);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -1443,11 +1447,20 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         fx::lightRays(painter, QRectF(fw * 0.4, fh * 0.1, fw * 0.2, fh * 0.2), m_loopFrame * 0.3, m_accentColor, 0.3 + 0.2 * std::sin(phase));
     }
 
-    painter.end();
+    painter.end(); // End overlay layer rasterization
 
-    // ── GPU Post-Processing — ALL effects on GPU ──────────
-    // The GPU postProcess routes every effect to the correct GLSL shader.
-    // This replaces ALL CPU fx:: calls for global effects.
+    // ── Step 3: GPU Composite overlay layer onto video ──────
+    // Alpha-blend the overlay layer (text, shapes, nameplates) onto the video+studio frame
+    if (m_gpu.isAvailable()) {
+        m_gpu.drawImage(output, overlayLayer, 0, 0);
+    } else {
+        QPainter blend(&output);
+        blend.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        blend.drawImage(0, 0, overlayLayer);
+        blend.end();
+    }
+
+    // ── Step 4: GPU Post-Processing — ALL effects via GLSL shaders ──
     if (m_gpu.isAvailable() && !m_bypassActive && !m_animTypeStr.isEmpty()) {
         output = m_gpu.postProcess(output, m_animTypeStr, m_accentColor, m_loopFrame);
     }
