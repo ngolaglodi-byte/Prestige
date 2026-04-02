@@ -193,6 +193,140 @@ static const char* RADIAL_BLUR_FRAG = R"(
     }
 )";
 
+// ── Directional Blur shader ───────────────────────────────
+static const char* DIR_BLUR_FRAG = R"(
+    #version 330 core
+    in vec2 vUV;
+    out vec4 fragColor;
+    uniform sampler2D tex;
+    uniform vec2 direction;
+    uniform float strength;
+    void main() {
+        vec4 result = vec4(0.0);
+        int samples = 16;
+        for (int i = 0; i < samples; i++) {
+            float t = (float(i) / float(samples) - 0.5) * 2.0;
+            vec2 offset = direction * t * strength;
+            result += texture(tex, vUV + offset);
+        }
+        fragColor = result / float(samples);
+    }
+)";
+
+// ── Wipe transition shader ────────────────────────────────
+static const char* WIPE_FRAG = R"(
+    #version 330 core
+    in vec2 vUV;
+    out vec4 fragColor;
+    uniform sampler2D tex;
+    uniform float progress;
+    uniform int leftToRight;
+    void main() {
+        vec4 c = texture(tex, vUV);
+        float edge = leftToRight == 1 ? vUV.x : (1.0 - vUV.x);
+        float feather = smoothstep(progress - 0.02, progress + 0.02, edge);
+        fragColor = vec4(c.rgb, c.a * feather);
+    }
+)";
+
+// ── Dissolve shader ───────────────────────────────────────
+static const char* DISSOLVE_FRAG = R"(
+    #version 330 core
+    in vec2 vUV;
+    out vec4 fragColor;
+    uniform sampler2D tex;
+    uniform float progress;
+    void main() {
+        vec4 c = texture(tex, vUV);
+        float noise = fract(sin(dot(vUV, vec2(12.9898, 78.233))) * 43758.5453);
+        float alpha = step(noise, progress);
+        fragColor = vec4(c.rgb, c.a * alpha);
+    }
+)";
+
+// ── Color Sweep shader ────────────────────────────────────
+static const char* COLOR_SWEEP_FRAG = R"(
+    #version 330 core
+    in vec2 vUV;
+    out vec4 fragColor;
+    uniform sampler2D tex;
+    uniform float progress;
+    uniform vec3 fromColor;
+    uniform vec3 toColor;
+    void main() {
+        vec4 c = texture(tex, vUV);
+        float sweep = smoothstep(progress - 0.1, progress + 0.1, vUV.x);
+        vec3 tint = mix(fromColor, toColor, sweep);
+        fragColor = vec4(c.rgb * 0.7 + tint * 0.3, c.a);
+    }
+)";
+
+// ── Duotone shader ────────────────────────────────────────
+static const char* DUOTONE_FRAG = R"(
+    #version 330 core
+    in vec2 vUV;
+    out vec4 fragColor;
+    uniform sampler2D tex;
+    uniform vec3 shadowColor;
+    uniform vec3 highlightColor;
+    void main() {
+        vec4 c = texture(tex, vUV);
+        float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+        vec3 duo = mix(shadowColor, highlightColor, lum);
+        fragColor = vec4(mix(c.rgb, duo, 0.3), c.a);
+    }
+)";
+
+// ── Particle shader (GPU particles rendered as textured points) ──
+static const char* PARTICLE_FRAG = R"(
+    #version 330 core
+    in vec2 vUV;
+    out vec4 fragColor;
+    uniform sampler2D tex;
+    uniform vec3 particleColor;
+    uniform float phase;
+    uniform int particleCount;
+    uniform int particleType; // 0=sparkle, 1=bokeh, 2=dust, 3=fire, 4=confetti, 5=snow, 6=rising
+    void main() {
+        vec4 c = texture(tex, vUV);
+        vec3 pColor = particleColor;
+        float accum = 0.0;
+        for (int i = 0; i < particleCount; i++) {
+            // Deterministic random position per particle
+            float fi = float(i);
+            float rx = fract(sin(fi * 37.17) * 43758.5453);
+            float ry = fract(sin(fi * 71.31) * 28573.1137);
+            float rSpeed = 0.3 + fract(sin(fi * 11.71) * 12345.6789) * 0.7;
+            float rSize = 0.003 + fract(sin(fi * 53.41) * 98765.4321) * 0.008;
+
+            vec2 pos;
+            if (particleType == 5) { // snow — fall down
+                pos = vec2(rx + sin(phase + fi * 0.3) * 0.02, fract(ry + phase * 0.05 * rSpeed));
+            } else if (particleType == 6 || particleType == 3) { // rising/fire — go up
+                pos = vec2(rx + sin(phase * 1.5 + fi * 0.7) * 0.015, fract(ry - phase * 0.06 * rSpeed));
+            } else { // sparkle, bokeh, dust, confetti — float
+                pos = vec2(rx + sin(phase + fi * 0.5) * 0.01, ry + cos(phase + fi * 0.3) * 0.01);
+            }
+
+            float d = length(vUV - pos);
+            float brightness = smoothstep(rSize, 0.0, d);
+
+            if (particleType == 0) // sparkle — sharp star
+                brightness *= abs(sin(phase * 4.0 + fi * 1.7));
+            else if (particleType == 1) // bokeh — soft circle
+                brightness *= 0.5;
+            else if (particleType == 3) // fire — orange tint
+                pColor = mix(vec3(1.0, 0.5, 0.0), vec3(1.0, 0.2, 0.0), rSpeed);
+            else if (particleType == 4) { // confetti — colored
+                pColor = vec3(fract(fi * 0.37), fract(fi * 0.71), fract(fi * 0.13));
+            }
+
+            accum += brightness;
+        }
+        fragColor = vec4(c.rgb + pColor * accum, c.a);
+    }
+)";
+
 // ══════════════════════════════════════════════════════════════
 // Implementation
 // ══════════════════════════════════════════════════════════════
@@ -262,6 +396,12 @@ bool GpuEffects::initialize()
     m_chromaticShader = std::make_unique<QOpenGLShaderProgram>();
     m_vhsShader = std::make_unique<QOpenGLShaderProgram>();
     m_radialBlurShader = std::make_unique<QOpenGLShaderProgram>();
+    m_dirBlurShader = std::make_unique<QOpenGLShaderProgram>();
+    m_wipeShader = std::make_unique<QOpenGLShaderProgram>();
+    m_dissolveShader = std::make_unique<QOpenGLShaderProgram>();
+    m_colorSweepShader = std::make_unique<QOpenGLShaderProgram>();
+    m_duotoneShader = std::make_unique<QOpenGLShaderProgram>();
+    m_particleShader = std::make_unique<QOpenGLShaderProgram>();
 
     bool ok = true;
     ok &= compileShader(*m_chromaKeyShader, VERT_SHADER, CHROMA_KEY_FRAG);
@@ -271,6 +411,12 @@ bool GpuEffects::initialize()
     ok &= compileShader(*m_chromaticShader, VERT_SHADER, CHROMATIC_FRAG);
     ok &= compileShader(*m_vhsShader, VERT_SHADER, VHS_FRAG);
     ok &= compileShader(*m_radialBlurShader, VERT_SHADER, RADIAL_BLUR_FRAG);
+    ok &= compileShader(*m_dirBlurShader, VERT_SHADER, DIR_BLUR_FRAG);
+    ok &= compileShader(*m_wipeShader, VERT_SHADER, WIPE_FRAG);
+    ok &= compileShader(*m_dissolveShader, VERT_SHADER, DISSOLVE_FRAG);
+    ok &= compileShader(*m_colorSweepShader, VERT_SHADER, COLOR_SWEEP_FRAG);
+    ok &= compileShader(*m_duotoneShader, VERT_SHADER, DUOTONE_FRAG);
+    ok &= compileShader(*m_particleShader, VERT_SHADER, PARTICLE_FRAG);
 
     m_context->doneCurrent();
 
@@ -422,6 +568,140 @@ QImage GpuEffects::applyRadialBlur(const QImage& frame, double centerX, double c
         s.setUniformValue("center", QVector2D(static_cast<float>(centerX), static_cast<float>(centerY)));
         s.setUniformValue("strength", static_cast<float>(strength));
     });
+}
+
+QImage GpuEffects::applyDirectionalBlur(const QImage& frame, double angle, double strength)
+{
+    double rad = angle * M_PI / 180.0;
+    return renderToImage(frame, *m_dirBlurShader, [&](QOpenGLShaderProgram& s) {
+        s.setUniformValue("direction", QVector2D(static_cast<float>(std::cos(rad)), static_cast<float>(std::sin(rad))));
+        s.setUniformValue("strength", static_cast<float>(strength));
+    });
+}
+
+QImage GpuEffects::applyWipe(const QImage& frame, double progress, bool leftToRight)
+{
+    return renderToImage(frame, *m_wipeShader, [&](QOpenGLShaderProgram& s) {
+        s.setUniformValue("progress", static_cast<float>(progress));
+        s.setUniformValue("leftToRight", leftToRight ? 1 : 0);
+    });
+}
+
+QImage GpuEffects::applyDissolve(const QImage& frame, double progress)
+{
+    return renderToImage(frame, *m_dissolveShader, [&](QOpenGLShaderProgram& s) {
+        s.setUniformValue("progress", static_cast<float>(progress));
+    });
+}
+
+QImage GpuEffects::applyColorSweep(const QImage& frame, double progress, const QColor& from, const QColor& to)
+{
+    return renderToImage(frame, *m_colorSweepShader, [&](QOpenGLShaderProgram& s) {
+        s.setUniformValue("progress", static_cast<float>(progress));
+        s.setUniformValue("fromColor", QVector3D(from.redF(), from.greenF(), from.blueF()));
+        s.setUniformValue("toColor", QVector3D(to.redF(), to.greenF(), to.blueF()));
+    });
+}
+
+QImage GpuEffects::applyDuotone(const QImage& frame, const QColor& shadow, const QColor& highlight)
+{
+    return renderToImage(frame, *m_duotoneShader, [&](QOpenGLShaderProgram& s) {
+        s.setUniformValue("shadowColor", QVector3D(shadow.redF(), shadow.greenF(), shadow.blueF()));
+        s.setUniformValue("highlightColor", QVector3D(highlight.redF(), highlight.greenF(), highlight.blueF()));
+    });
+}
+
+QImage GpuEffects::applyParticles(const QImage& frame, const QString& type, int count,
+                                   double phase, const QColor& color)
+{
+    int typeId = 0;
+    if (type == "sparkles") typeId = 0;
+    else if (type == "bokeh") typeId = 1;
+    else if (type == "dust") typeId = 2;
+    else if (type == "fire_embers") typeId = 3;
+    else if (type == "confetti") typeId = 4;
+    else if (type == "snow") typeId = 5;
+    else if (type == "rising_particles") typeId = 6;
+
+    return renderToImage(frame, *m_particleShader, [&](QOpenGLShaderProgram& s) {
+        s.setUniformValue("particleColor", QVector3D(color.redF(), color.greenF(), color.blueF()));
+        s.setUniformValue("phase", static_cast<float>(phase));
+        s.setUniformValue("particleCount", count);
+        s.setUniformValue("particleType", typeId);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// Master post-process — routes effect ID to correct GPU shader
+// ══════════════════════════════════════════════════════════════
+
+QImage GpuEffects::postProcess(const QImage& frame, const QString& effectId,
+                                const QColor& accentColor, int frameCount)
+{
+    if (!m_initialized || effectId.isEmpty()) return frame;
+
+    double phase = frameCount * 0.04;
+    double progress = std::fmod(frameCount / 60.0, 1.0);
+
+    // Glow & Light
+    if (effectId == "neon_glow")
+        return applyGlow(frame, accentColor, 0.5 + 0.2 * std::sin(phase), 6.0);
+    if (effectId == "bloom")
+        return applyBloom(frame, 0.7, 0.4);
+    if (effectId == "edge_glow")
+        return applyGlow(frame, accentColor, 0.3, 3.0);
+    if (effectId == "shimmer")
+        return applyGlow(frame, accentColor, 0.15 + 0.1 * std::sin(phase * 2), 4.0);
+
+    // Distortion
+    if (effectId == "glitch_rgb" || effectId == "glitch_transition")
+        return applyGlitchRGB(frame, 0.5, frameCount);
+    if (effectId == "chromatic_aberration")
+        return applyChromaticAberration(frame, 0.003);
+    if (effectId == "vhs_effect")
+        return applyVHS(frame, 0.5, frameCount);
+
+    // Blur
+    if (effectId == "gaussian_blur_in" || effectId == "blur_in")
+        return applyGaussianBlur(frame, 3.0);
+    if (effectId == "radial_blur")
+        return applyRadialBlur(frame, 0.5, 0.5, 0.02);
+    if (effectId == "directional_blur")
+        return applyDirectionalBlur(frame, 0.0, 0.01);
+    if (effectId == "defocus")
+        return applyGaussianBlur(frame, 5.0);
+
+    // Transitions
+    if (effectId == "wipe_linear")
+        return applyWipe(frame, progress, true);
+    if (effectId == "cross_dissolve")
+        return applyDissolve(frame, progress);
+
+    // Color/Style
+    if (effectId == "color_sweep")
+        return applyColorSweep(frame, progress, accentColor, accentColor.lighter(150));
+    if (effectId == "gradient_shift")
+        return applyColorSweep(frame, 0.5 + 0.5 * std::sin(phase), accentColor, accentColor.darker(150));
+    if (effectId == "duotone")
+        return applyDuotone(frame, QColor(0, 0, 30), accentColor);
+
+    // Particles (ALL on GPU)
+    if (effectId == "sparkles")
+        return applyParticles(frame, "sparkles", 30, phase, accentColor);
+    if (effectId == "bokeh")
+        return applyParticles(frame, "bokeh", 15, phase, accentColor);
+    if (effectId == "dust")
+        return applyParticles(frame, "dust", 40, phase, QColor(200, 200, 180));
+    if (effectId == "fire_embers")
+        return applyParticles(frame, "fire_embers", 25, phase, QColor(255, 140, 0));
+    if (effectId == "confetti")
+        return applyParticles(frame, "confetti", 50, phase, accentColor);
+    if (effectId == "snow")
+        return applyParticles(frame, "snow", 60, phase, Qt::white);
+    if (effectId == "rising_particles")
+        return applyParticles(frame, "rising_particles", 25, phase, accentColor);
+
+    return frame; // Unknown effect — passthrough
 }
 
 } // namespace prestige

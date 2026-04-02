@@ -47,6 +47,24 @@ public:
     // ── Blur (GPU gaussian) ──────────────────────────────
     QImage applyGaussianBlur(const QImage& frame, double radius);
     QImage applyRadialBlur(const QImage& frame, double centerX, double centerY, double strength);
+    QImage applyDirectionalBlur(const QImage& frame, double angle, double strength);
+
+    // ── Transitions (GPU) ────────────────────────────────
+    QImage applyWipe(const QImage& frame, double progress, bool leftToRight = true);
+    QImage applyDissolve(const QImage& frame, double progress);
+
+    // ── Color/Style (GPU) ────────────────────────────────
+    QImage applyColorSweep(const QImage& frame, double progress, const QColor& from, const QColor& to);
+    QImage applyDuotone(const QImage& frame, const QColor& shadow, const QColor& highlight);
+
+    // ── Particles (GPU compute → texture) ────────────────
+    QImage applyParticles(const QImage& frame, const QString& type, int count,
+                          double phase, const QColor& color);
+
+    // ── Full GPU post-process pipeline ───────────────────
+    // Applies the selected effect to the entire composited frame
+    QImage postProcess(const QImage& frame, const QString& effectId,
+                       const QColor& accentColor, int frameCount);
 
 private:
     bool compileShader(QOpenGLShaderProgram& program, const char* vertSrc, const char* fragSrc);
@@ -68,6 +86,12 @@ private:
     std::unique_ptr<QOpenGLShaderProgram> m_chromaticShader;
     std::unique_ptr<QOpenGLShaderProgram> m_vhsShader;
     std::unique_ptr<QOpenGLShaderProgram> m_radialBlurShader;
+    std::unique_ptr<QOpenGLShaderProgram> m_dirBlurShader;
+    std::unique_ptr<QOpenGLShaderProgram> m_wipeShader;
+    std::unique_ptr<QOpenGLShaderProgram> m_dissolveShader;
+    std::unique_ptr<QOpenGLShaderProgram> m_colorSweepShader;
+    std::unique_ptr<QOpenGLShaderProgram> m_duotoneShader;
+    std::unique_ptr<QOpenGLShaderProgram> m_particleShader;
 
     QSize m_lastSize;
     GLuint m_vao = 0;
