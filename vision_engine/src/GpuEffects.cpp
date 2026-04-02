@@ -6,6 +6,11 @@
 #include "GpuEffects.h"
 #include <QDebug>
 #include <QOpenGLExtraFunctions>
+#include <QPainter>
+#include <QPen>
+#include <QBrush>
+#include <QFont>
+#include <QFontMetrics>
 
 namespace prestige {
 
