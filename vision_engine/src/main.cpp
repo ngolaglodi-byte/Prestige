@@ -392,6 +392,24 @@ int main(int argc, char* argv[])
                 }, Qt::QueuedConnection);
             }
 
+            // Design Templates
+            QString npDesign = obj["nameplate_design"].toString("np_broadcast_news");
+            QString ttDesign = obj["title_design"].toString("tt_broadcast");
+            QString chDesign = obj["channel_design"].toString("ch_rectangle_red");
+            QString tkDesign = obj["ticker_design"].toString("tk_news_red");
+            QString sbDesign = obj["scoreboard_design"].toString("sb_glass_dark");
+            QString ckDesign = obj["clock_design"].toString("ck_shadow_only");
+            QString wtDesign = obj["weather_design"].toString("wt_shadow_only");
+            QMetaObject::invokeMethod(&compositor, [&compositor, npDesign, ttDesign, chDesign, tkDesign, sbDesign, ckDesign, wtDesign]() {
+                compositor.setNameplateDesign(npDesign);
+                compositor.setTitleDesign(ttDesign);
+                compositor.setChannelDesign(chDesign);
+                compositor.setTickerDesign(tkDesign);
+                compositor.setScoreboardDesign(sbDesign);
+                compositor.setClockDesign(ckDesign);
+                compositor.setWeatherDesign(wtDesign);
+            }, Qt::QueuedConnection);
+
             // Sport system
             QString teamLogoA = obj["team_logo_a"].toString();
             QString teamLogoB = obj["team_logo_b"].toString();

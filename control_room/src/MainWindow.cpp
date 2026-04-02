@@ -566,6 +566,15 @@ void MainWindow::publishConfig()
     obj["scoreboard_match_time"] = m_setupController->scoreboardMatchTime();
     obj["scoreboard_period"] = m_setupController->scoreboardPeriod();
 
+    // Design Templates
+    obj["nameplate_design"] = m_setupController->nameplateDesign();
+    obj["title_design"] = m_setupController->titleDesign();
+    obj["channel_design"] = m_setupController->channelDesign();
+    obj["ticker_design"] = m_setupController->tickerDesign();
+    obj["scoreboard_design"] = m_setupController->scoreboardDesign();
+    obj["clock_design"] = m_setupController->clockDesign();
+    obj["weather_design"] = m_setupController->weatherDesign();
+
     // Sport system
     obj["team_logo_a"] = m_setupController->teamLogoA();
     obj["team_logo_b"] = m_setupController->teamLogoB();

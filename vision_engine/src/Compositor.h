@@ -21,6 +21,7 @@
 
 #include "TalentData.h"
 #include "BroadcastEffects.h"
+#include "DesignTemplates.h"
 #include "VirtualStudio.h"
 #include "GpuEffects.h"
 
@@ -140,6 +141,15 @@ public:
     void setVsLightIntensity(double v) { m_virtualStudio.setLightIntensity(v); }
     void setVsAnimationsEnabled(bool v) { m_virtualStudio.setAnimationsEnabled(v); }
     void setVsCustomBackground(const QString& path) { m_virtualStudio.setCustomBackgroundPath(path); }
+
+    // ── Design Templates ────────────────────────────────
+    void setNameplateDesign(const QString& d) { m_npDesign = d; }
+    void setTitleDesign(const QString& d) { m_titleDesignId = d; }
+    void setChannelDesign(const QString& d) { m_chDesign = d; }
+    void setTickerDesign(const QString& d) { m_tkDesign = d; }
+    void setScoreboardDesign(const QString& d) { m_sbDesignId = d; }
+    void setClockDesign(const QString& d) { m_ckDesign = d; }
+    void setWeatherDesign(const QString& d) { m_wtDesign = d; }
 
     // ── Sport system ─────────────────────────────────────
     void setTeamLogoA(const QString& path);
@@ -343,6 +353,15 @@ private:
     double  m_showTitleEntryProgress = 0.0;
     bool    m_talentNameplateVisible = true;
     bool    m_bypassActive = false;
+
+    // Design Templates
+    QString m_npDesign = "np_broadcast_news";
+    QString m_titleDesignId = "tt_broadcast";
+    QString m_chDesign = "ch_rectangle_red";
+    QString m_tkDesign = "tk_news_red";
+    QString m_sbDesignId = "sb_glass_dark";
+    QString m_ckDesign = "ck_shadow_only";
+    QString m_wtDesign = "wt_shadow_only";
 
     // GPU Effects Engine
     GpuEffects m_gpu;

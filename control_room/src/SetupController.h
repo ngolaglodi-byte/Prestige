@@ -195,6 +195,15 @@ class SetupController : public QObject {
     Q_PROPERTY(int scoreboardRedA READ scoreboardRedA WRITE setScoreboardRedA NOTIFY brandingChanged)
     Q_PROPERTY(int scoreboardRedB READ scoreboardRedB WRITE setScoreboardRedB NOTIFY brandingChanged)
 
+    // Design Templates (per overlay)
+    Q_PROPERTY(QString nameplateDesign READ nameplateDesign WRITE setNameplateDesign NOTIFY brandingChanged)
+    Q_PROPERTY(QString titleDesign READ titleDesign WRITE setTitleDesign NOTIFY showTitleChanged)
+    Q_PROPERTY(QString channelDesign READ channelDesign WRITE setChannelDesign NOTIFY brandingChanged)
+    Q_PROPERTY(QString tickerDesign READ tickerDesign WRITE setTickerDesign NOTIFY brandingChanged)
+    Q_PROPERTY(QString scoreboardDesign READ scoreboardDesign WRITE setScoreboardDesign NOTIFY brandingChanged)
+    Q_PROPERTY(QString clockDesign READ clockDesign WRITE setClockDesign NOTIFY brandingChanged)
+    Q_PROPERTY(QString weatherDesign READ weatherDesign WRITE setWeatherDesign NOTIFY brandingChanged)
+
     // Sport system — team logos + goal animation
     Q_PROPERTY(QString teamLogoA READ teamLogoA WRITE setTeamLogoA NOTIFY brandingChanged)
     Q_PROPERTY(QString teamLogoB READ teamLogoB WRITE setTeamLogoB NOTIFY brandingChanged)
@@ -502,6 +511,22 @@ public:
     int scoreboardRedB() const { return m_scoreboardRedB; }
     void setScoreboardRedB(int v);
 
+    // Design Templates
+    QString nameplateDesign() const { return m_nameplateDesign; }
+    void setNameplateDesign(const QString& v) { if (m_nameplateDesign != v) { m_nameplateDesign = v; emit brandingChanged(); } }
+    QString titleDesign() const { return m_titleDesign; }
+    void setTitleDesign(const QString& v) { if (m_titleDesign != v) { m_titleDesign = v; emit showTitleChanged(); } }
+    QString channelDesign() const { return m_channelDesign; }
+    void setChannelDesign(const QString& v) { if (m_channelDesign != v) { m_channelDesign = v; emit brandingChanged(); } }
+    QString tickerDesign() const { return m_tickerDesign; }
+    void setTickerDesign(const QString& v) { if (m_tickerDesign != v) { m_tickerDesign = v; emit brandingChanged(); } }
+    QString scoreboardDesign() const { return m_scoreboardDesign; }
+    void setScoreboardDesign(const QString& v) { if (m_scoreboardDesign != v) { m_scoreboardDesign = v; emit brandingChanged(); } }
+    QString clockDesign() const { return m_clockDesign; }
+    void setClockDesign(const QString& v) { if (m_clockDesign != v) { m_clockDesign = v; emit brandingChanged(); } }
+    QString weatherDesign() const { return m_weatherDesign; }
+    void setWeatherDesign(const QString& v) { if (m_weatherDesign != v) { m_weatherDesign = v; emit brandingChanged(); } }
+
     // Sport system
     QString teamLogoA() const { return m_teamLogoA; }
     void setTeamLogoA(const QString& v) { if (m_teamLogoA != v) { m_teamLogoA = v; emit brandingChanged(); } }
@@ -666,6 +691,15 @@ private:
     int     m_scoreboardYellowB = 0;
     int     m_scoreboardRedA = 0;
     int     m_scoreboardRedB = 0;
+
+    // Design Templates
+    QString m_nameplateDesign = "np_broadcast_news";
+    QString m_titleDesign = "tt_broadcast";
+    QString m_channelDesign = "ch_rectangle_red";
+    QString m_tickerDesign = "tk_news_red";
+    QString m_scoreboardDesign = "sb_glass_dark";
+    QString m_clockDesign = "ck_shadow_only";
+    QString m_weatherDesign = "wt_shadow_only";
 
     // Sport system
     QString m_teamLogoA;

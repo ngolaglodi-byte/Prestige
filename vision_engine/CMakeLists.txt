@@ -13,6 +13,7 @@ set(VISION_SOURCES
     src/VirtualStudio.cpp
     src/BroadcastEffects.cpp
     src/GpuEffects.cpp
+    src/DesignTemplates.cpp
 )
 
 set(VISION_HEADERS
@@ -27,6 +28,7 @@ set(VISION_HEADERS
     src/VirtualStudio.h
     src/BroadcastEffects.h
     src/GpuEffects.h
+    src/DesignTemplates.h
 )
 
 qt_add_executable(prestige_vision WIN32 ${VISION_SOURCES} ${VISION_HEADERS})
