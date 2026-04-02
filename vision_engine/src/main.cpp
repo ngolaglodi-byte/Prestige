@@ -25,9 +25,13 @@
 #include <QQuickImageProvider>
 #include <QTimer>
 #include <QThread>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QDebug>
+#include <atomic>
 
 #ifdef PRESTIGE_HAVE_ZMQ
 #include <zmq.h>
@@ -630,11 +634,41 @@ int main(int argc, char* argv[])
         });
 
     // ── 8. THE PIPELINE: Capture → Composite → Output ────────
-    // Every frame: get video + overlay → fuse → encode → send
+    // Frame-dropping pipeline: process only the latest frame, skip backlog.
+    // This prevents slow-motion when compositor can't keep up with capture rate.
+    QImage latestFrame;
+    QMutex frameMutex;
+    std::atomic<bool> compositing{false};
+    std::atomic<int64_t> capturedCount{0};
+    std::atomic<int64_t> processedCount{0};
+
+    // Step 1: Capture stores latest frame (never blocks)
     QObject::connect(&capture, &prestige::VideoCapture::frameCaptured,
-        [&compositor, &talentStore, &outputRouter, &previewSender, liveProvider](
+        [&latestFrame, &frameMutex, &capturedCount](
             const QImage& frame, qint64 /*frameId*/, qint64 /*ts*/)
         {
+            QMutexLocker lock(&frameMutex);
+            latestFrame = frame; // Always keep only the latest
+            capturedCount++;
+        });
+
+    // Step 2: Timer drives compositing at steady rate (not tied to capture rate)
+    QTimer compositeTimer;
+    QObject::connect(&compositeTimer, &QTimer::timeout,
+        [&compositor, &talentStore, &outputRouter, &previewSender, liveProvider,
+         &latestFrame, &frameMutex, &compositing, &processedCount]()
+        {
+            if (compositing.load()) return; // Skip if previous frame still processing
+
+            QImage frame;
+            {
+                QMutexLocker lock(&frameMutex);
+                if (latestFrame.isNull()) return;
+                frame = latestFrame; // Grab latest, previous frames are dropped
+            }
+
+            compositing.store(true);
+
             // Get current overlay data
             auto talents = talentStore.snapshot();
 
@@ -649,7 +683,11 @@ int main(int argc, char* argv[])
 
             // Send to Control Room for live preview (:5558)
             previewSender.sendFrame(composited);
+
+            processedCount++;
+            compositing.store(false);
         });
+    compositeTimer.start(16); // ~60fps max processing rate (actual rate = compositor speed)
 
     // ── 9. Load QML ──────────────────────────────────────────
     const QUrl mainQml(QStringLiteral("qrc:/PrestigeVision/qml/OverlayNameplate.qml"));
