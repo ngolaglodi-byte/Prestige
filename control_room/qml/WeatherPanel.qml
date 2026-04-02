@@ -29,6 +29,16 @@ Item {
 
         Switch { text: "Afficher sur la sortie"; checked: setupController.weatherVisible; onToggled: setupController.weatherVisible = checked; leftPadding: 8 }
 
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label { text: "Design:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+            ComboBox { model: ["Shadow Only","Glass Dark","Pill Frost","Minimal","Card Dark","Neon Glow","Solid Dark","Transparent"]
+                property var vals: ["wt_shadow_only","wt_glass_dark","wt_pill_frost","wt_minimal","wt_card_dark","wt_neon_glow","wt_solid_dark","wt_transparent"]
+                currentIndex: Math.max(0, vals.indexOf(setupController.weatherDesign)); Layout.fillWidth: true
+                onActivated: setupController.weatherDesign = vals[currentIndex]
+                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+            }
+        }
+
         // ── Mode toggle ───────────────────────────────────────
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC"; Layout.leftMargin: 8; Layout.rightMargin: 8 }
 

@@ -34,6 +34,16 @@ Item {
 
         Switch { text: "Afficher le ticker"; checked: setupController.tickerVisible; onToggled: setupController.tickerVisible = checked; leftPadding: 8 }
 
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label { text: "Design:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+            ComboBox { model: ["News Red","News Blue","Dark Minimal","Sport Green","Breaking Red","Tech Dark","White Clean","Gold Luxury","Purple Pop","Orange Warm"]
+                property var vals: ["tk_news_red","tk_news_blue","tk_dark_minimal","tk_sport_green","tk_breaking_red","tk_tech_dark","tk_white_clean","tk_gold_luxury","tk_purple_pop","tk_orange_warm"]
+                currentIndex: Math.max(0, vals.indexOf(setupController.tickerDesign)); Layout.fillWidth: true
+                onActivated: setupController.tickerDesign = vals[currentIndex]
+                background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+            }
+        }
+
         // ── Manual Text ───────────────────────────────────────
         Label { text: "Texte manuel"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#444"; leftPadding: 8 }
         TextArea {

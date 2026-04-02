@@ -738,6 +738,17 @@ ApplicationWindow {
                             Switch { text: window.t("show_name_text"); checked: setupController.showChannelNameText; onToggled: setupController.showChannelNameText = checked; leftPadding: 8 }
                             RowLayout {
                                 spacing: 8; Layout.leftMargin: 8
+                                Label { text: "Design:"; color: window.darkMode ? "#999" : "#666" }
+                                ComboBox {
+                                    model: ["Rectangle Red","Rectangle Blue","Pill Dark","Pill Accent","Square Solid","Glass Frost","Neon Border","Gold Luxury","White Clean","Green Eco","Orange Warm","Purple Royal","Transparent","Gradient Dark","Cinema"]
+                                    property var vals: ["ch_rectangle_red","ch_rectangle_blue","ch_pill_dark","ch_pill_accent","ch_square_solid","ch_glass_frost","ch_neon_border","ch_gold_luxury","ch_white_clean","ch_green_eco","ch_orange_warm","ch_purple_royal","ch_transparent","ch_gradient_dark","ch_cinema"]
+                                    currentIndex: Math.max(0, vals.indexOf(setupController.channelDesign)); Layout.fillWidth: true
+                                    onActivated: setupController.channelDesign = vals[currentIndex]
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
+                            RowLayout {
+                                spacing: 8; Layout.leftMargin: 8
                                 Label { text: "Forme:"; color: window.darkMode ? "#999" : "#666" }
                                 ComboBox {
                                     id: nameShapeCb
@@ -847,6 +858,16 @@ ApplicationWindow {
                                     contentItem: Label { text: titlePosCb.currentText; font.pixelSize: 12; color: window.darkMode ? "white" : "#1A1A1A"; verticalAlignment: Text.AlignVCenter; leftPadding: 6 }
                                 }
                             }
+                            // Design Template
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Design:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                ComboBox { model: ["Broadcast Standard","Glass Dark","Solid Accent","Minimal Line","Elegant Frame","Modern Clean","Gradient Blue","Neon Outline","Sport Bold","Luxury Gold","Breaking Red","Weather Sky","Election Navy","Cinema Dark","Documentary","Music Vibrant","Tech Cyber","Arabic","Pill Rounded","Frameless"]
+                                    property var vals: ["tt_broadcast","tt_glass_dark","tt_solid_accent","tt_minimal_line","tt_elegant_frame","tt_modern_clean","tt_gradient_blue","tt_neon_outline","tt_sport_bold","tt_luxury_gold","tt_breaking_red","tt_weather_sky","tt_election_navy","tt_cinema_dark","tt_documentary","tt_music_vibrant","tt_tech_cyber","tt_arabic","tt_pill_rounded","tt_frameless"]
+                                    currentIndex: Math.max(0, vals.indexOf(setupController.titleDesign)); Layout.fillWidth: true
+                                    onActivated: setupController.titleDesign = vals[currentIndex]
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
                             // Shape
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "Forme:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
@@ -927,6 +948,15 @@ ApplicationWindow {
 
                             // Nameplate
                             Label { text: "Nameplate"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Design:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                ComboBox { model: ["Broadcast News","Elegant Minimal","Neon Tech","Sport Bold","Luxury Gold","Classic Dark","Glass Frost","Solid Red","Ocean Blue","Forest Green","Purple Royal","White Clean","Gradient Warm","Gradient Cool","Transparent Line","Pill Shape","Accent Fill","Dark Gradient","Bright Modern","Cinema Gold","Breaking Urgent","Election Split","Weather Sky","Music Vibrant","Documentary","Interview Warm","Arabic RTL","Chinese Modern","Football Match","Olympics"]
+                                    property var vals: ["np_broadcast_news","np_elegant_minimal","np_neon_tech","np_sport_bold","np_luxury_gold","np_classic_dark","np_glass_frost","np_solid_red","np_ocean_blue","np_forest_green","np_purple_royal","np_white_clean","np_gradient_warm","np_gradient_cool","np_transparent_line","np_pill_shape","np_accent_fill","np_dark_gradient","np_bright_modern","np_cinema_gold","np_breaking_urgent","np_election_split","np_weather_sky","np_music_vibrant","np_documentary","np_interview_warm","np_arabic_rtl","np_chinese_modern","np_football_match","np_olympics_rings"]
+                                    currentIndex: Math.max(0, vals.indexOf(setupController.nameplateDesign)); Layout.fillWidth: true
+                                    onActivated: setupController.nameplateDesign = vals[currentIndex]
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: 0.3; to: 4.0; stepSize: 0.1; value: setupController.nameplateScale; Layout.fillWidth: true; onMoved: setupController.nameplateScale = value }
@@ -1025,6 +1055,15 @@ ApplicationWindow {
 
                             // Horloge
                             Label { text: "Horloge"; font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#555"; leftPadding: 8 }
+                            RowLayout { spacing: 4; Layout.leftMargin: 8
+                                Label { text: "Design:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
+                                ComboBox { model: ["Shadow Only","Pill Dark","Pill Glow","Neon","Glass","Minimal","Bold Box","Accent Border"]
+                                    property var vals: ["ck_shadow_only","ck_pill_dark","ck_pill_glow","ck_neon","ck_glass","ck_minimal","ck_bold_box","ck_accent_border"]
+                                    currentIndex: Math.max(0, vals.indexOf(setupController.clockDesign)); Layout.fillWidth: true
+                                    onActivated: setupController.clockDesign = vals[currentIndex]
+                                    background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                                }
+                            }
                             RowLayout { spacing: 4; Layout.leftMargin: 8
                                 Label { text: "Taille:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 11 }
                                 Slider { from: 0.3; to: 4.0; stepSize: 0.1; value: setupController.clockScale; Layout.fillWidth: true; onMoved: setupController.clockScale = value }

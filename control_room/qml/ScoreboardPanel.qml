@@ -96,6 +96,16 @@ Item {
         }
         Switch{text:"Afficher";checked:setupController.scoreboardVisible;onToggled:setupController.scoreboardVisible=checked;leftPadding:8}
 
+        // ── Design Template ────────────────────────────
+        RowLayout { spacing: 4; Layout.leftMargin: 8
+            Label{text:"Design:";color:window.darkMode?"#999":"#666";font.pixelSize:10}
+            ComboBox{model:["Glass Dark","Solid Dark","Sport Green","FIFA Style","UEFA Modern","Neon Border","White Clean","Red Accent","Blue Accent","Minimal"];
+                property var vals:["sb_glass_dark","sb_solid_dark","sb_sport_green","sb_fifa_style","sb_uefa_modern","sb_neon_border","sb_white_clean","sb_red_accent","sb_blue_accent","sb_minimal"]
+                currentIndex:Math.max(0,vals.indexOf(setupController.scoreboardDesign));Layout.fillWidth:true
+                onActivated:setupController.scoreboardDesign=vals[currentIndex]
+                background:Rectangle{color:window.darkMode?"#1E1E22":"#F0F0F4";radius:4;border.color:window.darkMode?"#333":"#CCC"}}
+        }
+
         // ── Team Logos ──────────────────────────────────
         Rectangle{Layout.fillWidth:true;Layout.preferredHeight:1;color:window.darkMode?"#222":"#CCC";Layout.leftMargin:8;Layout.rightMargin:8}
         Label{text:"Logos des equipes";font.pixelSize:10;color:window.darkMode?"#AAA":"#444";leftPadding:8}
