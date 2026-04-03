@@ -456,7 +456,7 @@ void MainWindow::publishConfig()
     QString tickerContent = m_rssFetcher->headlines();
     if (tickerContent.isEmpty())
         tickerContent = m_setupController->tickerManualText();
-    obj["ticker_visible"] = m_setupController->tickerVisible() && !tickerContent.isEmpty();
+    obj["ticker_visible"] = m_setupController->tickerVisible();
     obj["ticker_text"] = tickerContent;
 
     // Subtitle config
@@ -654,7 +654,9 @@ void MainWindow::publishConfig()
     // Visibility states — gated behind overlays_active
     // Channel branding (logo, name) is sent unconditionally above
     // Only talent nameplates and show title depend on overlay activation
-    obj["show_title_visible"] = m_overlaysActive && m_liveController->isShowTitleVisible();
+    // Show title: visible when enabled + text configured (no need for overlay activation)
+    obj["show_title_visible"] = m_setupController->showTitleEnabled() && !m_setupController->showTitle().isEmpty();
+    // Talent nameplate: visible when overlays active + IA detected talent
     obj["talent_nameplate_visible"] = m_overlaysActive && m_liveController->isTalentNameplateVisible();
     obj["bypass_active"] = m_liveController->isBypassed();
 
