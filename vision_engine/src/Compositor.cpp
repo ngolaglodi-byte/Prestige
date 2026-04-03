@@ -120,7 +120,7 @@ void Compositor::setChannelName(const QString& n) { m_channelName = n; }
 // Channel branding animation setters
 void Compositor::setChannelNameShape(const QString& shape) { m_nameShape = shape; }
 void Compositor::setChannelNameColors(const QColor& bg, const QColor& text, const QColor& border) { m_nameBgColor = bg; m_nameTextColor = text; m_nameBorderColor = border; }
-void Compositor::setChannelNameFontSize(int size) { m_nameFontSize = qBound(8, size, 36); }
+void Compositor::setChannelNameFontSize(int size) { m_nameFontSize = qBound(6, size, 72); }
 void Compositor::setLogoEntryAnim(const QString& anim) { m_logoEntryAnimType = anim; }
 void Compositor::setNameEntryAnim(const QString& anim) { m_nameEntryAnimType = anim; }
 void Compositor::setLogoLoopAnim(const QString& anim) { m_logoLoopAnimType = anim; }
@@ -130,7 +130,7 @@ void Compositor::resetBrandingAnimations() { m_logoEntryProgress = 0.0; m_nameEn
 // Show title design setters
 void Compositor::setShowTitleShape(const QString& shape) { m_showTitleShape = shape; }
 void Compositor::setShowTitleColors(const QColor& bg, const QColor& text, const QColor& border) { m_showTitleBgColor = bg; m_showTitleTextColor = text; m_showTitleBorderColor = border; }
-void Compositor::setShowTitleFontSize(int size) { m_showTitleFontSize = qBound(10, size, 28); }
+void Compositor::setShowTitleFontSize(int size) { m_showTitleFontSize = qBound(8, size, 60); }
 void Compositor::setShowTitleEntryAnim(const QString& anim) { m_showTitleEntryAnimType = anim; }
 void Compositor::setShowTitleLoopAnim(const QString& anim) { m_showTitleLoopAnimType = anim; }
 
