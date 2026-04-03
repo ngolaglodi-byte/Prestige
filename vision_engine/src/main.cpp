@@ -225,6 +225,7 @@ int main(int argc, char* argv[])
             }, Qt::QueuedConnection);
 
             // ── AE Effects ─────────────────────────────────
+            QString lottiePreset = obj["lottie_preset"].toString();
             QString easingCurve = obj["easing_curve"].toString();
             QString blendMode = obj["overlay_blend_mode"].toString();
             QString aeEffectId = obj["ae_effect_id"].toString();
@@ -237,9 +238,10 @@ int main(int argc, char* argv[])
             double wiggleFreq = obj["wiggle_freq"].toDouble(3.0);
             double wiggleAmp = obj["wiggle_amp"].toDouble(5.0);
 
-            QMetaObject::invokeMethod(&compositor, [&compositor, easingCurve, blendMode, aeEffectId,
+            QMetaObject::invokeMethod(&compositor, [&compositor, lottiePreset, easingCurve, blendMode, aeEffectId,
                                                       aeIntensity, aeParam1, aeParam2, aeColor1, aeColor2,
                                                       wiggleOn, wiggleFreq, wiggleAmp]() {
+                if (!lottiePreset.isEmpty()) compositor.setLottiePreset(lottiePreset);
                 if (!easingCurve.isEmpty()) compositor.setEasingCurve(easingCurve);
                 if (!blendMode.isEmpty())   compositor.setOverlayBlendMode(blendMode);
                 compositor.setAeEffectId(aeEffectId);

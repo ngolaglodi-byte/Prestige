@@ -9,6 +9,8 @@
 #include <QPainterPath>
 #include <QDebug>
 #include <QTime>
+#include <QDir>
+#include <QCoreApplication>
 #include <cmath>
 
 namespace prestige {
@@ -25,6 +27,20 @@ Compositor::Compositor(QObject* parent) : QObject(parent) {
     // Initialize Design Templates
     DesignRegistry::instance();
     qInfo() << "[Compositor] Design Templates loaded";
+
+    // Load Lottie animation presets from multiple search paths
+    QString appDir = QCoreApplication::applicationDirPath();
+    QStringList searchPaths = {
+        appDir + "/animations",
+        appDir + "/../Resources/animations",
+        appDir + "/../../resources/animations",  // dev layout
+    };
+    for (const auto& path : searchPaths) {
+        if (QDir(path).exists()) {
+            m_lottie.loadPresets(path);
+            break;
+        }
+    }
 }
 
 void Compositor::registerStyles()
@@ -272,52 +288,57 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             }
             if (!talent) continue;
 
-            // Apply AE easing curve (configurable from Graph Editor)
+            // Apply easing for opacity
             double easedProg;
             if (state.targetProg > 0.5) {
                 easedProg = m_easingFunc ? m_easingFunc(state.progress) : easeOutCubic(state.progress);
             } else {
-                easedProg = ae::easeInCubic(state.progress);  // Exit: smooth cubic in
+                easedProg = ae::easeInCubic(state.progress);
             }
 
-            // Draw with animation progress
-            QString s = (talent->overlayStyle.isEmpty() || talent->overlayStyle == "default") ? m_styleId : talent->overlayStyle;
-            auto it = m_styles.find(s);
-            if (it != m_styles.end()) {
-                painter.save();
-                painter.setOpacity(easedProg);  // Global opacity animation
-                // Apply nameplate scale (configurable from UI)
-                if (std::abs(m_nameplateScale - 1.0) > 0.01) {
-                    QRectF plate = calcPlate(*talent, output.size(), output.width() * 0.198, 64);
-                    QPointF center = plate.center();
-                    painter.translate(center);
-                    painter.scale(m_nameplateScale, m_nameplateScale);
-                    painter.translate(-center);
+            // ── LOTTIE ANIMATION RENDERING ──────────────────
+            // Render the selected Lottie preset with talent text
+            if (!m_lottiePresetId.isEmpty()) {
+                m_lottie.setTitle(talent->name);
+                m_lottie.setSubtitle(talent->role);
+
+                // Calculate position: below the face bounding box
+                QRectF bbox = talent->bbox;
+                double localScale = output.width() / 1920.0;
+                double plateW = output.width() * 0.25;
+                double plateH = output.height() * 0.08;
+                double plateX = bbox.x() + (bbox.width() - plateW) / 2;
+                double plateY = bbox.y() + bbox.height() + 10 * localScale;
+                // Keep within screen bounds
+                plateX = std::clamp(plateX, 10.0, output.width() - plateW - 10.0);
+                plateY = std::clamp(plateY, 10.0, output.height() - plateH - 10.0);
+
+                // Render Lottie frame at current animation time
+                double animTime = state.progress * m_lottie.duration();
+                QImage lottieFrame = m_lottie.renderFrame(animTime, QSize(int(plateW), int(plateH)));
+
+                if (!lottieFrame.isNull()) {
+                    painter.save();
+                    painter.setOpacity(easedProg);
+                    if (std::abs(m_nameplateScale - 1.0) > 0.01) {
+                        QPointF center(plateX + plateW/2, plateY + plateH/2);
+                        painter.translate(center);
+                        painter.scale(m_nameplateScale, m_nameplateScale);
+                        painter.translate(-center);
+                    }
+                    painter.drawImage(int(plateX), int(plateY), lottieFrame);
+                    painter.restore();
                 }
-                it->second(painter, *talent, output.size(), easedProg);
-
-                // Broadcast lower third effects (drawn around the nameplate)
-                double scale = output.width() / 1920.0;
-                QRectF plateRect = calcPlate(*talent, output.size(),
-                    output.width() * 0.198, 64);
-                if (m_animTypeStr == "line_draw")
-                    fx::lineDraw(painter, plateRect, easedProg, m_accentColor, scale);
-                else if (m_animTypeStr == "bar_slide")
-                    fx::barSlide(painter, plateRect, easedProg, m_accentColor, scale);
-                else if (m_animTypeStr == "shape_morph")
-                    fx::shapeMorph(painter, plateRect, easedProg, m_accentColor, scale);
-                else if (m_animTypeStr == "split_reveal")
-                    fx::splitReveal(painter, plateRect, easedProg, m_accentColor, scale);
-                else if (m_animTypeStr == "bracket_expand")
-                    fx::bracketExpand(painter, plateRect, easedProg, m_accentColor, scale);
-                else if (m_animTypeStr == "underline_grow")
-                    fx::underlineGrow(painter, plateRect, easedProg, m_accentColor, scale);
-                else if (m_animTypeStr == "box_wipe")
-                    fx::boxWipe(painter, plateRect, easedProg, m_accentColor, scale);
-                else if (m_animTypeStr == "corner_build")
-                    fx::cornerBuild(painter, plateRect, easedProg, m_accentColor, scale);
-
-                painter.restore();
+            } else {
+                // Fallback: use style draw functions if no Lottie selected
+                QString s = (talent->overlayStyle.isEmpty() || talent->overlayStyle == "default") ? m_styleId : talent->overlayStyle;
+                auto it = m_styles.find(s);
+                if (it != m_styles.end()) {
+                    painter.save();
+                    painter.setOpacity(easedProg);
+                    it->second(painter, *talent, output.size(), easedProg);
+                    painter.restore();
+                }
             }
         }
     }

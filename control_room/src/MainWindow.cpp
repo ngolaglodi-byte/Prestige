@@ -434,7 +434,8 @@ void MainWindow::publishConfig()
     obj["accent_color"] = m_setupController->accentColor().name();
     obj["bg_opacity"] = m_setupController->backgroundOpacity();
 
-    // AE Effects
+    // Lottie + AE Effects
+    obj["lottie_preset"] = m_setupController->lottiePreset();
     obj["easing_curve"] = m_setupController->easingCurve();
     obj["overlay_blend_mode"] = m_setupController->overlayBlendMode();
     obj["ae_effect_id"] = m_setupController->aeEffectId();

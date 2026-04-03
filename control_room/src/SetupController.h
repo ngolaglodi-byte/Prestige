@@ -204,6 +204,9 @@ class SetupController : public QObject {
     Q_PROPERTY(QString clockDesign READ clockDesign WRITE setClockDesign NOTIFY brandingChanged)
     Q_PROPERTY(QString weatherDesign READ weatherDesign WRITE setWeatherDesign NOTIFY brandingChanged)
 
+    // ── Lottie Animation Preset ──────────────────────────
+    Q_PROPERTY(QString lottiePreset READ lottiePreset WRITE setLottiePreset NOTIFY aeEffectsChanged)
+
     // ── AE Effects System ────────────────────────────────
     Q_PROPERTY(QString easingCurve READ easingCurve WRITE setEasingCurve NOTIFY aeEffectsChanged)
     Q_PROPERTY(QString overlayBlendMode READ overlayBlendMode WRITE setOverlayBlendMode NOTIFY aeEffectsChanged)
@@ -560,6 +563,10 @@ public:
     QString sportEvent() const { return m_sportEvent; }
     void setSportEvent(const QString& v) { if (m_sportEvent != v) { m_sportEvent = v; emit brandingChanged(); } }
 
+    // ── Lottie Preset ─────────────────────────────────
+    QString lottiePreset() const { return m_lottiePreset; }
+    void setLottiePreset(const QString& v) { if (m_lottiePreset != v) { m_lottiePreset = v; emit aeEffectsChanged(); } }
+
     // ── AE Effects getters/setters ─────────────────────
     QString easingCurve() const { return m_easingCurve; }
     void setEasingCurve(const QString& v) { if (m_easingCurve != v) { m_easingCurve = v; emit aeEffectsChanged(); } }
@@ -771,7 +778,8 @@ private:
     bool    m_vsAnimEnabled = true;
     QString m_vsCustomBg;
 
-    // AE Effects
+    // Lottie + AE Effects
+    QString m_lottiePreset = "title_01";
     QString m_easingCurve = "ease_out_cubic";
     QString m_overlayBlendMode = "normal";
     QString m_aeEffectId;

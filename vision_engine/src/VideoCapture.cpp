@@ -10,6 +10,8 @@
 #include <QMediaDevices>
 #include <QCameraDevice>
 #include <QPainter>
+#include <QCoreApplication>
+#include <QPermissions>
 #include <QFont>
 
 namespace prestige {
@@ -29,6 +31,29 @@ bool VideoCapture::openWebcam(int index)
 {
     Q_UNUSED(index)
     close();
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    // Request camera permission on macOS/iOS (required since macOS 10.14)
+    QCameraPermission cameraPermission;
+    switch (qApp->checkPermission(cameraPermission)) {
+    case Qt::PermissionStatus::Undetermined:
+        qInfo() << "[VideoCapture] Requesting camera permission...";
+        qApp->requestPermission(cameraPermission, this, [this, index](const QPermission& permission) {
+            if (permission.status() == Qt::PermissionStatus::Granted) {
+                qInfo() << "[VideoCapture] Camera permission GRANTED";
+                openWebcam(index); // Retry after permission granted
+            } else {
+                qWarning() << "[VideoCapture] Camera permission DENIED by user";
+            }
+        });
+        return false; // Will retry via callback
+    case Qt::PermissionStatus::Denied:
+        qWarning() << "[VideoCapture] Camera permission DENIED — open System Settings > Privacy > Camera";
+        return false;
+    case Qt::PermissionStatus::Granted:
+        break; // Continue to open camera
+    }
+#endif
 
     m_camera = new QCamera(this);
     m_session = new QMediaCaptureSession(this);

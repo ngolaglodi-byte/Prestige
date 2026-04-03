@@ -399,50 +399,30 @@ Item {
                     RowLayout { Slider { from:0.4;to:1;value:setupController.backgroundOpacity;Layout.preferredWidth:140;onMoved:setupController.backgroundOpacity=value } Label { text: Math.round(setupController.backgroundOpacity*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11 } }
 
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
-                    Label { text: window.t("animation"); font.pixelSize: 13; color: window.darkMode ? "#AAA" : "#444" }
+                    Label { text: "Animation (After Effects)"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
                     ComboBox {
                         id: animCombo
                         Layout.fillWidth: true
                         model: [
-                            "— Classiques —", "Glisser gauche", "Glisser droite", "Monter", "Fondu+zoom", "Balayage", "Fondu", "Iris", "Glitch",
-                            "— Text (10) —", "Typewriter", "Bounce In", "Wave", "Tracking Expand", "Fade Up Letter", "Scale Up Letter", "Rotate In Letter", "Blur In", "Slide Per Letter", "Kinetic Pop",
-                            "— AE Text (25) —", "Matrix Rain", "Cascade Reveal", "Elastic Drop", "Spiral In", "Flip Board", "Glow Reveal", "Smoke In", "Scatter Assemble", "Slot Machine", "Stamp Press", "Wipe Per Letter", "Swing Drop", "Neon Flicker", "Gravity Crush", "Rubber Stretch", "Fade In Random", "Curved Path", "Zoom Burst", "Jitter Shake", "Shadow Expand", "Range Wipe", "Text Shatter", "Reflect Reveal", "Perspective Tilt", "Liquid Fill",
-                            "— Lower Third (8) —", "Line Draw", "Bar Slide", "Shape Morph", "Split Reveal", "Bracket Expand", "Underline Grow", "Box Wipe", "Corner Build",
-                            "— Logo Reveals (8) —", "Fade Glow", "Light Streak", "Particle Form", "Scale Bounce", "Shatter In", "Blur Zoom", "Rotate 3D", "Pulse Reveal",
-                            "— Transitions (8) —", "Wipe Linear", "Push Slide", "Zoom Through", "Glitch Transition", "Light Leak", "Ink Bleed", "Spin", "Cross Dissolve",
-                            "— AE Transitions (20) —", "Card Wipe", "Venetian Blinds", "Radial Wipe", "Iris Wipe", "Block Dissolve", "Checker Wipe", "Spiral Wipe", "Barn Door", "Matrix Wipe", "Pinwheel", "Zigzag Wipe", "Diamond Wipe", "Heart Wipe", "Star Wipe", "Clock Wipe", "Slide Reveal", "Split Wipe", "Door Wipe", "Ripple Dissolve", "Particle Dissolve",
-                            "— Glow & Light (6) —", "Neon Glow", "Bloom", "Light Rays", "Lens Flare", "Shimmer", "Edge Glow",
-                            "— Distortion (5) —", "Glitch RGB", "Chromatic Aberration", "Wave Distort", "Pixel Sort", "VHS Effect",
-                            "— Particles (7) —", "Sparkles", "Bokeh", "Dust", "Fire Embers", "Confetti", "Snow", "Rising Particles",
-                            "— Shape/Line (6) —", "Line Draw On", "Circle Expand", "Rectangle Build", "Path Trace", "Grid Reveal", "Hexagon Pattern",
-                            "— AE Shape (10) —", "Trim Path", "Repeater", "Offset Path", "Zig Zag", "Pucker & Bloat", "Round Corners", "Wiggle Path", "Dashed Path", "Taper Stroke", "Morph Paths",
-                            "— Blur/Focus (5) —", "Gaussian Blur In", "Radial Blur", "Directional Blur", "Tilt Shift", "Defocus",
-                            "— Color/Style (5) —", "Color Sweep", "Gradient Shift", "Duotone", "Shadow Drop", "Outline Stroke"
+                            "Title 01 — Simple Tag",
+                            "Title 02 — Stacked Blocks",
+                            "Title 03 — Modern Design",
+                            "Title 04 — Angled Bars",
+                            "Title 05 — Clean Bar",
+                            "Title 06 — Text Block",
+                            "Title 07 — Stylish Line",
+                            "Title 08 — Motion Block",
+                            "Title 09 — Wide Bar"
                         ]
                         property var values: [
-                            "", "slide_left", "slide_right", "slide_up", "fade_scale", "wipe", "fade", "iris", "glitch",
-                            "", "typewriter", "bounce_in", "wave_text", "tracking_expand", "fade_up_letter", "scale_up_letter", "rotate_in_letter", "blur_in", "slide_per_letter", "kinetic_pop",
-                            "", "matrix_rain", "cascade_reveal", "elastic_drop", "spiral_in", "flip_board", "glow_reveal", "smoke_in", "scatter_assemble", "slot_machine", "stamp_press", "wipe_per_letter", "swing_drop", "neon_flicker", "gravity_crush", "rubber_stretch", "fade_in_random", "curved_path", "zoom_burst", "jitter_shake", "shadow_expand", "range_wipe", "text_shatter", "reflect_reveal", "perspective_tilt", "liquid_fill",
-                            "", "line_draw", "bar_slide", "shape_morph", "split_reveal", "bracket_expand", "underline_grow", "box_wipe", "corner_build",
-                            "", "fade_glow", "light_streak", "particle_form", "scale_bounce", "shatter_in", "blur_zoom", "rotate_3d", "pulse_reveal",
-                            "", "wipe_linear", "push_slide", "zoom_through", "glitch_transition", "light_leak", "ink_bleed", "spin_transition", "cross_dissolve",
-                            "", "card_wipe", "venetian_blinds", "radial_wipe", "iris_wipe", "block_dissolve", "checker_wipe", "spiral_wipe", "barn_door", "matrix_wipe", "pinwheel", "zigzag_wipe", "diamond_wipe", "heart_wipe", "star_wipe", "clock_wipe", "slide_reveal", "split_wipe", "door_wipe", "ripple_dissolve", "particle_dissolve",
-                            "", "neon_glow", "bloom", "light_rays", "lens_flare", "shimmer", "edge_glow",
-                            "", "glitch_rgb", "chromatic_aberration", "wave_distort", "pixel_sort", "vhs_effect",
-                            "", "sparkles", "bokeh", "dust", "fire_embers", "confetti", "snow", "rising_particles",
-                            "", "line_draw_on", "circle_expand", "rectangle_build", "path_trace", "grid_reveal", "hexagon_pattern",
-                            "", "trim_path", "repeater", "offset_path", "zig_zag", "pucker_bloat", "round_corners", "wiggle_path", "dashed_path", "taper_stroke", "morph_paths",
-                            "", "gaussian_blur_in", "radial_blur", "directional_blur", "tilt_shift", "defocus",
-                            "", "color_sweep", "gradient_shift", "duotone", "shadow_drop_animate", "outline_stroke"
+                            "title_01", "title_02", "title_03", "title_04", "title_05",
+                            "title_06", "title_07", "title_08", "title_09"
                         ]
-                        currentIndex: Math.max(0, values.indexOf(setupController.animationType))
-                        onActivated: { if (values[currentIndex] !== "") setupController.animationType = values[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                        currentIndex: Math.max(0, values.indexOf(setupController.lottiePreset))
+                        onActivated: { setupController.lottiePreset = values[currentIndex] }
+                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#5B4FDB"; border.width: 1 }
                         contentItem: Label { text: animCombo.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
                     }
-
-                    RowLayout { Label{text:"Entrée:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:3;to:45;stepSize:1;value:setupController.animEnterFrames;Layout.preferredWidth:100;onMoved:setupController.animEnterFrames=value} Label{text:setupController.animEnterFrames+"f";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
-                    RowLayout { Label{text:"Sortie:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:2;to:20;stepSize:1;value:setupController.animExitFrames;Layout.preferredWidth:100;onMoved:setupController.animExitFrames=value} Label{text:setupController.animExitFrames+"f";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
 
                     // ══════════════════════════════════════════════
                     // AE EASING CURVE (Graph Editor)

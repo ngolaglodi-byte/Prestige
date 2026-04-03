@@ -25,6 +25,7 @@
 #include "VirtualStudio.h"
 #include "GpuEffects.h"
 #include "AEEasing.h"
+#include "LottieEngine.h"
 
 namespace prestige {
 
@@ -165,6 +166,13 @@ public:
     void setAeEffectParam2(double v) { m_aeEffectParam2 = v; }
     void setAeEffectColor1(const QColor& c) { m_aeEffectColor1 = c; }
     void setAeEffectColor2(const QColor& c) { m_aeEffectColor2 = c; }
+
+    // ── Lottie Animation Preset (from AE exports) ────────
+    void setLottiePreset(const QString& id) { m_lottiePresetId = id; m_lottie.setActivePreset(id); }
+    QString lottiePreset() const { return m_lottiePresetId; }
+    void loadLottiePresets(const QString& dir) { m_lottie.loadPresets(dir); }
+    QStringList lottiePresetIds() const { return m_lottie.presetIds(); }
+    QStringList lottiePresetNames() const { return m_lottie.presetNames(); }
 
     // ── AE Text Animator Selection ───────────────────────
     void setTextAnimatorId(const QString& id) { m_textAnimatorId = id; }
@@ -432,6 +440,10 @@ private:
     QString       m_shapeEffectId;        // Active shape layer effect
     int           m_aeFrameCount = 0;     // Frame counter for time-based effects
     QImage        m_prevOverlayLayer;     // Previous frame for time effects
+
+    // Lottie Animation Engine
+    LottieEngine m_lottie;
+    QString      m_lottiePresetId;
 
     // GPU Effects Engine
     GpuEffects m_gpu;
