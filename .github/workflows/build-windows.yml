@@ -100,9 +100,13 @@ jobs:
         Copy-Item resources\prestige.ico dist\PrestigeAI\
 
         # Compile Windows launcher (PrestigeAI.exe — starts both processes)
-        Push-Location scripts
-        & cl /Fe:..\dist\PrestigeAI\PrestigeAI.exe launcher_windows.c launcher.rc /link /SUBSYSTEM:WINDOWS user32.lib
-        Pop-Location
+        # Use Visual Studio Developer environment for cl.exe
+        $vsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $vsPath = & $vsWhere -latest -property installationPath
+        $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+
+        # Compile via cmd with vcvars environment
+        cmd /c "`"$vcvars`" && cd scripts && cl /Fe:..\dist\PrestigeAI\PrestigeAI.exe launcher_windows.c /link /SUBSYSTEM:WINDOWS user32.lib"
 
         # Studio presets
         if (Test-Path "resources\studios") {
