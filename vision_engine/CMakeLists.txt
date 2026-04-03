@@ -20,6 +20,8 @@ set(VISION_SOURCES
     src/AEBroadcastEffects.cpp
     # 3D PBR Studio Renderer
     src/Studio3DRenderer.cpp
+    # Cinematic Overlay Animations
+    src/CinematicOverlays.cpp
 )
 
 set(VISION_HEADERS
@@ -37,6 +39,7 @@ set(VISION_HEADERS
     src/DesignTemplates.h
     src/AEEasing.h
     src/Studio3DRenderer.h
+    src/CinematicOverlays.h
 )
 
 qt_add_executable(prestige_vision WIN32 ${VISION_SOURCES} ${VISION_HEADERS})
