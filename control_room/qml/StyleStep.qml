@@ -80,9 +80,31 @@ Item {
                 Label { text: window.t("preview"); font.pixelSize: 16; color: window.darkMode ? "white" : "#1A1A1A" }
 
                 // ── PREVIEW BOX ────────────────────────────────
+                // Shows LIVE Vision Engine output (with Lottie animations)
+                // when connected, or QML fallback when standalone
                 Rectangle {
                     id: pvBox; Layout.fillWidth: true; Layout.preferredHeight: width * 9 / 16
                 color: window.darkMode ? "#0A0A0E" : "#E8E8EE"; radius: 10; clip: true
+
+                // LIVE preview from Vision Engine (shows real Lottie animations)
+                Image {
+                    id: styleLivePreview
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectFit
+                    cache: false
+                    source: previewMonitor.active ? "image://preview/frame?" + stylePreviewCounter : ""
+                    visible: previewMonitor.active
+                    property int stylePreviewCounter: 0
+                    Connections {
+                        target: previewMonitor
+                        function onFrameUpdated() { styleLivePreview.stylePreviewCounter++ }
+                    }
+                }
+
+                // QML fallback (when Vision Engine not connected)
+                Item {
+                    anchors.fill: parent
+                    visible: !previewMonitor.active
 
                 Rectangle { anchors.fill: parent; radius: 10; gradient: Gradient { GradientStop { position: 0; color: "#1A1A24" } GradientStop { position: 1; color: "#0A0A10" } } }
                 Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: parent.height*0.15; width: parent.width*0.2; height: parent.height*0.55; color: Qt.rgba(1,1,1,0.03); radius: width*0.1 }
@@ -367,9 +389,13 @@ Item {
                     Label { id: fxLbl; anchors.centerIn: parent; text: setupController.animationType.replace(/_/g, " ").toUpperCase(); font.pixelSize: 7; font.bold: true; color: "#AAA" }
                 }
 
-                // Badges
-                Rectangle { anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 8; width: pvLbl.implicitWidth+12; height: 18; radius: 4; color: Qt.rgba(0,0,0,0.4); Label { id: pvLbl; anchors.centerIn: parent; text: "PREVIEW"; font.pixelSize: 10; color: "#666" } }
-                Rectangle { anchors.top: parent.top; anchors.left: parent.left; anchors.margins: 8; width: stLbl.implicitWidth+12; height: 18; radius: 4; color: Qt.rgba(0,0,0,0.4); Label { id: stLbl; anchors.centerIn: parent; text: root.previewStyleId.toUpperCase(); font.pixelSize: 10; font.bold: true; color: "#999" } }
+                } // End QML fallback Item
+
+                // Badges (always visible)
+                Rectangle { anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 8; width: pvLbl.implicitWidth+12; height: 18; radius: 4; color: Qt.rgba(0,0,0,0.4); z: 10
+                    Label { id: pvLbl; anchors.centerIn: parent; text: previewMonitor.active ? "LIVE" : "PREVIEW"; font.pixelSize: 10; color: previewMonitor.active ? "#1DB954" : "#666" } }
+                Rectangle { anchors.top: parent.top; anchors.left: parent.left; anchors.margins: 8; width: stLbl.implicitWidth+12; height: 18; radius: 4; color: Qt.rgba(0,0,0,0.4); z: 10
+                    Label { id: stLbl; anchors.centerIn: parent; text: root.previewStyleId.toUpperCase(); font.pixelSize: 10; font.bold: true; color: "#999" } }
             }
 
             // Replay animation button
