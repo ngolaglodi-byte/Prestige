@@ -22,6 +22,8 @@ set(VISION_SOURCES
     src/Studio3DRenderer.cpp
     # Cinematic Overlay Animations
     src/CinematicOverlays.cpp
+    # Lottie Animation Engine (AE title overlays)
+    src/LottieEngine.cpp
 )
 
 set(VISION_HEADERS
@@ -40,6 +42,7 @@ set(VISION_HEADERS
     src/AEEasing.h
     src/Studio3DRenderer.h
     src/CinematicOverlays.h
+    src/LottieEngine.h
 )
 
 qt_add_executable(prestige_vision WIN32 ${VISION_SOURCES} ${VISION_HEADERS})
