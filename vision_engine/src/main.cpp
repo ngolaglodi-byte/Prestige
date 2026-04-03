@@ -225,7 +225,8 @@ int main(int argc, char* argv[])
             }, Qt::QueuedConnection);
 
             // ── AE Effects ─────────────────────────────────
-            QString lottiePreset = obj["lottie_preset"].toString("title_01");
+            QString lottiePreset = obj["lottie_preset"].toString();
+            if (lottiePreset.isEmpty()) lottiePreset = "title_01";
             QString easingCurve = obj["easing_curve"].toString();
             QString blendMode = obj["overlay_blend_mode"].toString();
             QString aeEffectId = obj["ae_effect_id"].toString();

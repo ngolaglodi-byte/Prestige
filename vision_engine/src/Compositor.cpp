@@ -335,17 +335,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                     painter.drawImage(int(plateX), int(plateY), lottieFrame);
                     painter.restore();
                 }
-            } else {
-                // Fallback: use style draw functions if no Lottie selected
-                QString s = (talent->overlayStyle.isEmpty() || talent->overlayStyle == "default") ? m_styleId : talent->overlayStyle;
-                auto it = m_styles.find(s);
-                if (it != m_styles.end()) {
-                    painter.save();
-                    painter.setOpacity(easedProg);
-                    it->second(painter, *talent, output.size(), easedProg);
-                    painter.restore();
-                }
-            }
+            } // end Lottie talent rendering
         }
     }
 
@@ -590,7 +580,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     double loopPhase = std::sin(m_loopFrame * 0.05);
 
     // Logo — supports animated frames, configurable position, bypass logic, branding anims
-    if (m_logoVisible && !m_logoFrames.isEmpty() && !(m_bypassActive && !m_keepLogoDuringAds)) {
+    if (m_logoVisible && !m_logoFrames.isEmpty() && !(m_bypassActive && !m_keepLogoDuringAds) && m_lottiePresetId.isEmpty()) {
         const QImage& currentFrame = m_logoFrames[m_logoFrameIndex];
         if (!currentFrame.isNull()) {
             int logoH = static_cast<int>(m_logoSizeH * scale);
@@ -958,7 +948,24 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Renders the selected Lottie animation for show title,
     // channel name, and any other active overlay.
     // ══════════════════════════════════════════════════════════
-    if (!m_lottiePresetId.isEmpty() && !m_bypassActive) {
+    // Use Lottie animation — default to title_01 if no preset selected
+    QString activeLottie = m_lottiePresetId.isEmpty() ? "title_01" : m_lottiePresetId;
+    if (!m_bypassActive) {
+        // DEBUG: force Lottie render and save first frame to disk
+        static int debugCount = 0;
+        if (debugCount == 0) {
+            m_lottie.setActivePreset(activeLottie);
+            m_lottie.setTitle("TEST TITLE");
+            m_lottie.setSubtitle("Test Subtitle");
+            QImage dbgFrame = m_lottie.renderFrame(3.0, output.size());
+            if (dbgFrame.isNull()) {
+                qWarning() << "[DEBUG] Lottie renderFrame returned NULL for preset:" << activeLottie;
+            } else {
+                dbgFrame.save("/tmp/compositor_lottie_debug.png");
+                qInfo() << "[DEBUG] Saved Lottie debug frame:" << dbgFrame.size() << "preset:" << activeLottie;
+            }
+        }
+        debugCount++;
         // ── LOTTIE FULL-SCREEN OVERLAY ──────────────────────
         // Render the Lottie animation at FULL output resolution.
         // The Lottie files are designed for 1920x1080 — shapes and text
