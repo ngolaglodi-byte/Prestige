@@ -240,8 +240,14 @@ void Compositor::updateAnimations(const QList<TalentOverlay>& talents)
 
 QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay>& talents)
 {
-    if (videoFrame.isNull()) return {};
     m_perfTimer.start();
+
+    // If no camera frame, use black background (overlays still render)
+    QImage sourceFrame = videoFrame;
+    if (sourceFrame.isNull()) {
+        sourceFrame = QImage(1920, 1080, QImage::Format_RGB32);
+        sourceFrame.fill(QColor(10, 10, 15));
+    }
 
     // ── Wall-clock delta-time (frame-rate independent) ──────
     if (!m_wallClockStarted) {
@@ -262,7 +268,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
     // ── GPU PIPELINE ─────────────────────────────────────────
     // Step 1: Virtual Studio (chroma key + studio background) — GPU
-    QImage processedFrame = m_virtualStudio.process(videoFrame);
+    QImage processedFrame = m_virtualStudio.process(sourceFrame);
     QImage output = processedFrame.copy();
 
     // Step 2: All overlays rendered on overlay layer (transparent)
@@ -944,6 +950,74 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         // Advance frame for animation (only if multiple frames)
         if (m_logoFrames.size() > 1) {
             m_logoFrameIndex = (m_logoFrameIndex + 1) % m_logoFrames.size();
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // LOTTIE OVERLAY RENDERING — all persistent overlays
+    // Renders the selected Lottie animation for show title,
+    // channel name, and any other active overlay.
+    // ══════════════════════════════════════════════════════════
+    if (!m_lottiePresetId.isEmpty() && !m_bypassActive) {
+        double lottieScale = fw / 1920.0;
+
+        // ── Show Title via Lottie ────────────────────────────
+        if (m_showTitleVisible && !m_showTitleText.isEmpty()) {
+            m_lottie.setActivePreset(m_lottiePresetId);
+            m_lottie.setTitle(m_showTitleText);
+            m_lottie.setSubtitle(m_showSubtitleText);
+
+            // Position: lower third area
+            int ltW = static_cast<int>(fw * 0.45);
+            int ltH = static_cast<int>(fh * 0.12);
+            int ltX = safeMarginX;
+            int ltY = fh - ltH - safeMarginY - static_cast<int>(50 * lottieScale);
+
+            double animTime = m_wallTimeSec;
+            QImage lottieFrame = m_lottie.renderFrame(animTime, QSize(ltW, ltH));
+            if (!lottieFrame.isNull()) {
+                painter.save();
+                painter.setOpacity(std::clamp(m_showTitleProgress > 0 ? m_showTitleProgress : 1.0, 0.0, 1.0));
+                painter.drawImage(ltX, ltY, lottieFrame);
+                painter.restore();
+            }
+        }
+
+        // ── Channel Name via Lottie ──────────────────────────
+        if (m_showNameText && !m_channelName.isEmpty()) {
+            m_lottie.setActivePreset(m_lottiePresetId);
+            m_lottie.setTitle(m_channelName);
+            m_lottie.setSubtitle("");
+
+            int cnW = static_cast<int>(fw * 0.20);
+            int cnH = static_cast<int>(fh * 0.05);
+            int cnX = safeMarginX;
+            int cnY = safeMarginY;
+
+            double animTime = m_wallTimeSec;
+            QImage lottieFrame = m_lottie.renderFrame(animTime, QSize(cnW, cnH));
+            if (!lottieFrame.isNull()) {
+                painter.save();
+                painter.setOpacity(std::clamp(m_nameEntryProgress, 0.0, 1.0));
+                painter.drawImage(cnX, cnY, lottieFrame);
+                painter.restore();
+            }
+        }
+
+        // ── Ticker via Lottie ────────────────────────────────
+        if (m_tickerVisible && !m_tickerText.isEmpty()) {
+            m_lottie.setActivePreset(m_lottiePresetId);
+            m_lottie.setTitle(m_tickerText);
+
+            int tkW = fw;
+            int tkH = static_cast<int>(fh * 0.05);
+            int tkY = fh - tkH;
+
+            double animTime = m_wallTimeSec;
+            QImage lottieFrame = m_lottie.renderFrame(animTime, QSize(tkW, tkH));
+            if (!lottieFrame.isNull()) {
+                painter.drawImage(0, tkY, lottieFrame);
+            }
         }
     }
 

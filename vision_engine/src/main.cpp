@@ -745,8 +745,7 @@ int main(int argc, char* argv[])
             QImage frame;
             {
                 QMutexLocker lock(&frameMutex);
-                if (latestFrame.isNull()) return;
-                frame = latestFrame; // Grab latest, previous frames are dropped
+                frame = latestFrame; // Grab latest (may be null — Compositor handles it)
             }
 
             compositing.store(true);
