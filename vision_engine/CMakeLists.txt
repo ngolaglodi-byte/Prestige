@@ -106,6 +106,18 @@ else()
     message(STATUS "Qt 3D not found — using enhanced 2D fallback studios")
 endif()
 
+# ── rlottie (Samsung — Lottie animation rendering) ───────────
+find_library(RLOTTIE_LIB rlottie PATHS ${CMAKE_SOURCE_DIR}/third_party/rlottie/lib /opt/homebrew/lib /usr/local/lib)
+find_path(RLOTTIE_INC rlottie.h PATHS ${CMAKE_SOURCE_DIR}/third_party/rlottie/include /opt/homebrew/include /usr/local/include)
+if(RLOTTIE_LIB AND RLOTTIE_INC)
+    target_include_directories(prestige_vision PRIVATE ${RLOTTIE_INC})
+    target_link_libraries(prestige_vision PRIVATE ${RLOTTIE_LIB})
+    target_compile_definitions(prestige_vision PRIVATE PRESTIGE_HAVE_RLOTTIE)
+    message(STATUS "rlottie found — Lottie animations ENABLED (pixel-perfect AE)")
+else()
+    message(STATUS "rlottie not found — using simplified Lottie fallback")
+endif()
+
 # ── ZeroMQ ──────────────────────────────────────────────────
 if(ZMQ_FOUND)
     target_link_libraries(prestige_vision PRIVATE PkgConfig::ZMQ)
