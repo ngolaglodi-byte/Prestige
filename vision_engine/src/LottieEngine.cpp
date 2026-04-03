@@ -235,20 +235,28 @@ QImage LottieEngine::renderLottieFrame(const LottiePreset& preset, double frame,
     size_t width = static_cast<size_t>(size.width());
     size_t height = static_cast<size_t>(size.height());
 
-    // Render frame to ARGB32 buffer
-    QImage result(size, QImage::Format_ARGB32_Premultiplied);
-    result.fill(Qt::transparent);
+    // Render frame — rlottie writes BGRA on little-endian (macOS/Windows)
+    // We render to a raw buffer then convert to QImage with correct format
+    std::vector<uint32_t> buffer(width * height, 0);
 
     auto surface = rlottie::Surface(
-        reinterpret_cast<uint32_t*>(result.bits()),
-        width, height,
-        static_cast<size_t>(result.bytesPerLine())
+        buffer.data(), width, height, width * sizeof(uint32_t)
     );
 
     size_t frameNum = static_cast<size_t>(std::clamp(frame, 0.0, preset.durationFrames - 1));
     animation->renderSync(frameNum, surface);
 
-    return result;
+    // Convert rlottie BGRA buffer to QImage ARGB32_Premultiplied
+    // rlottie on little-endian: uint32 = 0xAARRGGBB in code, but in memory = BB GG RR AA
+    // QImage Format_ARGB32_Premultiplied on little-endian: memory = BB GG RR AA (same!)
+    // So we can use the buffer directly with Format_ARGB32_Premultiplied
+    QImage result(reinterpret_cast<const uchar*>(buffer.data()),
+                  static_cast<int>(width), static_cast<int>(height),
+                  static_cast<int>(width * 4),
+                  QImage::Format_ARGB32_Premultiplied);
+
+    // Deep copy (buffer will be destroyed when we return)
+    return result.copy();
 
 #else
     // ── Fallback: simplified renderer (when rlottie not compiled) ──

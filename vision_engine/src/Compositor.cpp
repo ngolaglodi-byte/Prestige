@@ -488,8 +488,8 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Replaced by Show Title system (setShowTitle/setShowTitleVisible)
     // and Talent Nameplate system (20 styles with IA detection)
 
-    // Ticker (scrolling text at very bottom)
-    if (m_tickerVisible && !m_tickerText.isEmpty() && !m_bypassActive) {
+    // Ticker (scrolling text at very bottom) — QPainter fallback only
+    if (m_tickerVisible && !m_tickerText.isEmpty() && !m_bypassActive && m_lottiePresetId.isEmpty()) {
         int tkH = static_cast<int>(36 * scale);
         int tkOffY = static_cast<int>(m_tickerOffY * scale);
         int tkY = fh - tkH - tkOffY;
@@ -759,8 +759,8 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
             painter.restore();
 
-            // Channel name text next to logo — with entry/loop animations and shape
-            if (m_showNameText && !m_channelName.isEmpty()) {
+            // Channel name text next to logo — QPainter fallback only
+            if (m_showNameText && !m_channelName.isEmpty() && m_lottiePresetId.isEmpty()) {
                 QFont nameF("Helvetica Neue", static_cast<int>(m_nameFontSize * scale), QFont::Bold);
                 nameF.setLetterSpacing(QFont::AbsoluteSpacing, 1);
                 painter.setFont(nameF);
@@ -959,65 +959,32 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // channel name, and any other active overlay.
     // ══════════════════════════════════════════════════════════
     if (!m_lottiePresetId.isEmpty() && !m_bypassActive) {
-        double lottieScale = fw / 1920.0;
+        // ── LOTTIE FULL-SCREEN OVERLAY ──────────────────────
+        // Render the Lottie animation at FULL output resolution.
+        // The Lottie files are designed for 1920x1080 — shapes and text
+        // are positioned by the AE designer within that canvas.
+        // We render at output size and composite directly.
 
-        // ── Show Title via Lottie ────────────────────────────
+        // Render selected Lottie animation
+        m_lottie.setActivePreset(m_lottiePresetId);
+
+        // Set text from active overlays (or defaults for preview)
         if (m_showTitleVisible && !m_showTitleText.isEmpty()) {
-            m_lottie.setActivePreset(m_lottiePresetId);
             m_lottie.setTitle(m_showTitleText);
             m_lottie.setSubtitle(m_showSubtitleText);
-
-            // Position: lower third area
-            int ltW = static_cast<int>(fw * 0.45);
-            int ltH = static_cast<int>(fh * 0.12);
-            int ltX = safeMarginX;
-            int ltY = fh - ltH - safeMarginY - static_cast<int>(50 * lottieScale);
-
-            double animTime = m_wallTimeSec;
-            QImage lottieFrame = m_lottie.renderFrame(animTime, QSize(ltW, ltH));
-            if (!lottieFrame.isNull()) {
-                painter.save();
-                painter.setOpacity(std::clamp(m_showTitleProgress > 0 ? m_showTitleProgress : 1.0, 0.0, 1.0));
-                painter.drawImage(ltX, ltY, lottieFrame);
-                painter.restore();
-            }
-        }
-
-        // ── Channel Name via Lottie ──────────────────────────
-        if (m_showNameText && !m_channelName.isEmpty()) {
-            m_lottie.setActivePreset(m_lottiePresetId);
+        } else if (m_showNameText && !m_channelName.isEmpty()) {
             m_lottie.setTitle(m_channelName);
             m_lottie.setSubtitle("");
-
-            int cnW = static_cast<int>(fw * 0.20);
-            int cnH = static_cast<int>(fh * 0.05);
-            int cnX = safeMarginX;
-            int cnY = safeMarginY;
-
-            double animTime = m_wallTimeSec;
-            QImage lottieFrame = m_lottie.renderFrame(animTime, QSize(cnW, cnH));
-            if (!lottieFrame.isNull()) {
-                painter.save();
-                painter.setOpacity(std::clamp(m_nameEntryProgress, 0.0, 1.0));
-                painter.drawImage(cnX, cnY, lottieFrame);
-                painter.restore();
-            }
-        }
-
-        // ── Ticker via Lottie ────────────────────────────────
-        if (m_tickerVisible && !m_tickerText.isEmpty()) {
-            m_lottie.setActivePreset(m_lottiePresetId);
+        } else if (m_tickerVisible && !m_tickerText.isEmpty()) {
             m_lottie.setTitle(m_tickerText);
+            m_lottie.setSubtitle("");
+        }
+        // else: Lottie renders with its default text (from AE)
 
-            int tkW = fw;
-            int tkH = static_cast<int>(fh * 0.05);
-            int tkY = fh - tkH;
-
-            double animTime = m_wallTimeSec;
-            QImage lottieFrame = m_lottie.renderFrame(animTime, QSize(tkW, tkH));
-            if (!lottieFrame.isNull()) {
-                painter.drawImage(0, tkY, lottieFrame);
-            }
+        // ALWAYS render when preset is selected — this IS the overlay
+        QImage lottieFrame = m_lottie.renderFrame(m_wallTimeSec, output.size());
+        if (!lottieFrame.isNull()) {
+            painter.drawImage(0, 0, lottieFrame);
         }
     }
 
@@ -1032,7 +999,9 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         if (m_showTitleProgress > 0.0)
             m_showTitleProgress = qMax(0.0, m_showTitleProgress - m_deltaTime * 2.4); // ~0.42s fade-out
     }
-    if (m_showTitleProgress > 0.01) {
+    if (m_showTitleProgress > 0.01 && m_lottiePresetId.isEmpty()) {
+        // QPainter fallback — only when NO Lottie preset is selected
+        // (Lottie rendering happens above in the Lottie overlay block)
         double prog = m_easingFunc ? m_easingFunc(m_showTitleProgress) : easeOutCubic(m_showTitleProgress);
 
         QFont titleF("Helvetica Neue", static_cast<int>(m_showTitleFontSize * scale), QFont::Bold);

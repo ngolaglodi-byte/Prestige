@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
             }, Qt::QueuedConnection);
 
             // ── AE Effects ─────────────────────────────────
-            QString lottiePreset = obj["lottie_preset"].toString();
+            QString lottiePreset = obj["lottie_preset"].toString("title_01");
             QString easingCurve = obj["easing_curve"].toString();
             QString blendMode = obj["overlay_blend_mode"].toString();
             QString aeEffectId = obj["ae_effect_id"].toString();
@@ -681,7 +681,7 @@ int main(int argc, char* argv[])
                     compositor.resetBrandingAnimations();
             }, Qt::QueuedConnection);
 
-            qInfo() << "[VisionEngine] Config received: style=" << styleId << "anim=" << animType;
+            qInfo() << "[VisionEngine] Config received: style=" << styleId << "anim=" << animType << "lottie=" << lottiePreset;
         }
 
         zmq_close(sock);
