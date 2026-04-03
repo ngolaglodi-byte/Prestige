@@ -479,7 +479,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // and Talent Nameplate system (20 styles with IA detection)
 
     // Ticker (scrolling text at very bottom) — QPainter fallback only
-    if (m_tickerVisible && !m_tickerText.isEmpty() && !m_bypassActive && m_lottiePresetId.isEmpty()) {
+    if (m_tickerVisible && !m_tickerText.isEmpty() && !m_bypassActive) {
         int tkH = static_cast<int>(36 * scale);
         int tkOffY = static_cast<int>(m_tickerOffY * scale);
         int tkY = fh - tkH - tkOffY;
@@ -580,7 +580,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     double loopPhase = std::sin(m_loopFrame * 0.05);
 
     // Logo — supports animated frames, configurable position, bypass logic, branding anims
-    if (m_logoVisible && !m_logoFrames.isEmpty() && !(m_bypassActive && !m_keepLogoDuringAds) && m_lottiePresetId.isEmpty()) {
+    if (m_logoVisible && !m_logoFrames.isEmpty() && !(m_bypassActive && !m_keepLogoDuringAds)) {
         const QImage& currentFrame = m_logoFrames[m_logoFrameIndex];
         if (!currentFrame.isNull()) {
             int logoH = static_cast<int>(m_logoSizeH * scale);
@@ -750,7 +750,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             painter.restore();
 
             // Channel name text next to logo — QPainter fallback only
-            if (m_showNameText && !m_channelName.isEmpty() && m_lottiePresetId.isEmpty()) {
+            if (m_showNameText && !m_channelName.isEmpty()) {
                 QFont nameF("Helvetica Neue", static_cast<int>(m_nameFontSize * scale), QFont::Bold);
                 nameF.setLetterSpacing(QFont::AbsoluteSpacing, 1);
                 painter.setFont(nameF);
@@ -1006,7 +1006,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         if (m_showTitleProgress > 0.0)
             m_showTitleProgress = qMax(0.0, m_showTitleProgress - m_deltaTime * 2.4); // ~0.42s fade-out
     }
-    if (m_showTitleProgress > 0.01 && m_lottiePresetId.isEmpty()) {
+    if (m_showTitleProgress > 0.01) {
         // QPainter fallback — only when NO Lottie preset is selected
         // (Lottie rendering happens above in the Lottie overlay block)
         double prog = m_easingFunc ? m_easingFunc(m_showTitleProgress) : easeOutCubic(m_showTitleProgress);
