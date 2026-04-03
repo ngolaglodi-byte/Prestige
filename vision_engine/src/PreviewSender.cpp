@@ -77,8 +77,10 @@ void PreviewSender::sendFrame(const QImage& compositedFrame)
     buffer.open(QIODevice::WriteOnly);
     preview.save(&buffer, "JPEG", 75);
 
-    zmq_send(m_zmqSocket, jpegData.constData(), jpegData.size(), ZMQ_NOBLOCK);
+    int rc = zmq_send(m_zmqSocket, jpegData.constData(), jpegData.size(), ZMQ_NOBLOCK);
     m_framesSent++;
+    if (m_framesSent % 150 == 1)
+        qInfo() << "[PreviewSender] Frame" << m_framesSent << "size:" << jpegData.size() << "bytes, rc:" << rc;
 #else
     Q_UNUSED(compositedFrame)
 #endif

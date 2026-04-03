@@ -766,6 +766,9 @@ int main(int argc, char* argv[])
 
             // Composite: video frame + overlay nameplates → single frame
             QImage composited = compositor.composite(frame, talents);
+            static int logCount = 0;
+            if (logCount++ % 150 == 0) // Log every ~5 seconds
+                qInfo() << "[Pipeline]" << (frame.isNull() ? "no-source" : "source-ok") << composited.size() << "frames:" << processedCount.load();
 
             // Send to all outputs (RTMP/SRT/File)
             outputRouter.sendFrame(composited);
