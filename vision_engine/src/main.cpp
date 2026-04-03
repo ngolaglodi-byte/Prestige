@@ -741,7 +741,9 @@ int main(int argc, char* argv[])
         [&compositor, &talentStore, &aiPipeline, &outputRouter, &previewSender, liveProvider,
          &latestFrame, &frameMutex, &compositing, &processedCount]()
         {
-            if (compositing.load()) return; // Skip if previous frame still processing
+            static int timerTick = 0;
+            if (timerTick++ == 0) qInfo() << "[Pipeline] Timer first tick";
+            if (compositing.load()) { if (timerTick % 300 == 0) qInfo() << "[Pipeline] BLOCKED — compositing stuck"; return; }
 
             QImage frame;
             {
@@ -751,6 +753,7 @@ int main(int argc, char* argv[])
 
             compositing.store(true);
 
+            try {
             // Get interpolated overlay positions (called every render frame for smooth motion)
             // predictNow() uses velocity extrapolation between 5fps detections
             auto predicted = aiPipeline.predictNow();
@@ -767,8 +770,10 @@ int main(int argc, char* argv[])
             // Composite: video frame + overlay nameplates → single frame
             QImage composited = compositor.composite(frame, talents);
             static int logCount = 0;
-            if (logCount++ % 150 == 0) // Log every ~5 seconds
+            if (logCount++ % 150 == 0) { // Log every ~5 seconds
                 qInfo() << "[Pipeline]" << (frame.isNull() ? "no-source" : "source-ok") << composited.size() << "frames:" << processedCount.load();
+                if (logCount <= 3) composited.save("/tmp/prestige_composite_" + QString::number(logCount) + ".png");
+            }
 
             // Send to all outputs (RTMP/SRT/File)
             outputRouter.sendFrame(composited);
@@ -780,6 +785,11 @@ int main(int argc, char* argv[])
             previewSender.sendFrame(composited);
 
             processedCount++;
+            } catch (const std::exception& e) {
+                qWarning() << "[Pipeline] CRASH in composite:" << e.what();
+            } catch (...) {
+                qWarning() << "[Pipeline] CRASH in composite (unknown)";
+            }
             compositing.store(false);
         });
     compositeTimer.start(16); // ~60fps max, adjusts dynamically when config received
