@@ -61,7 +61,9 @@ public:
 
     void setStyleId(const QString& styleId);
     QString styleId() const { return m_styleId; }
-    void setAccentColor(const QColor& color) { m_accentColor = color; }
+    void setAccentColor(const QColor& color) { m_accentColor = color; m_lottie.setAccentColor(color); }
+    void setNameplateFontSize(int s) { m_lottie.setFontSize(s); }
+    void setNameplateTextColor(const QColor& c) { m_lottie.setTextColor(c); }
     void setBgOpacity(double opacity) { m_bgOpacity = opacity; }
     void setAnimationSpeed(double factor) { m_animSpeed = factor; }
     void setAnimationType(const QString& type);
@@ -214,6 +216,7 @@ public:
 
     // ── Overlay scale factors ─────────────────────────────
     void setNameplateScale(double s) { m_nameplateScale = s; }
+    void setNameplateOffset(int x, int y) { m_nameplateOffX = x; m_nameplateOffY = y; }
     void setScoreboardScale(double s) { m_scoreboardScale = s; }
     void setWeatherScale(double s) { m_weatherScale = s; }
     void setClockScale(double s) { m_clockScale = s; }
@@ -223,6 +226,7 @@ public:
     // ── Overlay offsets (from drag handles) ──────────────
     void setShowTitleOffset(int x, int y) { m_showTitleOffX = x; m_showTitleOffY = y; }
     void setTickerOffsetY(int y) { m_tickerOffY = y; }
+    void setTickerPosition(const QString& p) { m_tickerPosition = p; }
     void setSubtitleOffset(int x, int y) { m_subtitleOffX = x; m_subtitleOffY = y; }
     void setCountdownOffset(int x, int y) { m_countdownOffX = x; m_countdownOffY = y; }
     void setClockOffset(int x, int y) { m_clockOffX = x; m_clockOffY = y; }
@@ -443,7 +447,7 @@ private:
 
     // Lottie Animation Engine
     LottieEngine m_lottie;
-    QString      m_lottiePresetId;
+    QString      m_lottiePresetId = "title_01";
 
     // GPU Effects Engine
     GpuEffects m_gpu;
@@ -466,8 +470,10 @@ private:
     QString m_sportEvent;
     int     m_sportEventFrame = 0;
 
-    // Overlay scale factors
+    // Overlay scale factors + offsets
     double m_nameplateScale = 1.0;
+    int m_nameplateOffX = 0;
+    int m_nameplateOffY = 0;
     double m_scoreboardScale = 1.0;
     double m_weatherScale = 1.0;
     double m_clockScale = 1.0;
@@ -477,6 +483,7 @@ private:
     // Overlay offsets (pixels at 1920x1080 reference)
     int m_showTitleOffX = 0, m_showTitleOffY = 0;
     int m_tickerOffY = 0;
+    QString m_tickerPosition = "bottom";
     int m_subtitleOffX = 0, m_subtitleOffY = 0;
     int m_countdownOffX = 0, m_countdownOffY = 0;
     int m_clockOffX = 0, m_clockOffY = 0;

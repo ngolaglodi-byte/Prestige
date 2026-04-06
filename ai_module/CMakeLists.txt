@@ -50,7 +50,7 @@ if(ONNXRUNTIME_LIB AND ONNXRUNTIME_INC)
 else()
     # Try system paths
     find_library(ONNXRT_SYS_LIB onnxruntime PATHS /opt/homebrew/lib /usr/local/lib)
-    find_path(ONNXRT_SYS_INC onnxruntime_cxx_api.h PATHS /opt/homebrew/include /usr/local/include PATH_SUFFIXES onnxruntime/core/session)
+    find_path(ONNXRT_SYS_INC onnxruntime_cxx_api.h PATHS /opt/homebrew/include /usr/local/include PATH_SUFFIXES onnxruntime)
     if(ONNXRT_SYS_LIB AND ONNXRT_SYS_INC)
         target_include_directories(prestige_ai_module PRIVATE ${ONNXRT_SYS_INC})
         target_link_libraries(prestige_ai_module PRIVATE ${ONNXRT_SYS_LIB})

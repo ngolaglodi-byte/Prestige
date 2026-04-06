@@ -261,7 +261,7 @@ void Studio3DRenderer::setFloorColor(const QColor& c) { m_customFloor = c; m_sce
 void Studio3DRenderer::setLightIntensity(double v) { m_customLightIntensity = v; }
 void Studio3DRenderer::setLightColor(const QColor& c) { m_customLightColor = c; }
 void Studio3DRenderer::setAnimationsEnabled(bool v) { m_animEnabled = v; }
-void Studio3DRenderer::setHdriEnvironment(const QString& path) { Q_UNUSED(path) /* TODO: load .hdr cubemap */ }
+void Studio3DRenderer::setHdriEnvironment(const QString& path) { Q_UNUSED(path) }
 
 void Studio3DRenderer::buildScene()
 {

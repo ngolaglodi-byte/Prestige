@@ -21,8 +21,8 @@ Item {
         Rectangle { anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom; width: 4; color: root.accentColor }
         Column {
             anchors.verticalCenter: parent.verticalCenter; anchors.left: parent.left; anchors.leftMargin: 24; spacing: 2
-            Text { text: root.talentName; color: "#FFFFFF"; font.pixelSize: 24; font.bold: true; font.family: "Helvetica Neue" }
-            Text { text: root.talentRole; color: "#CCCCCC"; font.pixelSize: 14; font.family: "Helvetica Neue" }
+            Text { text: root.talentName; color: "#FFFFFF"; font.pixelSize: 24; font.bold: true; font.family: "Helvetica Neue"; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
+            Text { text: root.talentRole; color: "#CCCCCC"; font.pixelSize: 14; font.family: "Helvetica Neue"; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
         }
     }
 }

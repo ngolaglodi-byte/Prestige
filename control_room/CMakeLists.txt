@@ -21,6 +21,7 @@ set(CONTROL_SOURCES
     src/LicenseManager.cpp
     src/AnalyticsEngine.cpp
     src/GraphicsQueue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vision_engine/src/LottieEngine.cpp
 )
 
 set(CONTROL_HEADERS
@@ -61,6 +62,7 @@ if(APPLE)
         MACOSX_BUNDLE_BUNDLE_NAME "Prestige AI"
         MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
     )
 endif()
 
@@ -88,6 +90,8 @@ qt_add_qml_module(prestige_control
         qml/ColorPickerButton.qml
 )
 
+target_include_directories(prestige_control PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../vision_engine/src)
+
 target_link_libraries(prestige_control PRIVATE
     Qt6::Core
     Qt6::Gui
@@ -104,4 +108,13 @@ target_link_libraries(prestige_control PRIVATE
 if(ZMQ_FOUND)
     target_link_libraries(prestige_control PRIVATE PkgConfig::ZMQ)
     target_compile_definitions(prestige_control PRIVATE PRESTIGE_HAVE_ZMQ)
+endif()
+
+# ── rlottie (for Lottie style preview) ────────────────────
+find_library(RLOTTIE_LIB rlottie PATHS ${CMAKE_SOURCE_DIR}/third_party/rlottie/lib /opt/homebrew/lib /usr/local/lib)
+find_path(RLOTTIE_INC rlottie.h PATHS ${CMAKE_SOURCE_DIR}/third_party/rlottie/include /opt/homebrew/include /usr/local/include)
+if(RLOTTIE_LIB AND RLOTTIE_INC)
+    target_include_directories(prestige_control PRIVATE ${RLOTTIE_INC})
+    target_link_libraries(prestige_control PRIVATE ${RLOTTIE_LIB})
+    target_compile_definitions(prestige_control PRIVATE PRESTIGE_HAVE_RLOTTIE)
 endif()

@@ -52,6 +52,8 @@ private:
     bool         m_connected  = false;
     QSize        m_resolution = {1920, 1080};
     int          m_fps        = 25;
+    qint64       m_frameId    = 0;
+    QTimer*      m_captureTimer = nullptr;
     CaptureStats m_stats;
 
 #ifdef PRESTIGE_HAVE_MAGEWELL

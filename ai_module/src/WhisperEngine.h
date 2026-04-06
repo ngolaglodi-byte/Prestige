@@ -60,8 +60,9 @@ private:
     QString m_language = "fr";
     QString m_modelPath;
 
-    // whisper.cpp handle (void* for forward compat)
+    // whisper.cpp handle
     void* m_whisperCtx = nullptr;
+    QString m_lastText;
 };
 
 }} // namespace prestige::ai

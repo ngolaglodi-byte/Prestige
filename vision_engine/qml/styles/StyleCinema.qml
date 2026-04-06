@@ -12,8 +12,8 @@ Item {
 
     states: [ State { name: "shown"; when: overlayVisible; PropertyChanges { target: root; opacity: 1 } },
               State { name: "hidden"; when: !overlayVisible; PropertyChanges { target: root; opacity: 0 } } ]
-    transitions: [ Transition { to: "shown"; NumberAnimation { property: "opacity"; duration: 1330 } },
-                   Transition { to: "hidden"; NumberAnimation { property: "opacity"; duration: 800 } } ]
+    transitions: [ Transition { to: "shown"; NumberAnimation { property: "opacity"; duration: 900; easing.type: Easing.OutCubic } },
+                   Transition { to: "hidden"; NumberAnimation { property: "opacity"; duration: 400 } } ]
     y: root.parent ? root.parent.height * 0.80 : 420
     x: root.parent ? root.parent.width * 0.05 : 40
 

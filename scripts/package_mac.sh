@@ -47,24 +47,23 @@ chmod +x "$APP_BUNDLE/Contents/MacOS/PrestigeAI"
 # ── 5. Copy Info.plist ──────────────────────────────────────
 cp scripts/Info.plist "$APP_BUNDLE/Contents/Info.plist"
 
-# ── 6. Copy AI Engine WITH venv + models (100% offline) ────
-echo "=== Step 5/8: Bundling AI Engine (offline-ready) ==="
-mkdir -p "$APP_BUNDLE/Contents/Resources/ai_engine"
-for item in main.py detector.py zmq_publisher.py frame_receiver.py talent_manager.py tracker.py subtitle_engine.py social_chat.py talents.json requirements.txt; do
-    if [ -e "ai_engine/$item" ]; then
-        cp "ai_engine/$item" "$APP_BUNDLE/Contents/Resources/ai_engine/"
-    fi
-done
-# Copy ONNX models (325MB — no download needed)
-if [ -d "ai_engine/models" ]; then
-    echo "  Bundling ONNX models (325MB)..."
-    cp -r ai_engine/models/ "$APP_BUNDLE/Contents/Resources/ai_engine/models/" 2>/dev/null || true
-fi
-# Copy pre-built venv (692MB — no pip install needed, no internet)
-if [ -d "ai_engine/venv" ]; then
-    echo "  Bundling Python venv (692MB — 100% offline)..."
-    cp -r ai_engine/venv/ "$APP_BUNDLE/Contents/Resources/ai_engine/venv/"
-fi
+# ── 6. Bundle AI models + resources (C++ ONNX Runtime — no Python) ────
+echo "=== Step 5/8: Bundling AI models + resources ==="
+
+# Face detection models (ONNX)
+mkdir -p "$APP_BUNDLE/Contents/Resources/models/buffalo_l"
+cp ai_engine/models/buffalo_l/*.onnx "$APP_BUNDLE/Contents/Resources/models/buffalo_l/" 2>/dev/null || true
+
+# Whisper speech-to-text models
+mkdir -p "$APP_BUNDLE/Contents/Resources/models/whisper"
+cp resources/models/whisper/ggml-*.bin "$APP_BUNDLE/Contents/Resources/models/whisper/" 2>/dev/null || true
+
+# Lottie animations (9 presets)
+mkdir -p "$APP_BUNDLE/Contents/Resources/animations"
+cp resources/animations/title_*.json "$APP_BUNDLE/Contents/Resources/animations/" 2>/dev/null || true
+
+# Virtual studio backgrounds
+[ -d "resources/studios" ] && cp -R resources/studios "$APP_BUNDLE/Contents/Resources/"
 
 # ── 7. Copy icon ────────────────────────────────────────────
 echo "=== Step 6/8: Setting up icon ==="

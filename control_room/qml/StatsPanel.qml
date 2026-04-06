@@ -107,7 +107,7 @@ Item {
                                 Rectangle {
                                     width: parent.width * Math.min(modelData.screenTimePercent / 100.0, 1.0)
                                     height: parent.height; radius: 3
-                                    color: "#5B4FDB"
+                                    color: "#6C5CE7"
                                     Behavior on width { NumberAnimation { duration: 300 } }
                                 }
 
@@ -145,7 +145,6 @@ Item {
                     onClicked: {
                         var path = Qt.resolvedUrl(".").toString().replace("file://", "") + "rapport_prestige.txt"
                         analyticsEngine.exportReportToFile(path)
-                        console.log("[Stats] Report exported to", path)
                     }
                 }
             }

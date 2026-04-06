@@ -70,7 +70,7 @@ Item {
                     ListElement { platform: "instagram"; name: "Instagram Live";  icon: "\u25CB";  rtmpBase: "rtmps://live-upload.instagram.com:443/rtmp/"; color: "#E4405F" }
                     ListElement { platform: "tiktok";    name: "TikTok LIVE";     icon: "\u266A";  rtmpBase: "rtmp://push.rtmp.tiktok.com/live/"; color: "#010101" }
                     ListElement { platform: "x";         name: "X (Twitter)";     icon: "X";       rtmpBase: "rtmp://va.pscp.tv:80/x/";         color: "#000000" }
-                    ListElement { platform: "custom";    name: "RTMP personnalisé"; icon: "\u2B22"; rtmpBase: "";                                 color: "#5B4FDB" }
+                    ListElement { platform: "custom";    name: "RTMP personnalisé"; icon: "\u2B22"; rtmpBase: "";                                 color: "#6C5CE7" }
                 }
                 delegate: Rectangle {
                     Layout.fillWidth: true
@@ -179,7 +179,7 @@ Item {
                     model: [{"label": "24", "fps": 24}, {"label": "25 PAL", "fps": 25}, {"label": "30 NTSC", "fps": 30}, {"label": "50", "fps": 50}, {"label": "60", "fps": 60}]
                     Rectangle {
                         Layout.preferredWidth: fpsLbl.implicitWidth + 16; Layout.preferredHeight: 28; radius: 6
-                        color: setupController.outputFps === modelData.fps ? "#5B4FDB" : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06))
+                        color: setupController.outputFps === modelData.fps ? "#6C5CE7" : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06))
                         Label { id: fpsLbl; anchors.centerIn: parent; text: modelData.label + " fps"; font.pixelSize: 11; color: setupController.outputFps === modelData.fps ? "white" : (window.darkMode ? "#888" : "#555") }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.outputFps = modelData.fps }
                     }
@@ -200,7 +200,7 @@ Item {
                     if (br <= 30) return "  4K standard"
                     return "  4K haute qualité / broadcast"
                 }
-                font.pixelSize: 11; color: "#5B4FDB"; leftPadding: 8
+                font.pixelSize: 11; color: "#6C5CE7"; leftPadding: 8
             }
 
             // Summary
@@ -235,22 +235,38 @@ Item {
         }
     }
 
-    // ── Social media config storage ──────────────────────
-    // Uses setupController properties for main RTMP
-    // Social media configs stored in a JS object
+    // ── Social media config storage — persisted via SetupController ──
     property var socialConfigs: ({})
 
+    // Default URLs per platform
+    readonly property var defaultUrls: ({
+        "youtube":   "rtmp://a.rtmp.youtube.com/live2/",
+        "twitch":    "rtmp://live.twitch.tv/app/",
+        "facebook":  "rtmps://live-api-s.facebook.com:443/rtmp/",
+        "instagram": "rtmps://live-upload.instagram.com:443/rtmp/",
+        "tiktok":    "rtmp://push.rtmp.tiktok.com/live/",
+        "x":         "rtmp://va.pscp.tv:80/x/",
+        "custom":    ""
+    })
+
     Component.onCompleted: {
-        // Initialize from saved data if available
-        socialConfigs = {
-            "youtube":   { enabled: false, key: "", url: "rtmp://a.rtmp.youtube.com/live2/" },
-            "twitch":    { enabled: false, key: "", url: "rtmp://live.twitch.tv/app/" },
-            "facebook":  { enabled: false, key: "", url: "rtmps://live-api-s.facebook.com:443/rtmp/" },
-            "instagram": { enabled: false, key: "", url: "rtmps://live-upload.instagram.com:443/rtmp/" },
-            "tiktok":    { enabled: false, key: "", url: "rtmp://push.rtmp.tiktok.com/live/" },
-            "x":         { enabled: false, key: "", url: "rtmp://va.pscp.tv:80/x/" },
-            "custom":    { enabled: false, key: "", url: "" }
+        // Load saved configs from SetupController (persisted in profile)
+        var saved = setupController.socialConfigsJson
+        if (saved && saved.length > 2) {
+            try { socialConfigs = JSON.parse(saved) } catch(e) { socialConfigs = {} }
         }
+        // Ensure all platforms exist with defaults
+        var platforms = ["youtube","twitch","facebook","instagram","tiktok","x","custom"]
+        for (var i = 0; i < platforms.length; i++) {
+            var p = platforms[i]
+            if (!socialConfigs[p])
+                socialConfigs[p] = { enabled: false, key: "", url: defaultUrls[p] || "" }
+            if (!socialConfigs[p].url)
+                socialConfigs[p].url = defaultUrls[p] || ""
+        }
+        socialConfigs = socialConfigs
+        // Publish immediately so VE gets the saved config
+        publishSocialToController()
     }
 
     function getSocialEnabled(p) { return socialConfigs[p] ? socialConfigs[p].enabled : false }
@@ -258,25 +274,33 @@ Item {
     function getSocialUrl(p) { return socialConfigs[p] ? socialConfigs[p].url : "" }
 
     function setSocialEnabled(p, v) {
-        if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: "" }
+        if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: defaultUrls[p] || "" }
         socialConfigs[p].enabled = v
         socialConfigs = socialConfigs
+        saveSocialConfigs()
         publishSocialToController()
     }
     function setSocialKey(p, v) {
-        if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: "" }
+        if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: defaultUrls[p] || "" }
         socialConfigs[p].key = v
         socialConfigs = socialConfigs
+        saveSocialConfigs()
         publishSocialToController()
     }
     function setSocialUrl(p, v) {
-        if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: "" }
+        if (!socialConfigs[p]) socialConfigs[p] = { enabled: false, key: "", url: defaultUrls[p] || "" }
         socialConfigs[p].url = v
         socialConfigs = socialConfigs
+        saveSocialConfigs()
         publishSocialToController()
     }
 
-    // Serialize active social RTMP outputs to SetupController for Vision Engine
+    // Save all configs to SetupController for persistence
+    function saveSocialConfigs() {
+        setupController.socialConfigsJson = JSON.stringify(socialConfigs)
+    }
+
+    // Serialize ACTIVE outputs to SetupController for Vision Engine transmission
     function publishSocialToController() {
         var outputs = []
         var platforms = ["youtube","twitch","facebook","instagram","tiktok","x","custom"]

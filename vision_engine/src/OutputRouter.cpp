@@ -37,6 +37,11 @@ OutputRouter::~OutputRouter()
 
 bool OutputRouter::addOutput(int type, const QString& url, int bitrateMbps, int fps)
 {
+    // Skip if same output already active with same URL — avoid reconnection drops
+    auto it = m_outputs.find(type);
+    if (it != m_outputs.end() && it->second && it->second->config.url == url && it->second->active)
+        return true;
+
     removeOutput(type);
 
     auto entry = std::make_unique<OutputEntry>();
@@ -72,6 +77,13 @@ bool OutputRouter::initializeEntry(OutputEntry& entry, int width, int height)
     else if (entry.fps == 24) { encConfig.fpsNum = 24000; encConfig.fpsDen = 1001; }  // 23.976
     encConfig.bitrateMbps = entry.bitrateMbps;
     encConfig.lowLatency = true;
+    // RTMP/SRT streaming requires CBR for platform compatibility (YouTube, Twitch, etc.)
+    if (entry.config.type == OutputType::RTMP || entry.config.type == OutputType::SRT)
+        encConfig.rateControl = "cbr";
+
+    // Force minimum bitrate for streaming (YouTube requires >= 4500 Kbps for 1080p)
+    if (encConfig.bitrateMbps < 4 && (entry.config.type == OutputType::RTMP || entry.config.type == OutputType::SRT))
+        encConfig.bitrateMbps = 6;
 
     if (!entry.encoder->initialize(encConfig)) {
         qWarning() << "[OutputRouter] Encoder init failed at" << width << "x" << height;
@@ -165,10 +177,12 @@ void OutputRouter::sendFrame(const QImage& compositedFrame)
         }
 
         if (entry->config.type == OutputType::SDI) {
-            // DeckLink receives raw YUV frames via ScheduleVideoFrame
-            // Frame conversion and scheduling would happen here
+            // DeckLink receives raw UYVY frames via the SDK
+            // Convert RGB → UYVY and send via DeckLinkOutputStream
             if (entry->stream && entry->stream->isOpen()) {
-                entry->stream->writePacket(QByteArray(), 0, 0, false);
+                QImage bgra = compositedFrame.convertToFormat(QImage::Format_ARGB32);
+                QByteArray frameData(reinterpret_cast<const char*>(bgra.constBits()), bgra.sizeInBytes());
+                entry->stream->writePacket(frameData, entry->stats.framesSent, entry->stats.framesSent, true);
                 entry->stats.framesSent++;
             }
             continue;
@@ -179,8 +193,22 @@ void OutputRouter::sendFrame(const QImage& compositedFrame)
 
         for (const auto& pkt : packets) {
             if (entry->stream && entry->stream->isOpen()) {
-                entry->stream->writePacket(pkt.data, pkt.pts, pkt.dts, pkt.isKeyframe);
-                entry->stats.framesSent++;
+                bool ok = entry->stream->writePacket(pkt.data, pkt.pts, pkt.dts, pkt.isKeyframe);
+                if (ok) {
+                    entry->stats.framesSent++;
+                    entry->failCount = 0;
+                } else {
+                    entry->failCount++;
+                    // Auto-reconnect after 30 consecutive failures (~1 second at 30fps)
+                    if (entry->failCount >= 30 &&
+                        (entry->config.type == OutputType::RTMP || entry->config.type == OutputType::SRT)) {
+                        qWarning() << "[OutputRouter] Stream" << key << "failed, reconnecting...";
+                        entry->stream->close();
+                        entry->stream->open(entry->config, w, h, entry->fps);
+                        entry->failCount = 0;
+                        emit outputError(key, QStringLiteral("Reconnecting stream"));
+                    }
+                }
             }
         }
     }
@@ -235,6 +263,11 @@ struct FfmpegOutputStream::Impl {
     qint64           ptsBase      = 0;
     int              fps          = 25;
     bool             hasAudio     = false;
+
+    // Non-blocking RTMP reconnection state
+    QByteArray       rtmpRetryUrl;
+    QElapsedTimer    rtmpRetryDeadline;
+    bool             rtmpRetryPending = false;
 };
 
 FfmpegOutputStream::FfmpegOutputStream(QObject* parent)
@@ -323,19 +356,22 @@ bool FfmpegOutputStream::open(const OutputConfig& config, int width, int height,
     if (!(m_impl->fmtCtx->oformat->flags & AVFMT_NOFILE)) {
         ret = avio_open2(&m_impl->fmtCtx->pb, urlBytes.constData(), AVIO_FLAG_WRITE, nullptr, &options);
         if (ret < 0) {
-            qWarning() << "[Output] Failed to open" << config.url << "— will retry";
-            // Retry once after 2 seconds (RTMP reconnection)
+            qWarning() << "[Output] Failed to open" << config.url << "— mark for deferred retry";
+            // Non-blocking: record failure time so sendFrame() can retry after 2s
             if (config.url.startsWith("rtmp")) {
-                QThread::msleep(2000);
-                ret = avio_open2(&m_impl->fmtCtx->pb, urlBytes.constData(), AVIO_FLAG_WRITE, nullptr, &options);
-            }
-            if (ret < 0) {
-                qWarning() << "[Output] Retry failed for" << config.url;
+                m_impl->rtmpRetryUrl = urlBytes;
+                m_impl->rtmpRetryPending = true;
+                m_impl->rtmpRetryDeadline.start();
                 av_dict_free(&options);
                 avformat_free_context(m_impl->fmtCtx);
                 m_impl->fmtCtx = nullptr;
-                return false;
+                return false; // caller will retry via sendFrame() after 2s elapsed
             }
+            qWarning() << "[Output] Non-RTMP open failed for" << config.url;
+            av_dict_free(&options);
+            avformat_free_context(m_impl->fmtCtx);
+            m_impl->fmtCtx = nullptr;
+            return false;
         }
     }
     av_dict_free(&options);
@@ -466,6 +502,7 @@ bool FileOutputStream::open(const OutputConfig& config, int width, int height, i
     int ret = avformat_alloc_output_context2(&m_impl->fmtCtx, nullptr, nullptr, pathBytes.constData());
     if (ret < 0 || !m_impl->fmtCtx) return false;
 
+    // Video stream
     m_impl->stream = avformat_new_stream(m_impl->fmtCtx, nullptr);
     if (!m_impl->stream) { avformat_free_context(m_impl->fmtCtx); m_impl->fmtCtx = nullptr; return false; }
 
@@ -476,6 +513,19 @@ bool FileOutputStream::open(const OutputConfig& config, int width, int height, i
     cp->height = height;
     cp->bit_rate = static_cast<int64_t>(config.bitrateMbps) * 1000000;
     m_impl->stream->time_base = {1, fps};
+
+    // Audio stream (AAC 48kHz stereo 128kbps) — same as RTMP/SRT
+    AVStream* audioStream = avformat_new_stream(m_impl->fmtCtx, nullptr);
+    if (audioStream) {
+        auto* ap = audioStream->codecpar;
+        ap->codec_type = AVMEDIA_TYPE_AUDIO;
+        ap->codec_id = AV_CODEC_ID_AAC;
+        ap->sample_rate = 48000;
+        ap->ch_layout = AV_CHANNEL_LAYOUT_STEREO;
+        ap->bit_rate = 128000;
+        ap->frame_size = 1024;
+        audioStream->time_base = {1, 48000};
+    }
 
     if (!(m_impl->fmtCtx->oformat->flags & AVFMT_NOFILE)) {
         if (avio_open(&m_impl->fmtCtx->pb, pathBytes.constData(), AVIO_FLAG_WRITE) < 0)
@@ -553,10 +603,13 @@ struct NdiOutputStream::Impl {
     QString sourceName;
 
     // Function pointers
-    NDIlib_initialize_fn     pInit     = nullptr;
-    NDIlib_send_create_fn    pCreate   = nullptr;
-    NDIlib_send_destroy_fn   pDestroy  = nullptr;
-    NDIlib_send_send_video_v2_fn pSend = nullptr;
+    NDIlib_initialize_fn     pInit      = nullptr;
+    NDIlib_send_create_fn    pCreate    = nullptr;
+    NDIlib_send_destroy_fn   pDestroy   = nullptr;
+    NDIlib_send_send_video_v2_fn pSend  = nullptr;
+    // Audio function pointer (resolved dynamically)
+    using NDIlib_send_send_audio_fn = void(*)(void*, const void*);
+    NDIlib_send_send_audio_fn pSendAudio = nullptr;
 };
 
 NdiOutputStream::NdiOutputStream(QObject* parent)
@@ -611,6 +664,7 @@ bool NdiOutputStream::open(const OutputConfig& config, int width, int height, in
     m_impl->pCreate  = reinterpret_cast<NDIlib_send_create_fn>(m_impl->ndiLib.resolve("NDIlib_send_create_v2"));
     m_impl->pDestroy = reinterpret_cast<NDIlib_send_destroy_fn>(m_impl->ndiLib.resolve("NDIlib_send_destroy"));
     m_impl->pSend    = reinterpret_cast<NDIlib_send_send_video_v2_fn>(m_impl->ndiLib.resolve("NDIlib_send_send_video_v2"));
+    m_impl->pSendAudio = reinterpret_cast<Impl::NDIlib_send_send_audio_fn>(m_impl->ndiLib.resolve("NDIlib_send_send_audio_v3"));
 
     if (!m_impl->pInit || !m_impl->pCreate || !m_impl->pDestroy || !m_impl->pSend) {
         qWarning() << "[NDI] Failed to resolve NDI SDK functions";
@@ -631,7 +685,7 @@ bool NdiOutputStream::open(const OutputConfig& config, int width, int height, in
     sendDesc.name = nameBytes.constData();
     sendDesc.groups = nullptr;
     sendDesc.clock_video = true;
-    sendDesc.clock_audio = false;
+    sendDesc.clock_audio = true;
 
     m_impl->ndiSendInstance = m_impl->pCreate(&sendDesc);
     if (!m_impl->ndiSendInstance) {

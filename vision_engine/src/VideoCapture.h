@@ -89,6 +89,9 @@ private:
     QString m_currentType;
     QString m_currentSource;
 
+    // Test pattern timer (SMPTE bars)
+    QTimer* m_testPatternTimer = nullptr;
+
     // Hardware capture cards (created on demand, destroyed on close)
     DecklinkCapture* m_decklink = nullptr;
     AjaCapture*      m_aja      = nullptr;

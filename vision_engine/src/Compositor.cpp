@@ -7,6 +7,7 @@
 #include <QLinearGradient>
 #include <QRadialGradient>
 #include <QPainterPath>
+#include <QFontDatabase>
 #include <QDebug>
 #include <QTime>
 #include <QDir>
@@ -38,6 +39,8 @@ Compositor::Compositor(QObject* parent) : QObject(parent) {
     for (const auto& path : searchPaths) {
         if (QDir(path).exists()) {
             m_lottie.loadPresets(path);
+            m_lottie.setActivePreset(m_lottiePresetId); // Activate default preset
+            qInfo() << "[Compositor] Lottie default preset:" << m_lottiePresetId;
             break;
         }
     }
@@ -303,39 +306,64 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             }
 
             // ── LOTTIE ANIMATION RENDERING ──────────────────
-            // Render the selected Lottie preset with talent text
             if (!m_lottiePresetId.isEmpty()) {
+                m_lottie.setActivePreset(m_lottiePresetId);
                 m_lottie.setTitle(talent->name);
                 m_lottie.setSubtitle(talent->role);
 
-                // Calculate position: below the face bounding box
-                QRectF bbox = talent->bbox;
-                double localScale = output.width() / 1920.0;
-                double plateW = output.width() * 0.25;
-                double plateH = output.height() * 0.08;
-                double plateX = bbox.x() + (bbox.width() - plateW) / 2;
-                double plateY = bbox.y() + bbox.height() + 10 * localScale;
-                // Keep within screen bounds
-                plateX = std::clamp(plateX, 10.0, output.width() - plateW - 10.0);
-                plateY = std::clamp(plateY, 10.0, output.height() - plateH - 10.0);
-
-                // Render Lottie frame at current animation time
                 double animTime = state.progress * m_lottie.duration();
-                QImage lottieFrame = m_lottie.renderFrame(animTime, QSize(int(plateW), int(plateH)));
+                QImage lottieFrame = m_lottie.renderFrame(animTime, output.size());
 
                 if (!lottieFrame.isNull()) {
                     painter.save();
-                    painter.setOpacity(easedProg);
-                    if (std::abs(m_nameplateScale - 1.0) > 0.01) {
-                        QPointF center(plateX + plateW/2, plateY + plateH/2);
-                        painter.translate(center);
-                        painter.scale(m_nameplateScale, m_nameplateScale);
-                        painter.translate(-center);
+                    painter.setOpacity(easedProg * m_bgOpacity);
+                    // Apply user's nameplate scale + offset
+                    double npS = output.width() / 1920.0;
+                    if (m_nameplateScale != 1.0 || m_nameplateOffX != 0 || m_nameplateOffY != 0) {
+                        painter.translate(m_nameplateOffX * npS, m_nameplateOffY * npS);
+                        if (m_nameplateScale != 1.0) {
+                            // Scale from bottom-center (where nameplates typically are)
+                            double cx = output.width() / 2.0;
+                            double cy = output.height() * 0.85;
+                            painter.translate(cx, cy);
+                            painter.scale(m_nameplateScale, m_nameplateScale);
+                            painter.translate(-cx, -cy);
+                        }
                     }
-                    painter.drawImage(int(plateX), int(plateY), lottieFrame);
+                    painter.drawImage(0, 0, lottieFrame);
                     painter.restore();
                 }
             } // end Lottie talent rendering
+        }
+    }
+
+    // ── Preview talent: Lottie animation with default talent ──
+    if (m_talentNameplateVisible && !m_bypassActive && !m_lottiePresetId.isEmpty() && talents.isEmpty()) {
+        m_lottie.setActivePreset(m_lottiePresetId);
+        m_lottie.setTitle("Marie Dupont");
+        m_lottie.setSubtitle("Journaliste");
+
+        double duration = m_lottie.duration();
+        double animTime = (duration > 0) ? std::fmod(m_wallTimeSec + 3.0, duration) : 3.0;
+        QImage lottieFrame = m_lottie.renderFrame(animTime, output.size());
+
+        if (!lottieFrame.isNull()) {
+            painter.save();
+            painter.setOpacity(m_bgOpacity);
+            // Apply user's nameplate scale + offset (same as talent path)
+            if (m_nameplateScale != 1.0 || m_nameplateOffX != 0 || m_nameplateOffY != 0) {
+                double scale = output.width() / 1920.0;
+                painter.translate(m_nameplateOffX * scale, m_nameplateOffY * scale);
+                if (m_nameplateScale != 1.0) {
+                    double cx = output.width() / 2.0;
+                    double cy = output.height() * 0.85;
+                    painter.translate(cx, cy);
+                    painter.scale(m_nameplateScale, m_nameplateScale);
+                    painter.translate(-cx, -cy);
+                }
+            }
+            painter.drawImage(0, 0, lottieFrame);
+            painter.restore();
         }
     }
 
@@ -481,8 +509,7 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // Ticker (scrolling text at very bottom) — QPainter fallback only
     if (m_tickerVisible && !m_tickerText.isEmpty() && !m_bypassActive) {
         int tkH = static_cast<int>(36 * scale);
-        int tkOffY = static_cast<int>(m_tickerOffY * scale);
-        int tkY = fh - tkH - tkOffY;
+        int tkY = (m_tickerPosition == "top") ? 0 : (fh - tkH);
         QRectF tkRect(0, tkY, fw, tkH);
 
         // Design Template: render ticker background layers (if active)
@@ -497,7 +524,9 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             painter.drawRect(tkRect);
         }
 
-        QFont tkF("Helvetica Neue", static_cast<int>(m_tickerFontSize * scale), QFont::Bold);
+        QString tkFontFamily = QFontDatabase::hasFamily("Inter") ? "Inter" : (QFontDatabase::hasFamily("SF Pro Display") ? "SF Pro Display" : "Helvetica Neue");
+        QFont tkF(tkFontFamily, static_cast<int>(m_tickerFontSize * scale), QFont::Bold);
+        tkF.setLetterSpacing(QFont::AbsoluteSpacing, 0.5 * scale);
         painter.setFont(tkF);
         painter.setPen(m_tickerTextColor);
 
@@ -569,9 +598,9 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
     // ── Branding animation state machine (wall-clock timed) ──
     m_loopFrame++; // Keep for compatibility but use m_wallTimeSec for timing
 
-    // Advance entry animations: 0.03 per frame at 30fps = ~1s entry
-    // Convert to: deltaTime / 1.0s = step per real second
-    double brandingStep = m_deltaTime * 0.9; // ~1.1s entry duration
+    // Advance entry animations — broadcast standard: 500ms entry
+    // step = deltaTime / 0.5s → completes in ~500ms wall-clock
+    double brandingStep = m_deltaTime * 2.0; // ~500ms entry duration (broadcast standard)
     if (m_logoEntryProgress < 1.0)
         m_logoEntryProgress = qMin(1.0, m_logoEntryProgress + brandingStep);
     if (m_nameEntryProgress < 1.0)
@@ -748,9 +777,16 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             }
 
             painter.restore();
+        }
+        // Advance frame for animation (only if multiple frames)
+        if (m_logoFrames.size() > 1) {
+            m_logoFrameIndex = (m_logoFrameIndex + 1) % m_logoFrames.size();
+        }
+    }
 
-            // Channel name text next to logo — QPainter fallback only
-            if (m_showNameText && !m_channelName.isEmpty()) {
+    // ── Channel Name (independent of logo) ──────────────────
+    if (m_showNameText && !m_channelName.isEmpty() && !m_bypassActive) {
+        {
                 QFont nameF("Helvetica Neue", static_cast<int>(m_nameFontSize * scale), QFont::Bold);
                 nameF.setLetterSpacing(QFont::AbsoluteSpacing, 1);
                 painter.setFont(nameF);
@@ -759,8 +795,31 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 int textH = nameFm.height();
                 int padH = static_cast<int>(8 * scale);
                 int padV = static_cast<int>(4 * scale);
-                int nameBaseX = logoX;
-                int nameBaseY = logoY + scaledLogo.height() + static_cast<int>(4 * scale);
+
+                // Position: below logo if visible, else top-right corner
+                int nameBaseX, nameBaseY;
+                int namePad = static_cast<int>(24 * scale); // broadcast safe margin
+                if (m_logoVisible && !m_logoFrames.isEmpty()) {
+                    // Calculate logo position to place name below it
+                    int logoH = static_cast<int>(m_logoSizeH * scale);
+                    if (m_logoPosition == "top_left") {
+                        nameBaseX = namePad;
+                        nameBaseY = namePad + logoH + static_cast<int>(4 * scale);
+                    } else if (m_logoPosition == "bottom_left") {
+                        nameBaseX = namePad;
+                        nameBaseY = fh - logoH - namePad - textH - padV * 2 - static_cast<int>(4 * scale);
+                    } else if (m_logoPosition == "bottom_right") {
+                        nameBaseX = fw - textW - padH * 2 - namePad;
+                        nameBaseY = fh - logoH - namePad - textH - padV * 2 - static_cast<int>(4 * scale);
+                    } else { // top_right
+                        nameBaseX = fw - textW - padH * 2 - namePad;
+                        nameBaseY = namePad + logoH + static_cast<int>(4 * scale);
+                    }
+                } else {
+                    // No logo — place channel name at top-right
+                    nameBaseX = fw - textW - padH * 2 - namePad;
+                    nameBaseY = namePad;
+                }
 
                 // Name entry animation
                 double nameOpacity = 1.0;
@@ -797,14 +856,23 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 // Name loop animation (after entry complete)
                 if (m_nameEntryProgress >= 1.0 && m_nameLoopAnimType != "none") {
                     if (m_nameLoopAnimType == "pulse") {
-                        nameScale = 1.0 + loopPhase * 0.03;
+                        // Gentle breathing effect — 2% scale, smooth and professional
+                        double breathe = std::sin(m_loopFrame * 0.035); // ~5.4s cycle (slower = classier)
+                        nameScale = 1.0 + breathe * 0.02;
                     } else if (m_nameLoopAnimType == "bounce") {
-                        nameOffY = static_cast<int>(std::abs(loopPhase) * 3.0 * scale);
+                        // Micro float — subtle Y oscillation, not a literal bounce
+                        double floatY = std::sin(m_loopFrame * 0.04) * 2.0 * scale; // ±2px, ~4.7s cycle
+                        nameOffY = static_cast<int>(floatY);
                     }
                 }
 
                 int drawNX = nameBaseX + nameOffX + static_cast<int>(m_nameOffX * scale);
                 int drawNY = nameBaseY + nameOffY + static_cast<int>(m_nameOffY * scale);
+                // Clamp to frame boundaries
+                int nameW = textW + padH * 2;
+                int nameH = textH + padV * 2;
+                drawNX = qBound(static_cast<int>(4 * scale), drawNX, fw - nameW - static_cast<int>(4 * scale));
+                drawNY = qBound(static_cast<int>(4 * scale), drawNY, fh - nameH - static_cast<int>(4 * scale));
 
                 painter.save();
                 painter.setOpacity(nameOpacity);
@@ -826,7 +894,26 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 // Draw name shape background
                 QRectF nameRect(drawNX, drawNY, textW + padH * 2, textH + padV * 2);
 
-                if (m_nameShape == "rectangle") {
+                // When a design template is active, IT handles all visual rendering + text.
+                // Otherwise fall back to manual shape drawing.
+                bool designHandledText = false;
+                bool namePerLetterLoopActive = false;
+                {
+                    // Check if a per-letter loop is about to draw
+                    bool isPerLetter = (m_nameLoopAnimType == "wave_float" || m_nameLoopAnimType == "rotate_swing" ||
+                                        m_nameLoopAnimType == "scale_breathe" || m_nameLoopAnimType == "color_cycle" ||
+                                        m_nameLoopAnimType == "glitch_letters" || m_nameLoopAnimType == "typewriter_loop");
+                    namePerLetterLoopActive = isPerLetter && m_nameEntryProgress >= 1.0;
+                }
+                if (!m_chDesign.isEmpty()) {
+                    double timeSec = m_loopFrame / 30.0;
+                    // When per-letter loop active, pass empty text so design draws ONLY background
+                    QString dtText = namePerLetterLoopActive ? "" : m_channelName;
+                    DesignRegistry::instance().render(painter, "channel", m_chDesign, nameRect,
+                                                       timeSec, scale, m_accentColor, dtText,
+                                                       "", nameF, m_nameTextColor);
+                    designHandledText = !namePerLetterLoopActive;
+                } else if (m_nameShape == "rectangle") {
                     drawGlassRect(painter, nameRect, 2 * scale, m_nameBgColor, 0.85);
                     painter.setPen(QPen(m_nameBorderColor, 1));
                     painter.setBrush(Qt::NoBrush);
@@ -857,47 +944,51 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                     painter.setBrush(m_nameBgColor);
                     painter.drawPath(angledPath);
                 } else { // "frameless"
-                    // Drop shadow only
                     painter.setPen(Qt::NoPen);
                     painter.setBrush(QColor(0, 0, 0, 120));
                     painter.drawRoundedRect(nameRect.adjusted(2 * scale, 2 * scale, 2 * scale, 2 * scale), 2 * scale, 2 * scale);
                 }
 
-                // Channel Name Design Template
-                if (!m_chDesign.isEmpty()) {
-                    double timeSec = m_loopFrame / 30.0;
-                    DesignRegistry::instance().render(painter, "channel", m_chDesign, nameRect,
-                                                       timeSec, scale, m_accentColor, m_channelName);
-                }
-
-                // Glow loop for name
+                // Glow loop for name — accent-colored soft glow, broadcast-grade
                 if (m_nameEntryProgress >= 1.0 && m_nameLoopAnimType == "glow") {
-                    double glowOp = 0.3 + loopPhase * 0.15;
+                    double breathe = std::sin(m_loopFrame * 0.03); // ~6.3s cycle — slow, elegant
+                    double glowOp = 0.15 + breathe * 0.10; // 15-25% opacity range
+                    painter.save();
                     painter.setOpacity(glowOp);
-                    QRectF glowRect = nameRect.adjusted(-3 * scale, -3 * scale, 3 * scale, 3 * scale);
+                    QRectF glowRect = nameRect.adjusted(-4 * scale, -4 * scale, 4 * scale, 4 * scale);
                     painter.setPen(Qt::NoPen);
-                    painter.setBrush(QColor(255, 255, 255, 60));
-                    painter.drawRoundedRect(glowRect, 4 * scale, 4 * scale);
+                    QColor glowColor = m_accentColor;
+                    glowColor.setAlpha(80);
+                    painter.setBrush(glowColor);
+                    painter.drawRoundedRect(glowRect, 6 * scale, 6 * scale);
+                    painter.restore();
                     painter.setOpacity(nameOpacity);
                 }
 
-                // Shimmer loop for name
+                // Shimmer sweep for name — light streak, like France 24 / luxury brands
                 if (m_nameEntryProgress >= 1.0 && m_nameLoopAnimType == "shimmer") {
-                    double shimmerPos = (m_loopFrame % 120) / 120.0;
-                    double sx = nameRect.x() + (nameRect.width() + 20 * scale) * shimmerPos - 10 * scale;
-                    QLinearGradient shimGrad(sx, nameRect.y(), sx + 10 * scale, nameRect.y() + nameRect.height());
+                    int shimCycle = 180; // 6 seconds at 30fps — slow, premium sweep
+                    double shimmerPos = (m_loopFrame % shimCycle) / static_cast<double>(shimCycle);
+                    double sweepW = 30 * scale; // wider streak for pro look
+                    double sx = nameRect.x() + (nameRect.width() + sweepW * 2) * shimmerPos - sweepW;
+                    QLinearGradient shimGrad(sx, nameRect.y(), sx + sweepW, nameRect.y());
                     shimGrad.setColorAt(0.0, QColor(255, 255, 255, 0));
-                    shimGrad.setColorAt(0.5, QColor(255, 255, 255, 50));
+                    shimGrad.setColorAt(0.4, QColor(255, 255, 255, 35));
+                    shimGrad.setColorAt(0.6, QColor(255, 255, 255, 35));
                     shimGrad.setColorAt(1.0, QColor(255, 255, 255, 0));
+                    painter.save();
                     painter.setPen(Qt::NoPen);
                     painter.setBrush(shimGrad);
                     painter.setClipRect(nameRect);
                     painter.drawRect(nameRect);
                     painter.setClipping(false);
+                    painter.restore();
                 }
 
-                // Draw text — use broadcast text effect if selected, otherwise standard
-                if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "typewriter") {
+                // Draw text — skip if design template already drew it
+                if (designHandledText && m_nameEntryProgress >= 1.0) {
+                    // Design template already rendered the text — no double draw
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "typewriter") {
                     fx::typewriter(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
                 } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "bounce_in") {
                     fx::bounceIn(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
@@ -917,12 +1008,194 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                     fx::slidePerLetter(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
                 } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "rotate_in_letter") {
                     fx::rotateInPerLetter(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                // ── AE Extended text animations ──
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "matrix_rain") {
+                    fx::matrixRain(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "cascade_reveal") {
+                    fx::cascadeReveal(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "elastic_drop") {
+                    fx::elasticDrop(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "spiral_in") {
+                    fx::spiralIn(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "flip_board") {
+                    fx::flipBoard(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "scatter_assemble") {
+                    fx::scatterAssemble(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "stamp_press") {
+                    fx::stampPress(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "swing_drop") {
+                    fx::swingDrop(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "neon_flicker") {
+                    fx::neonFlicker(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
+                } else if (m_nameEntryProgress < 1.0 && m_nameEntryAnimType == "rubber_stretch") {
+                    fx::rubberStretch(painter, m_channelName, nameRect, m_nameEntryProgress, nameF, m_nameTextColor);
                 } else {
-                    painter.setPen(m_nameTextColor);
-                    painter.drawText(nameRect, Qt::AlignCenter, m_channelName);
+                    // Skip standard text when a per-letter loop is about to draw
+                    bool nameLoopIsPerLetter = (m_nameLoopAnimType == "wave_float" || m_nameLoopAnimType == "rotate_swing" ||
+                                                m_nameLoopAnimType == "scale_breathe" || m_nameLoopAnimType == "color_cycle" ||
+                                                m_nameLoopAnimType == "glitch_letters" || m_nameLoopAnimType == "typewriter_loop");
+                    if (!(nameLoopIsPerLetter && m_nameEntryProgress >= 1.0)) {
+                        // Text shadow for broadcast legibility
+                        QColor shadowColor(0, 0, 0, 100);
+                        painter.setPen(shadowColor);
+                        painter.drawText(nameRect.adjusted(1 * scale, 1 * scale, 1 * scale, 1 * scale), Qt::AlignCenter, m_channelName);
+                        // Main text
+                        painter.setPen(m_nameTextColor);
+                        painter.drawText(nameRect, Qt::AlignCenter, m_channelName);
+                    }
                 }
 
-                // Broadcast loop effects on channel name
+                // ── CONTINUOUS PER-LETTER ANIMATIONS (loop after entry) ──
+                // Each one renders ALL letters itself — completely independent behaviors
+                if (m_nameEntryProgress >= 1.0 && m_nameLoopAnimType != "none") {
+                    QFontMetrics lfm(nameF);
+                    double ltotalW = lfm.horizontalAdvance(m_channelName);
+                    double lstartX = nameRect.x() + (nameRect.width() - ltotalW) / 2.0;
+                    double lbaseY = nameRect.y() + nameRect.height() * 0.72;
+                    double t = m_loopFrame * 0.033; // time in seconds-ish
+
+                    if (m_nameLoopAnimType == "wave_float") {
+                        // TRAVELING SINE WAVE — each letter at different phase, wave moves right
+                        painter.save(); painter.setFont(nameF);
+                        // Shadow pass
+                        double sx = lstartX;
+                        for (int i = 0; i < m_channelName.length(); i++) {
+                            double phase = t * 1.8 - i * 0.45; // wave travels right
+                            double offY = std::sin(phase) * 4.0 * scale;
+                            painter.setPen(QColor(0,0,0,80));
+                            painter.drawText(QPointF(sx + scale, lbaseY + offY + scale), m_channelName.mid(i, 1));
+                            sx += lfm.horizontalAdvance(m_channelName[i]);
+                        }
+                        // Main pass
+                        sx = lstartX;
+                        for (int i = 0; i < m_channelName.length(); i++) {
+                            double phase = t * 1.8 - i * 0.45;
+                            double offY = std::sin(phase) * 4.0 * scale;
+                            painter.setPen(m_nameTextColor);
+                            painter.drawText(QPointF(sx, lbaseY + offY), m_channelName.mid(i, 1));
+                            sx += lfm.horizontalAdvance(m_channelName[i]);
+                        }
+                        painter.restore();
+
+                    } else if (m_nameLoopAnimType == "rotate_swing") {
+                        // PENDULUM — each letter rotates back and forth independently, staggered
+                        painter.save(); painter.setFont(nameF);
+                        double sx = lstartX;
+                        for (int i = 0; i < m_channelName.length(); i++) {
+                            double phase = t * 2.0 + i * 0.7;
+                            double angle = std::sin(phase) * 8.0; // ±8 degrees
+                            double charW = lfm.horizontalAdvance(m_channelName[i]);
+                            painter.save();
+                            painter.translate(sx + charW / 2.0, lbaseY);
+                            painter.rotate(angle);
+                            painter.translate(-(sx + charW / 2.0), -lbaseY);
+                            // Shadow
+                            painter.setPen(QColor(0,0,0,80));
+                            painter.drawText(QPointF(sx + scale, lbaseY + scale), m_channelName.mid(i, 1));
+                            // Main
+                            painter.setPen(m_nameTextColor);
+                            painter.drawText(QPointF(sx, lbaseY), m_channelName.mid(i, 1));
+                            painter.restore();
+                            sx += charW;
+                        }
+                        painter.restore();
+
+                    } else if (m_nameLoopAnimType == "scale_breathe") {
+                        // INDIVIDUAL BREATHING — each letter scales up/down at different rhythms
+                        painter.save(); painter.setFont(nameF);
+                        double sx = lstartX;
+                        for (int i = 0; i < m_channelName.length(); i++) {
+                            double phase = t * 1.5 + i * 1.1; // different frequency per letter
+                            double s = 1.0 + std::sin(phase) * 0.08; // ±8% scale
+                            double charW = lfm.horizontalAdvance(m_channelName[i]);
+                            painter.save();
+                            painter.translate(sx + charW / 2.0, lbaseY - lfm.ascent() / 2.0);
+                            painter.scale(s, s);
+                            painter.translate(-(sx + charW / 2.0), -(lbaseY - lfm.ascent() / 2.0));
+                            painter.setPen(QColor(0,0,0,80));
+                            painter.drawText(QPointF(sx + scale, lbaseY + scale), m_channelName.mid(i, 1));
+                            painter.setPen(m_nameTextColor);
+                            painter.drawText(QPointF(sx, lbaseY), m_channelName.mid(i, 1));
+                            painter.restore();
+                            sx += charW;
+                        }
+                        painter.restore();
+
+                    } else if (m_nameLoopAnimType == "color_cycle") {
+                        // COLOR SHIFT — each letter cycles through accent color hue spectrum
+                        painter.save(); painter.setFont(nameF);
+                        double sx = lstartX;
+                        for (int i = 0; i < m_channelName.length(); i++) {
+                            double hueShift = std::fmod(t * 20.0 + i * 25.0, 360.0);
+                            QColor letterColor = QColor::fromHsvF(
+                                std::fmod(m_accentColor.hsvHueF() + hueShift / 360.0, 1.0),
+                                qBound(0.0, m_accentColor.hsvSaturationF() * 0.8, 1.0),
+                                1.0);
+                            // Shadow
+                            painter.setPen(QColor(0,0,0,80));
+                            painter.drawText(QPointF(sx + scale, lbaseY + scale), m_channelName.mid(i, 1));
+                            // Colored letter
+                            painter.setPen(letterColor);
+                            painter.drawText(QPointF(sx, lbaseY), m_channelName.mid(i, 1));
+                            sx += lfm.horizontalAdvance(m_channelName[i]);
+                        }
+                        painter.restore();
+
+                    } else if (m_nameLoopAnimType == "glitch_letters") {
+                        // RANDOM GLITCH — letters randomly offset for 2-3 frames then snap back
+                        painter.save(); painter.setFont(nameF);
+                        double sx = lstartX;
+                        for (int i = 0; i < m_channelName.length(); i++) {
+                            double offX = 0, offY = 0;
+                            // Pseudo-random glitch: each letter glitches for ~3 frames every ~90 frames
+                            int glitchSeed = static_cast<int>(std::abs(std::sin(i * 47.13 + std::floor(t * 30 / 90.0) * 17.3)) * 43758.5);
+                            int frameInCycle = m_loopFrame % 90;
+                            int glitchStart = glitchSeed % 80;
+                            if (frameInCycle >= glitchStart && frameInCycle < glitchStart + 3) {
+                                double seed1 = std::sin(i * 31.7 + m_loopFrame * 7.13) * 43758.5;
+                                double seed2 = std::sin(i * 83.1 + m_loopFrame * 3.17) * 27391.1;
+                                offX = (seed1 - std::floor(seed1) - 0.5) * 6.0 * scale;
+                                offY = (seed2 - std::floor(seed2) - 0.5) * 4.0 * scale;
+                            }
+                            painter.setPen(QColor(0,0,0,80));
+                            painter.drawText(QPointF(sx + offX + scale, lbaseY + offY + scale), m_channelName.mid(i, 1));
+                            painter.setPen(m_nameTextColor);
+                            painter.drawText(QPointF(sx + offX, lbaseY + offY), m_channelName.mid(i, 1));
+                            sx += lfm.horizontalAdvance(m_channelName[i]);
+                        }
+                        painter.restore();
+
+                    } else if (m_nameLoopAnimType == "typewriter_loop") {
+                        // TYPEWRITER BLINK — shows cursor blinking at end, letters re-type periodically
+                        painter.save(); painter.setFont(nameF);
+                        int cycleLen = m_channelName.length() * 8 + 60; // frames for full cycle
+                        int frameInCycle = m_loopFrame % cycleLen;
+                        int visibleChars = qMin(m_channelName.length(), static_cast<qsizetype>(frameInCycle / 4));
+                        if (frameInCycle > m_channelName.length() * 4 + 10) visibleChars = m_channelName.length(); // hold
+
+                        double sx = lstartX;
+                        for (int i = 0; i < m_channelName.length(); i++) {
+                            int alpha = i < visibleChars ? 255 : 0;
+                            painter.setPen(QColor(0,0,0, alpha > 0 ? 80 : 0));
+                            painter.drawText(QPointF(sx + scale, lbaseY + scale), m_channelName.mid(i, 1));
+                            painter.setPen(QColor(m_nameTextColor.red(), m_nameTextColor.green(), m_nameTextColor.blue(), alpha));
+                            painter.drawText(QPointF(sx, lbaseY), m_channelName.mid(i, 1));
+                            sx += lfm.horizontalAdvance(m_channelName[i]);
+                        }
+                        // Blinking cursor
+                        if ((m_loopFrame / 15) % 2 == 0) {
+                            double cursorX = lstartX;
+                            for (int i = 0; i < qMin(visibleChars, m_channelName.length()); i++)
+                                cursorX += lfm.horizontalAdvance(m_channelName[i]);
+                            painter.setPen(QPen(m_accentColor, 1.5 * scale));
+                            painter.drawLine(QPointF(cursorX + 2*scale, lbaseY - lfm.ascent()),
+                                           QPointF(cursorX + 2*scale, lbaseY + lfm.descent()));
+                        }
+                        painter.restore();
+                    }
+                }
+
+                // ── VISUAL EFFECTS ON CHANNEL NAME (non-letter) ──
                 if (m_nameEntryProgress >= 1.0 && m_nameLoopAnimType != "none") {
                     if (m_nameLoopAnimType == "neon_glow")
                         fx::neonGlow(painter, nameRect, m_accentColor, 0.5 + loopPhase * 0.3);
@@ -935,65 +1208,11 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 }
 
                 painter.restore();
-            }
-        }
-        // Advance frame for animation (only if multiple frames)
-        if (m_logoFrames.size() > 1) {
-            m_logoFrameIndex = (m_logoFrameIndex + 1) % m_logoFrames.size();
         }
     }
 
-    // ══════════════════════════════════════════════════════════
-    // LOTTIE OVERLAY RENDERING — all persistent overlays
-    // Renders the selected Lottie animation for show title,
-    // channel name, and any other active overlay.
-    // ══════════════════════════════════════════════════════════
-    // Use Lottie animation — default to title_01 if no preset selected
-    QString activeLottie = m_lottiePresetId.isEmpty() ? "title_01" : m_lottiePresetId;
-    if (!m_bypassActive) {
-        // DEBUG: force Lottie render and save first frame to disk
-        static int debugCount = 0;
-        if (debugCount == 0) {
-            m_lottie.setActivePreset(activeLottie);
-            m_lottie.setTitle("TEST TITLE");
-            m_lottie.setSubtitle("Test Subtitle");
-            QImage dbgFrame = m_lottie.renderFrame(3.0, output.size());
-            if (dbgFrame.isNull()) {
-                qWarning() << "[DEBUG] Lottie renderFrame returned NULL for preset:" << activeLottie;
-            } else {
-                dbgFrame.save("/tmp/compositor_lottie_debug.png");
-                qInfo() << "[DEBUG] Saved Lottie debug frame:" << dbgFrame.size() << "preset:" << activeLottie;
-            }
-        }
-        debugCount++;
-        // ── LOTTIE FULL-SCREEN OVERLAY ──────────────────────
-        // Render the Lottie animation at FULL output resolution.
-        // The Lottie files are designed for 1920x1080 — shapes and text
-        // are positioned by the AE designer within that canvas.
-        // We render at output size and composite directly.
-
-        // Render selected Lottie animation
-        m_lottie.setActivePreset(m_lottiePresetId);
-
-        // Set text from active overlays (or defaults for preview)
-        if (m_showTitleVisible && !m_showTitleText.isEmpty()) {
-            m_lottie.setTitle(m_showTitleText);
-            m_lottie.setSubtitle(m_showSubtitleText);
-        } else if (m_showNameText && !m_channelName.isEmpty()) {
-            m_lottie.setTitle(m_channelName);
-            m_lottie.setSubtitle("");
-        } else if (m_tickerVisible && !m_tickerText.isEmpty()) {
-            m_lottie.setTitle(m_tickerText);
-            m_lottie.setSubtitle("");
-        }
-        // else: Lottie renders with its default text (from AE)
-
-        // ALWAYS render when preset is selected — this IS the overlay
-        QImage lottieFrame = m_lottie.renderFrame(m_wallTimeSec, output.size());
-        if (!lottieFrame.isNull()) {
-            painter.drawImage(0, 0, lottieFrame);
-        }
-    }
+    // (Lottie animation is used only for talent nameplates — rendered above
+    //  in the per-talent loop. Persistent overlays below use QPainter.)
 
     // Show Title (Layer 2) — permanent banner that yields to talent nameplate
     // Advance entry animation when visible
@@ -1007,13 +1226,19 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             m_showTitleProgress = qMax(0.0, m_showTitleProgress - m_deltaTime * 2.4); // ~0.42s fade-out
     }
     if (m_showTitleProgress > 0.01) {
-        // QPainter fallback — only when NO Lottie preset is selected
-        // (Lottie rendering happens above in the Lottie overlay block)
         double prog = m_easingFunc ? m_easingFunc(m_showTitleProgress) : easeOutCubic(m_showTitleProgress);
 
-        QFont titleF("Helvetica Neue", static_cast<int>(m_showTitleFontSize * scale), QFont::Bold);
+        // Pro broadcast font stack — Inter > SF Pro Display > Helvetica Neue > Arial
+        QString fontFamily = "Inter";
+        if (!QFontDatabase::hasFamily("Inter")) {
+            if (QFontDatabase::hasFamily("SF Pro Display")) fontFamily = "SF Pro Display";
+            else fontFamily = "Helvetica Neue";
+        }
+        QFont titleF(fontFamily, static_cast<int>(m_showTitleFontSize * scale), QFont::Bold);
+        titleF.setLetterSpacing(QFont::AbsoluteSpacing, 0.5 * scale);
         int subSize = qMax(10, m_showTitleFontSize - 4);
-        QFont subF("Helvetica Neue", static_cast<int>(subSize * scale));
+        QFont subF(fontFamily, static_cast<int>(subSize * scale));
+        subF.setLetterSpacing(QFont::AbsoluteSpacing, 0.3 * scale);
         QFontMetrics titleFm(titleF);
         QFontMetrics subFm(subF);
 
@@ -1023,9 +1248,12 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         int padX = static_cast<int>(16 * scale);
         int padY = static_cast<int>(10 * scale);
         int boxW = textW + padX * 2;
-        int boxH = static_cast<int>(m_showSubtitleText.isEmpty() ? 40 * scale : 58 * scale);
+        // Dynamic box height based on actual text content
+        int titleTextH = titleFm.height();
+        int subTextH = m_showSubtitleText.isEmpty() ? 0 : (static_cast<int>(4 * scale) + subFm.height());
+        int boxH = padY * 2 + titleTextH + subTextH;
         int boxX, boxY;
-        int pad = static_cast<int>(16 * scale);
+        int pad = static_cast<int>(24 * scale); // broadcast safe margin
 
         if (m_showTitlePosition == "bottom_right") {
             boxX = fw - boxW - pad; boxY = fh - boxH - static_cast<int>(fh * 0.12);
@@ -1037,10 +1265,11 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             boxX = pad; boxY = fh - boxH - static_cast<int>(fh * 0.12);
         }
 
-        // Entry animation offset/opacity
+        // Entry animation offset/opacity — full parity with channel name system
         double titleOpacity = prog;
         int titleOffX = 0, titleOffY = 0;
         double titleScale = 1.0;
+        bool titleEntryIsPerLetter = false; // per-letter anims handle their own text draw
         if (m_showTitleEntryProgress < 1.0) {
             double p = m_easingFunc ? m_easingFunc(m_showTitleEntryProgress) : easeOutCubic(m_showTitleEntryProgress);
             if (m_showTitleEntryAnimType == "fade") {
@@ -1058,21 +1287,37 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
                 titleOpacity = p * prog;
             } else if (m_showTitleEntryAnimType == "wipe") {
                 // Handled via clip rect
+            } else {
+                // All per-letter entry animations (typewriter, bounce_in, wave_text, etc.)
+                titleEntryIsPerLetter = true;
             }
         }
 
-        // Loop animation (after entry complete)
+        // Loop animation (after entry complete) — cinema-grade
+        double stLoopPhase = std::sin(m_loopFrame * 0.05);
+        bool titleLoopIsPerLetter = false;
         if (m_showTitleEntryProgress >= 1.0 && m_showTitleLoopAnimType != "none") {
-            double stLoopPhase = std::sin(m_loopFrame * 0.05);
             if (m_showTitleLoopAnimType == "pulse") {
-                titleScale = 1.0 + stLoopPhase * 0.03;
+                double breathe = std::sin(m_loopFrame * 0.035);
+                titleScale = 1.0 + breathe * 0.02;
             } else if (m_showTitleLoopAnimType == "bounce") {
-                titleOffY = static_cast<int>(std::abs(stLoopPhase) * 3.0 * scale);
+                double floatY = std::sin(m_loopFrame * 0.04) * 2.0 * scale;
+                titleOffY = static_cast<int>(floatY);
+            } else if (m_showTitleLoopAnimType == "wave_float" ||
+                       m_showTitleLoopAnimType == "rotate_swing" ||
+                       m_showTitleLoopAnimType == "scale_breathe" ||
+                       m_showTitleLoopAnimType == "color_cycle" ||
+                       m_showTitleLoopAnimType == "glitch_letters" ||
+                       m_showTitleLoopAnimType == "typewriter_loop") {
+                titleLoopIsPerLetter = true; // handled below after text draw
             }
         }
 
         int drawBX = boxX + titleOffX + static_cast<int>(m_showTitleOffX * scale);
         int drawBY = boxY + titleOffY + static_cast<int>(m_showTitleOffY * scale);
+        // Clamp to broadcast safe area — never exceed frame boundaries
+        drawBX = qBound(static_cast<int>(4 * scale), drawBX, fw - boxW - static_cast<int>(4 * scale));
+        drawBY = qBound(static_cast<int>(4 * scale), drawBY, fh - boxH - static_cast<int>(4 * scale));
 
         painter.save();
         painter.setOpacity(titleOpacity);
@@ -1092,8 +1337,21 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
 
         QRectF boxRect(drawBX, drawBY, boxW, boxH);
 
-        // Draw shape background (same logic as channel name)
-        if (m_showTitleShape == "rectangle") {
+        // Draw shape background — design template takes priority (like channel name)
+        bool titleDesignHandledText = false;
+        bool perLetterLoopActive = titleLoopIsPerLetter && m_showTitleEntryProgress >= 1.0;
+        if (!m_titleDesignId.isEmpty()) {
+            double timeSec = m_loopFrame / 30.0;
+            // When per-letter loop is active, pass empty text so design draws ONLY background
+            // The per-letter loop code below draws the animated text itself
+            QString dtTitle = perLetterLoopActive ? "" : m_showTitleText;
+            QString dtSub = perLetterLoopActive ? "" : m_showSubtitleText;
+            DesignRegistry::instance().render(painter, "title", m_titleDesignId, boxRect,
+                                               timeSec, scale, m_accentColor,
+                                               dtTitle, dtSub, titleF,
+                                               m_showTitleTextColor);
+            titleDesignHandledText = !perLetterLoopActive;
+        } else if (m_showTitleShape == "rectangle") {
             drawGlassRect(painter, boxRect, 4 * scale, m_showTitleBgColor, 0.85);
             painter.setPen(QPen(m_showTitleBorderColor, 1));
             painter.setBrush(Qt::NoBrush);
@@ -1129,51 +1387,229 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
             painter.drawRoundedRect(boxRect.adjusted(2 * scale, 2 * scale, 2 * scale, 2 * scale), 4 * scale, 4 * scale);
         }
 
-        // Design Template overlay (rendered on top of shape background)
-        if (!m_titleDesignId.isEmpty()) {
-            double timeSec = m_loopFrame / 30.0;
-            DesignRegistry::instance().render(painter, "title", m_titleDesignId, boxRect,
-                                               timeSec, scale, m_accentColor,
-                                               m_showTitleText, m_showSubtitleText, titleF);
-        }
-
-        // Glow loop
+        // Glow loop — accent-colored, broadcast-grade
         if (m_showTitleEntryProgress >= 1.0 && m_showTitleLoopAnimType == "glow") {
-            double stLoopPhase2 = std::sin(m_loopFrame * 0.05);
-            double glowOp = 0.3 + stLoopPhase2 * 0.15;
+            double breathe = std::sin(m_loopFrame * 0.03);
+            double glowOp = 0.15 + breathe * 0.10;
+            painter.save();
             painter.setOpacity(glowOp);
-            QRectF glowRect = boxRect.adjusted(-3 * scale, -3 * scale, 3 * scale, 3 * scale);
+            QRectF glowRect = boxRect.adjusted(-4 * scale, -4 * scale, 4 * scale, 4 * scale);
             painter.setPen(Qt::NoPen);
-            painter.setBrush(QColor(255, 255, 255, 60));
+            QColor glowColor = m_accentColor; glowColor.setAlpha(80);
+            painter.setBrush(glowColor);
             painter.drawRoundedRect(glowRect, 6 * scale, 6 * scale);
+            painter.restore();
             painter.setOpacity(titleOpacity);
         }
 
-        // Shimmer loop
+        // Shimmer sweep — premium, slow
         if (m_showTitleEntryProgress >= 1.0 && m_showTitleLoopAnimType == "shimmer") {
-            double shimmerPos = (m_loopFrame % 120) / 120.0;
-            double sx = boxRect.x() + (boxRect.width() + 20 * scale) * shimmerPos - 10 * scale;
-            QLinearGradient shimGrad(sx, boxRect.y(), sx + 10 * scale, boxRect.y() + boxRect.height());
+            int shimCycle = 180;
+            double shimmerPos = (m_loopFrame % shimCycle) / static_cast<double>(shimCycle);
+            double sweepW = 30 * scale;
+            double sx = boxRect.x() + (boxRect.width() + sweepW * 2) * shimmerPos - sweepW;
+            QLinearGradient shimGrad(sx, boxRect.y(), sx + sweepW, boxRect.y());
             shimGrad.setColorAt(0.0, QColor(255, 255, 255, 0));
-            shimGrad.setColorAt(0.5, QColor(255, 255, 255, 50));
+            shimGrad.setColorAt(0.4, QColor(255, 255, 255, 35));
+            shimGrad.setColorAt(0.6, QColor(255, 255, 255, 35));
             shimGrad.setColorAt(1.0, QColor(255, 255, 255, 0));
+            painter.save();
             painter.setPen(Qt::NoPen);
             painter.setBrush(shimGrad);
             painter.setClipRect(boxRect);
             painter.drawRect(boxRect);
             painter.setClipping(false);
+            painter.restore();
         }
 
-        // Title text
-        painter.setFont(titleF);
-        painter.setPen(m_showTitleTextColor);
-        painter.drawText(static_cast<int>(boxRect.x()) + padX, static_cast<int>(boxRect.y()) + padY + titleFm.ascent(), m_showTitleText);
+        // Title + Subtitle text — skip if design template already drew it
+        if (!titleDesignHandledText) {
+            QRectF titleTextRect(boxRect.x() + padX, boxRect.y() + padY,
+                                 boxRect.width() - padX * 2, titleFm.height());
+            int subY = static_cast<int>(boxRect.y()) + padY + titleFm.height() + static_cast<int>(4 * scale);
+            QRectF subTextRect(boxRect.x() + padX, subY, boxRect.width() - padX * 2, subFm.height());
+            QColor shadowColor(0, 0, 0, 100);
+            QColor subColor(m_showTitleTextColor.red(), m_showTitleTextColor.green(), m_showTitleTextColor.blue(), 200);
 
-        // Subtitle text
-        if (!m_showSubtitleText.isEmpty()) {
-            painter.setFont(subF);
-            painter.setPen(m_showTitleTextColor.lighter(130));
-            painter.drawText(static_cast<int>(boxRect.x()) + padX, static_cast<int>(boxRect.y()) + padY + titleFm.height() + static_cast<int>(4 * scale) + subFm.ascent(), m_showSubtitleText);
+            // ── TITLE TEXT ──
+            if (titleEntryIsPerLetter && m_showTitleEntryProgress < 1.0) {
+                // Per-letter entry animation on title
+                auto& anim = m_showTitleEntryAnimType;
+                if (anim == "typewriter") fx::typewriter(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "bounce_in") fx::bounceIn(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "wave_text") fx::waveText(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "kinetic_pop") fx::kineticPop(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "tracking_expand") fx::trackingExpand(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "fade_up_letter") fx::fadeUpPerLetter(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "scale_up_letter") fx::scaleUpPerLetter(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "blur_in") fx::blurIn(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "slide_per_letter") fx::slidePerLetter(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "rotate_in_letter") fx::rotateInPerLetter(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "matrix_rain") fx::matrixRain(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "cascade_reveal") fx::cascadeReveal(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "elastic_drop") fx::elasticDrop(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "spiral_in") fx::spiralIn(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "flip_board") fx::flipBoard(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "scatter_assemble") fx::scatterAssemble(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "stamp_press") fx::stampPress(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "swing_drop") fx::swingDrop(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "neon_flicker") fx::neonFlicker(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                else if (anim == "rubber_stretch") fx::rubberStretch(painter, m_showTitleText, titleTextRect, m_showTitleEntryProgress, titleF, m_showTitleTextColor);
+                // Subtitle also gets per-letter entry (delayed slightly)
+                if (!m_showSubtitleText.isEmpty()) {
+                    double subProg = qMax(0.0, m_showTitleEntryProgress - 0.15); // subtitle starts 15% later
+                    fx::fadeUpPerLetter(painter, m_showSubtitleText, subTextRect, subProg, subF, subColor);
+                }
+            } else if (titleLoopIsPerLetter && m_showTitleEntryProgress >= 1.0) {
+                // Skip standard title text — per-letter loop draws below
+                // But ALWAYS draw subtitle in standard mode
+                if (!m_showSubtitleText.isEmpty()) {
+                    painter.setFont(subF);
+                    painter.setPen(shadowColor);
+                    painter.drawText(static_cast<int>(subTextRect.x()) + 1, subY + subFm.ascent() + 1, m_showSubtitleText);
+                    painter.setPen(subColor);
+                    painter.drawText(static_cast<int>(subTextRect.x()), subY + subFm.ascent(), m_showSubtitleText);
+                }
+            } else {
+                // Standard title with shadow
+                painter.setFont(titleF);
+                painter.setPen(shadowColor);
+                painter.drawText(static_cast<int>(boxRect.x()) + padX + 1, static_cast<int>(boxRect.y()) + padY + titleFm.ascent() + 1, m_showTitleText);
+                painter.setPen(m_showTitleTextColor);
+                painter.drawText(static_cast<int>(boxRect.x()) + padX, static_cast<int>(boxRect.y()) + padY + titleFm.ascent(), m_showTitleText);
+
+                // Standard subtitle with shadow
+                if (!m_showSubtitleText.isEmpty()) {
+                    painter.setFont(subF);
+                    painter.setPen(shadowColor);
+                    painter.drawText(static_cast<int>(subTextRect.x()) + 1, subY + subFm.ascent() + 1, m_showSubtitleText);
+                    painter.setPen(subColor);
+                    painter.drawText(static_cast<int>(subTextRect.x()), subY + subFm.ascent(), m_showSubtitleText);
+                }
+            }
+        }
+
+        // ── PER-LETTER LOOP ANIMATIONS for title + subtitle (cinema-grade) ──
+        // Per-letter loops run ALWAYS (even over design template text — they replace it)
+        if (titleLoopIsPerLetter && m_showTitleEntryProgress >= 1.0) {
+            // Helper lambda: animate per-letter for any text line
+            auto animateLetters = [&](const QString& text, const QFont& font, const QColor& color,
+                                      double baseX, double baseY, double phaseOffset) {
+                QFontMetrics fm(font);
+                double t = m_loopFrame * 0.033;
+                painter.save(); painter.setFont(font);
+
+                if (m_showTitleLoopAnimType == "wave_float") {
+                    double sx = baseX;
+                    for (int i = 0; i < text.length(); i++) {
+                        double phase = t * 1.8 - i * 0.45 + phaseOffset;
+                        double offY = std::sin(phase) * 4.0 * scale;
+                        painter.setPen(QColor(0,0,0,80));
+                        painter.drawText(QPointF(sx + scale, baseY + offY + scale), text.mid(i, 1));
+                        painter.setPen(color);
+                        painter.drawText(QPointF(sx, baseY + offY), text.mid(i, 1));
+                        sx += fm.horizontalAdvance(text[i]);
+                    }
+                } else if (m_showTitleLoopAnimType == "rotate_swing") {
+                    double sx = baseX;
+                    for (int i = 0; i < text.length(); i++) {
+                        double phase = t * 2.0 + i * 0.7 + phaseOffset;
+                        double angle = std::sin(phase) * 8.0;
+                        double charW = fm.horizontalAdvance(text[i]);
+                        painter.save();
+                        painter.translate(sx + charW / 2.0, baseY);
+                        painter.rotate(angle);
+                        painter.translate(-(sx + charW / 2.0), -baseY);
+                        painter.setPen(QColor(0,0,0,80));
+                        painter.drawText(QPointF(sx + scale, baseY + scale), text.mid(i, 1));
+                        painter.setPen(color);
+                        painter.drawText(QPointF(sx, baseY), text.mid(i, 1));
+                        painter.restore();
+                        sx += charW;
+                    }
+                } else if (m_showTitleLoopAnimType == "scale_breathe") {
+                    double sx = baseX;
+                    for (int i = 0; i < text.length(); i++) {
+                        double phase = t * 1.5 + i * 1.1 + phaseOffset;
+                        double s = 1.0 + std::sin(phase) * 0.08;
+                        double charW = fm.horizontalAdvance(text[i]);
+                        painter.save();
+                        painter.translate(sx + charW / 2.0, baseY - fm.ascent() / 2.0);
+                        painter.scale(s, s);
+                        painter.translate(-(sx + charW / 2.0), -(baseY - fm.ascent() / 2.0));
+                        painter.setPen(color);
+                        painter.drawText(QPointF(sx, baseY), text.mid(i, 1));
+                        painter.restore();
+                        sx += charW;
+                    }
+                } else if (m_showTitleLoopAnimType == "color_cycle") {
+                    double sx = baseX;
+                    for (int i = 0; i < text.length(); i++) {
+                        double hueShift = std::fmod(t * 20.0 + i * 25.0 + phaseOffset * 100, 360.0);
+                        QColor lc = QColor::fromHsvF(std::fmod(m_accentColor.hsvHueF() + hueShift / 360.0, 1.0),
+                                                     qBound(0.0, m_accentColor.hsvSaturationF() * 0.8, 1.0), 1.0);
+                        painter.setPen(lc);
+                        painter.drawText(QPointF(sx, baseY), text.mid(i, 1));
+                        sx += fm.horizontalAdvance(text[i]);
+                    }
+                } else if (m_showTitleLoopAnimType == "glitch_letters") {
+                    double sx = baseX;
+                    for (int i = 0; i < text.length(); i++) {
+                        double offX = 0, offY = 0;
+                        int gs = static_cast<int>(std::abs(std::sin(i * 47.13 + phaseOffset * 10 + std::floor(t * 30 / 90.0) * 17.3)) * 43758.5);
+                        if ((m_loopFrame % 90) >= (gs % 80) && (m_loopFrame % 90) < (gs % 80) + 3) {
+                            double s1 = std::sin(i * 31.7 + m_loopFrame * 7.13) * 43758.5;
+                            double s2 = std::sin(i * 83.1 + m_loopFrame * 3.17) * 27391.1;
+                            offX = (s1 - std::floor(s1) - 0.5) * 6.0 * scale;
+                            offY = (s2 - std::floor(s2) - 0.5) * 4.0 * scale;
+                        }
+                        painter.setPen(color);
+                        painter.drawText(QPointF(sx + offX, baseY + offY), text.mid(i, 1));
+                        sx += fm.horizontalAdvance(text[i]);
+                    }
+                } else if (m_showTitleLoopAnimType == "typewriter_loop") {
+                    int cycleLen = text.length() * 8 + 60;
+                    int frameInCycle = (m_loopFrame + static_cast<int>(phaseOffset * 30)) % cycleLen;
+                    auto vis = qMin(text.length(), static_cast<qsizetype>(frameInCycle / 4));
+                    if (frameInCycle > text.length() * 4 + 10) vis = text.length();
+                    double sx = baseX;
+                    for (int i = 0; i < text.length(); i++) {
+                        int alpha = i < vis ? 255 : 0;
+                        painter.setPen(QColor(color.red(), color.green(), color.blue(), alpha));
+                        painter.drawText(QPointF(sx, baseY), text.mid(i, 1));
+                        sx += fm.horizontalAdvance(text[i]);
+                    }
+                    if ((m_loopFrame / 15) % 2 == 0) {
+                        double cx = baseX;
+                        for (qsizetype i = 0; i < qMin(vis, text.length()); i++) cx += fm.horizontalAdvance(text[i]);
+                        painter.setPen(QPen(m_accentColor, 1.5 * scale));
+                        painter.drawLine(QPointF(cx + 2*scale, baseY - fm.ascent()), QPointF(cx + 2*scale, baseY + fm.descent()));
+                    }
+                }
+                painter.restore();
+            };
+
+            // Title line — left-aligned
+            double titleX = boxRect.x() + padX;
+            double titleY = boxRect.y() + padY + titleFm.ascent();
+            animateLetters(m_showTitleText, titleF, m_showTitleTextColor, titleX, titleY, 0.0);
+
+            // Subtitle line — same animation, slightly phase-offset for visual interest
+            if (!m_showSubtitleText.isEmpty()) {
+                QColor subColor(m_showTitleTextColor.red(), m_showTitleTextColor.green(), m_showTitleTextColor.blue(), 200);
+                double subLY = boxRect.y() + padY + titleFm.height() + 4 * scale + subFm.ascent();
+                animateLetters(m_showSubtitleText, subF, subColor, titleX, subLY, 1.5);
+            }
+        }
+
+        // Visual FX loops on title
+        if (m_showTitleEntryProgress >= 1.0 && m_showTitleLoopAnimType != "none") {
+            if (m_showTitleLoopAnimType == "neon_glow")
+                fx::neonGlow(painter, boxRect, m_accentColor, 0.5 + stLoopPhase * 0.3);
+            else if (m_showTitleLoopAnimType == "edge_glow")
+                fx::edgeGlow(painter, boxRect, m_accentColor, 3 + stLoopPhase * 2);
+            else if (m_showTitleLoopAnimType == "glitch_rgb")
+                fx::glitchRGB(painter, boxRect, 0.3 + stLoopPhase * 0.2, m_loopFrame);
         }
 
         painter.restore();
@@ -1799,10 +2235,11 @@ QImage Compositor::composite(const QImage& videoFrame, const QList<TalentOverlay
         blend.end();
     }
 
-    // ── Step 4: GPU Post-Processing — ALL effects via GLSL shaders ──
-    if (m_gpu.isAvailable() && !m_bypassActive && !m_animTypeStr.isEmpty()) {
-        output = m_gpu.postProcess(output, m_animTypeStr, m_accentColor, m_loopFrame);
-    }
+    // ── Step 4: GPU Post-Processing — DISABLED ──
+    // m_animTypeStr is the overlay ENTRY animation type (slide_left, wipe, etc.)
+    // NOT a post-process effect. Passing it to postProcess caused visual corruption
+    // (wipe_linear applied a cycling wipe to the entire output frame).
+    // Post-processing is handled by AE effects (m_aeEffectId) in Step 2.5 above.
 
     m_lastCompositeMs = m_perfTimer.nsecsElapsed() / 1000000.0;
     emit frameComposited(output);

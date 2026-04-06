@@ -74,7 +74,7 @@ Item {
                         "#00FFFF","#0088FF","#0044FF","#0000FF","#4400FF","#8800FF","#FF00FF","#FF0088",
                         "#CC0000","#CC4400","#CC8800","#CCCC00","#88CC00","#00CC00","#00CC88","#00CCCC",
                         "#FFFFFF","#CCCCCC","#999999","#666666","#333333","#1A1A1A","#0D0D0D","#000000",
-                        "#E30613","#5B4FDB","#0066CC","#1DB954","#FF6B00","#D4AF37","#00E5FF","#C0C0C0"
+                        "#E30613","#6C5CE7","#0066CC","#1DB954","#FF6B00","#D4AF37","#00E5FF","#C0C0C0"
                     ]
                     Rectangle {
                         width: 20; height: 20; radius: 3; color: modelData

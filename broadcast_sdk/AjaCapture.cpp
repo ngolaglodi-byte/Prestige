@@ -4,6 +4,8 @@
 
 #include "AjaCapture.h"
 #include <QDebug>
+#include <QTimer>
+#include <QDateTime>
 #include <QFile>
 
 namespace prestige {
@@ -116,9 +118,47 @@ bool AjaCapture::open(const QString& deviceName, const QSize& resolution, int fp
     m_card->SetVideoFormat(videoFormat);
     m_card->SetMode(NTV2_CHANNEL1, NTV2_MODE_INPUT);
 
+    // Enable audio input (48kHz 16-bit stereo — SMPTE 299M)
+    m_card->SetAudioSystemInputSource(NTV2_AUDIOSYSTEM_1, NTV2_AUDIO_EMBEDDED, NTV2_EMBEDDED_AUDIO_INPUT_VIDEO_1);
+
     m_connected = true;
     emit connectionChanged(true);
-    qInfo() << "[AJA] Opened:" << deviceName << resolution << fps << "fps";
+
+    // Start capture thread
+    m_captureTimer = new QTimer(this);
+    m_captureTimer->setInterval(1000 / qMax(1, fps));
+    connect(m_captureTimer, &QTimer::timeout, this, [this]() {
+        if (!m_card || !m_connected) return;
+
+        // Read frame from DMA
+        ULWord* pBuffer = nullptr;
+        ULWord bufferSize = 0;
+        m_card->DMAReadFrame(0, pBuffer, bufferSize);
+
+        if (pBuffer && bufferSize > 0) {
+            // Convert NTV2 frame to QImage (UYVY → RGB32)
+            QImage frame(m_resolution, QImage::Format_RGB32);
+            // Simple UYVY to RGB conversion
+            const uint8_t* src = reinterpret_cast<const uint8_t*>(pBuffer);
+            for (int y = 0; y < m_resolution.height(); ++y) {
+                QRgb* dst = reinterpret_cast<QRgb*>(frame.scanLine(y));
+                for (int x = 0; x < m_resolution.width(); x += 2) {
+                    int idx = (y * m_resolution.width() + x) * 2;
+                    int u  = src[idx] - 128;
+                    int y0 = src[idx+1];
+                    int v  = src[idx+2] - 128;
+                    int y1 = src[idx+3];
+                    dst[x]   = qRgb(qBound(0, y0 + 1.402*v, 255), qBound(0, y0 - 0.344*u - 0.714*v, 255), qBound(0, y0 + 1.772*u, 255));
+                    dst[x+1] = qRgb(qBound(0, y1 + 1.402*v, 255), qBound(0, y1 - 0.344*u - 0.714*v, 255), qBound(0, y1 + 1.772*u, 255));
+                }
+            }
+            m_frameId++;
+            emit frameReady(frame, QDateTime::currentMSecsSinceEpoch());
+        }
+    });
+    m_captureTimer->start();
+
+    qInfo() << "[AJA] Opened:" << deviceName << resolution << fps << "fps — capture started";
     return true;
 #else
     Q_UNUSED(deviceName)
@@ -129,6 +169,11 @@ bool AjaCapture::open(const QString& deviceName, const QSize& resolution, int fp
 
 void AjaCapture::close()
 {
+    if (m_captureTimer) {
+        m_captureTimer->stop();
+        delete m_captureTimer;
+        m_captureTimer = nullptr;
+    }
 #ifdef PRESTIGE_HAVE_AJA
     if (m_card) {
         delete m_card;

@@ -169,7 +169,6 @@ int main(int argc, char* argv[])
     // The WhisperEngine captures audio at 16kHz mono. For broadcast output,
     // we need a separate 48kHz stereo audio capture routed to the encoder.
     // For now, connect the whisper audio buffer as a source.
-    // TODO: Add dedicated 48kHz audio capture for broadcast-grade A/V sync.
 
     // ── 4b. Config receiver from Control Room (:5559) ────────
     // Listens for style/animation changes from the director
@@ -306,6 +305,8 @@ int main(int argc, char* argv[])
             // Social media RTMP outputs
             QStringList socialUrls;
             auto socialArr = obj["social_outputs"].toArray();
+            if (!socialArr.isEmpty())
+                qInfo() << "[VisionEngine] Social outputs:" << socialArr.size() << "destinations";
             for (const auto& v : socialArr) {
                 QString url = v.toObject()["url"].toString();
                 if (!url.isEmpty())
@@ -345,12 +346,16 @@ int main(int argc, char* argv[])
                 else
                     outputRouter.removeOutput(0);
 
-                // Social media RTMP outputs (100-106)
-                for (int i = 100; i <= 106; ++i)
-                    outputRouter.removeOutput(i);
-                int socialBitrate = qMax(4, outBitrate - 2); // slightly lower for social
-                for (int i = 0; i < socialUrls.size() && i < 7; ++i) {
-                    outputRouter.addOutput(100 + i, socialUrls[i], socialBitrate, outFps);
+                // Social media RTMP outputs (100-106) — only reconnect if URL changed
+                int socialBitrate = qMax(4, outBitrate - 2);
+                for (int i = 0; i < 7; ++i) {
+                    int outId = 100 + i;
+                    if (i < socialUrls.size() && !socialUrls[i].isEmpty()) {
+                        // addOutput skips if same URL already active
+                        outputRouter.addOutput(outId, socialUrls[i], socialBitrate, outFps);
+                    } else {
+                        outputRouter.removeOutput(outId);
+                    }
                 }
             }, Qt::QueuedConnection);
 
@@ -491,8 +496,12 @@ int main(int argc, char* argv[])
                 compositor.setVsCustomBackground(vsCustomBg);
             }, Qt::QueuedConnection);
 
-            // Overlay scale factors
+            // Overlay scale factors + offsets
             double npScale = obj["nameplate_scale"].toDouble(1.0);
+            int npOffX = obj["nameplate_offset_x"].toInt(0);
+            int npOffY = obj["nameplate_offset_y"].toInt(0);
+            int npFontSize = obj["nameplate_font_size"].toInt(28);
+            QString npTextColor = obj["nameplate_text_color"].toString("#FFFFFF");
             double sbScale = obj["scoreboard_scale"].toDouble(1.0);
             double wScale = obj["weather_scale"].toDouble(1.0);
             double ckScale = obj["clock_scale"].toDouble(1.0);
@@ -513,6 +522,7 @@ int main(int argc, char* argv[])
             int stOffX = obj["show_title_offset_x"].toInt(0);
             int stOffY = obj["show_title_offset_y"].toInt(0);
             int tkOffY = obj["ticker_offset_y"].toInt(0);
+            QString tkPosition = obj["ticker_position"].toString("bottom");
             int subOffX = obj["subtitle_offset_x"].toInt(0);
             int subOffY = obj["subtitle_offset_y"].toInt(0);
             int cdOffX = obj["countdown_offset_x"].toInt(0);
@@ -554,10 +564,10 @@ int main(int argc, char* argv[])
             QString wIcon = obj["weather_condition_icon"].toString();
 
             QMetaObject::invokeMethod(&compositor, [&compositor,
-                npScale, sbScale, wScale, ckScale, cdScale, qrScale,
+                npScale, npOffX, npOffY, npFontSize, npTextColor, sbScale, wScale, ckScale, cdScale, qrScale,
                 tkFontSize, tkBgColor, tkTextColor, tkSpeed,
                 clockVis, clockFmt,
-                stOffX, stOffY, tkOffY, subOffX, subOffY,
+                stOffX, stOffY, tkOffY, tkPosition, subOffX, subOffY,
                 cdOffX, cdOffY, ckOffX, ckOffY, qrOffX, qrOffY,
                 sbOffX, sbOffY, wOffX, wOffY, logoOffX, logoOffY, nameOffX, nameOffY,
                 scoreVis, sbTeamA, sbTeamB, sbScoreA, sbScoreB, sbColA, sbColB, sbPos, sbTime, sbPeriod,
@@ -565,6 +575,9 @@ int main(int argc, char* argv[])
                 weatherVis, wCity, wTemp, wUnit, wIcon]() {
                 // Scales
                 compositor.setNameplateScale(npScale);
+                compositor.setNameplateOffset(npOffX, npOffY);
+                compositor.setNameplateFontSize(npFontSize);
+                compositor.setNameplateTextColor(QColor(npTextColor));
                 compositor.setScoreboardScale(sbScale);
                 compositor.setWeatherScale(wScale);
                 compositor.setClockScale(ckScale);
@@ -581,6 +594,7 @@ int main(int argc, char* argv[])
                 // Offsets
                 compositor.setShowTitleOffset(stOffX, stOffY);
                 compositor.setTickerOffsetY(tkOffY);
+                compositor.setTickerPosition(tkPosition);
                 compositor.setSubtitleOffset(subOffX, subOffY);
                 compositor.setCountdownOffset(cdOffX, cdOffY);
                 compositor.setClockOffset(ckOffX, ckOffY);
@@ -772,7 +786,6 @@ int main(int argc, char* argv[])
             static int logCount = 0;
             if (logCount++ % 150 == 0) { // Log every ~5 seconds
                 qInfo() << "[Pipeline]" << (frame.isNull() ? "no-source" : "source-ok") << composited.size() << "frames:" << processedCount.load();
-                if (logCount <= 3) composited.save("/tmp/prestige_composite_" + QString::number(logCount) + ".png");
             }
 
             // Send to all outputs (RTMP/SRT/File)

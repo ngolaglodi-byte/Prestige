@@ -9,58 +9,97 @@ Item {
     property string previewAnimType: setupController.animationType
 
     RowLayout {
-        anchors.fill: parent; anchors.margins: 24; spacing: 24
+        anchors.fill: parent; anchors.margins: 20; spacing: 20
 
         // ── Left: Style list (scrollable) — 50% ────────────
         ColumnLayout {
-            Layout.preferredWidth: (parent.width - 24) / 2
-            Layout.fillHeight: true; spacing: 12
-            Label { text: window.t("overlay_style"); font.pixelSize: 16; color: window.darkMode ? "white" : "#1A1A1A" }
-            Label { text: window.t("hover_preview"); font.pixelSize: 12; color: window.darkMode ? "#666" : "#999" }
+            Layout.preferredWidth: (parent.width - 20) / 2
+            Layout.fillHeight: true; spacing: 10
+
+            // Section header
+            RowLayout {
+                spacing: 8
+                Rectangle {
+                    Layout.preferredWidth: 28; Layout.preferredHeight: 28; radius: 7
+                    color: Qt.rgba(108/255,92/255,231/255,0.12)
+                    Label { anchors.centerIn: parent; text: "\u25A0"; font.pixelSize: 12; color: "#6C5CE7" }
+                }
+                ColumnLayout {
+                    spacing: 0
+                    Label { text: window.t("overlay_style"); font.pixelSize: 15; font.weight: Font.Bold; color: window.darkMode ? "#F0F0F5" : "#0F0F14" }
+                    Label { text: window.t("hover_preview"); font.pixelSize: 11; color: window.darkMode ? "#505060" : "#999" }
+                }
+            }
 
             ListView {
                 id: styleList; Layout.fillWidth: true; Layout.fillHeight: true
-                spacing: 4; clip: true
+                spacing: 3; clip: true
                 model: ListModel {
-                    ListElement { sid: "bfm"; nm: "BFM TV"; ref: "Barre rouge, fond noir" }
-                    ListElement { sid: "lci"; nm: "LCI"; ref: "Dégradé, triangle orange" }
-                    ListElement { sid: "france2"; nm: "France 2"; ref: "Fond blanc, bleu" }
-                    ListElement { sid: "france24"; nm: "France 24"; ref: "Double ligne rouge+bleu" }
-                    ListElement { sid: "cnn"; nm: "CNN"; ref: "Fond rouge plein" }
-                    ListElement { sid: "bbc"; nm: "BBC News"; ref: "Rouge, barre blanche" }
-                    ListElement { sid: "skynews"; nm: "Sky News"; ref: "Bleu Sky, cyan" }
-                    ListElement { sid: "aljazeera"; nm: "Al Jazeera"; ref: "Bordeaux, texte or" }
-                    ListElement { sid: "sports"; nm: "Sports"; ref: "Badge numéro, accent" }
-                    ListElement { sid: "football"; nm: "Football TV"; ref: "Fond pelouse" }
-                    ListElement { sid: "olympics"; nm: "Olympiques"; ref: "Blanc, anneaux" }
-                    ListElement { sid: "politique"; nm: "Débats politiques"; ref: "Bleu nuit, tricolore" }
-                    ListElement { sid: "gouvernement"; nm: "Officiel gouv."; ref: "Blanc, sceau RF" }
-                    ListElement { sid: "cinema"; nm: "Cinéma / Festival"; ref: "Noir, lignes or" }
-                    ListElement { sid: "luxury"; nm: "Luxury / Prestige"; ref: "Argent, spacing" }
-                    ListElement { sid: "tech"; nm: "Tech / Innovation"; ref: "Cyan néon, mono" }
-                    ListElement { sid: "minimal"; nm: "Minimaliste"; ref: "Sans fond" }
-                    ListElement { sid: "dual"; nm: "Deux personnes"; ref: "Double bloc" }
-                    ListElement { sid: "fullscreen"; nm: "Plein écran"; ref: "Gradient, médaillon" }
-                    ListElement { sid: "breaking"; nm: "Breaking News"; ref: "Bannière rouge" }
+                    ListElement { sid: "title_01"; nm: "Simple Tag"; ref: "Animation epuree, tag simple" }
+                    ListElement { sid: "title_02"; nm: "Stacked Blocks"; ref: "Blocs empiles, moderne" }
+                    ListElement { sid: "title_03"; nm: "Modern Design"; ref: "Design contemporain" }
+                    ListElement { sid: "title_04"; nm: "Angled Bars"; ref: "Barres obliques, dynamique" }
+                    ListElement { sid: "title_05"; nm: "Clean Bar"; ref: "Barre propre, classique" }
+                    ListElement { sid: "title_06"; nm: "Text Block"; ref: "Bloc texte, pro" }
+                    ListElement { sid: "title_07"; nm: "Stylish Line"; ref: "Ligne stylisee, elegant" }
+                    ListElement { sid: "title_08"; nm: "Motion Block"; ref: "Bloc en mouvement" }
+                    ListElement { sid: "title_09"; nm: "Wide Bar"; ref: "Barre large, broadcast" }
                 }
                 delegate: Rectangle {
-                    width: styleList.width; height: 52; radius: 8
-                    color: sid === setupController.selectedStyle ? Qt.rgba(91/255,79/255,219/255,0.12) : ma.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06)) : (window.darkMode ? "#0D0D10" : "#E0E0E6")
-                    border.color: sid === setupController.selectedStyle ? Qt.rgba(91/255,79/255,219/255,0.3) : "transparent"
+                    id: styleDelegate
+                    property bool isSelected: sid === setupController.lottiePreset
+                    width: styleList.width; height: 54; radius: 10
+                    color: isSelected
+                        ? (window.darkMode ? Qt.rgba(108/255,92/255,231/255,0.14) : Qt.rgba(108/255,92/255,231/255,0.10))
+                        : (ma.containsMouse ? (window.darkMode ? Qt.rgba(255,255,255,0.04) : Qt.rgba(0,0,0,0.04)) : (window.darkMode ? "#0D0D12" : "#E4E4EA"))
+                    border.color: isSelected ? Qt.rgba(108/255,92/255,231/255,0.35) : "transparent"
+                    border.width: isSelected ? 1 : 0
                     Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
                     RowLayout {
-                        anchors.fill: parent; anchors.margins: 8; spacing: 8
-                        Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: 32; radius: 2; color: getAccent(sid) }
-                        ColumnLayout { Layout.fillWidth: true; spacing: 1
-                            Label { text: nm; font.pixelSize: 13; font.weight: Font.DemiBold; color: window.darkMode ? "white" : "#1A1A1A" }
-                            Label { text: ref; font.pixelSize: 10; color: window.darkMode ? "#666" : "#999" }
+                        anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 12; anchors.topMargin: 6; anchors.bottomMargin: 6; spacing: 10
+
+                        // Accent bar with gradient
+                        Rectangle {
+                            Layout.preferredWidth: 3; Layout.preferredHeight: 34; radius: 2
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: isSelected ? "#8B7AFF" : "#6C5CE7" }
+                                GradientStop { position: 1.0; color: isSelected ? "#6C5CE7" : "#5A4BD4" }
+                            }
+                            opacity: isSelected ? 1.0 : 0.4
+                            Behavior on opacity { NumberAnimation { duration: 200 } }
                         }
-                        Label { text: "\u2713"; color: "#5B4FDB"; font.pixelSize: 14; visible: sid === setupController.selectedStyle }
+
+                        ColumnLayout { Layout.fillWidth: true; spacing: 2
+                            Label {
+                                text: nm; font.pixelSize: 13; font.weight: Font.DemiBold
+                                color: isSelected ? (window.darkMode ? "#F0F0F5" : "#0F0F14") : (window.darkMode ? "#B0B0BC" : "#333")
+                            }
+                            Label {
+                                text: ref; font.pixelSize: 10
+                                color: window.darkMode ? "#505060" : "#999"
+                            }
+                        }
+
+                        // Checkmark
+                        Rectangle {
+                            Layout.preferredWidth: 22; Layout.preferredHeight: 22; radius: 11
+                            color: isSelected ? "#6C5CE7" : "transparent"
+                            border.color: isSelected ? "#6C5CE7" : (window.darkMode ? Qt.rgba(255,255,255,0.08) : Qt.rgba(0,0,0,0.10))
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: 200 } }
+                            Label {
+                                anchors.centerIn: parent; text: "\u2713"
+                                color: "white"; font.pixelSize: 11; font.weight: Font.Bold
+                                opacity: isSelected ? 1 : 0
+                                Behavior on opacity { NumberAnimation { duration: 200 } }
+                            }
+                        }
                     }
                     MouseArea {
                         id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: { setupController.selectedStyle = sid; root.previewStyleId = sid }
-                        onEntered: root.previewStyleId = sid
+                        onClicked: { setupController.lottiePreset = sid }
                     }
                 }
             }
@@ -77,145 +116,123 @@ Item {
             ColumnLayout {
                 id: rightCol; width: parent.width; spacing: 12
 
-                Label { text: window.t("preview"); font.pixelSize: 16; color: window.darkMode ? "white" : "#1A1A1A" }
+                // Section header
+                RowLayout {
+                    spacing: 8
+                    Rectangle {
+                        Layout.preferredWidth: 28; Layout.preferredHeight: 28; radius: 7
+                        color: Qt.rgba(108/255,92/255,231/255,0.12)
+                        Label { anchors.centerIn: parent; text: "\u25B6"; font.pixelSize: 12; color: "#6C5CE7" }
+                    }
+                    ColumnLayout {
+                        spacing: 0
+                        Label { text: window.t("preview"); font.pixelSize: 15; font.weight: Font.Bold; color: window.darkMode ? "#F0F0F5" : "#0F0F14" }
+                        Label { text: setupController.lottiePreset.replace("_"," ").toUpperCase(); font.pixelSize: 10; color: window.darkMode ? "#505060" : "#999" }
+                    }
+                }
 
                 // ── PREVIEW BOX ────────────────────────────────
-                // Shows LIVE Vision Engine output (with Lottie animations)
-                // when connected, or QML fallback when standalone
                 Rectangle {
                     id: pvBox; Layout.fillWidth: true; Layout.preferredHeight: width * 9 / 16
-                color: window.darkMode ? "#0A0A0E" : "#E8E8EE"; radius: 10; clip: true
+                    color: "#000000"; radius: 8; clip: true
 
-                // LIVE preview from Vision Engine (shows real Lottie animations)
-                Image {
-                    id: styleLivePreview
-                    anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                    cache: false
-                    source: previewMonitor.active ? "image://preview/frame?" + stylePreviewCounter : ""
-                    visible: previewMonitor.active
-                    property int stylePreviewCounter: 0
-                    Connections {
-                        target: previewMonitor
-                        function onFrameUpdated() { styleLivePreview.stylePreviewCounter++ }
+                    // Simulated camera background (dark studio gradient)
+                    Rectangle {
+                        anchors.fill: parent; radius: 8
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#141820" }
+                            GradientStop { position: 0.5; color: "#0C1018" }
+                            GradientStop { position: 1.0; color: "#080A10" }
+                        }
                     }
-                }
 
-                // QML fallback (when Vision Engine not connected)
+                    // Subtle simulated person silhouette (gives broadcast context)
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: parent.height * 0.08; width: parent.width * 0.09; height: width
+                        radius: width / 2; color: Qt.rgba(1,1,1,0.05)
+                    }
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: parent.height * 0.18; width: parent.width * 0.18; height: parent.height * 0.5
+                        radius: width * 0.1; color: Qt.rgba(1,1,1,0.03)
+                    }
+
+                    // Lottie animation preview — rendered by C++ LottiePreviewProvider
+                    Image {
+                        id: lottiePreview
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        cache: false
+                        source: "image://lottie/" + setupController.lottiePreset + "?" + lottieFrameCounter
+                        property int lottieFrameCounter: 0
+                    }
+                    Timer {
+                        interval: 50; running: true; repeat: true  // ~20fps for smoother preview
+                        onTriggered: lottiePreview.lottieFrameCounter++
+                    }
+
+                    // Top-left badge showing current preset
+                    Rectangle {
+                        anchors.top: parent.top; anchors.left: parent.left; anchors.margins: 8
+                        width: stLbl.implicitWidth + 12; height: 20; radius: 4
+                        color: Qt.rgba(0,0,0,0.5); z: 10
+                        Label { id: stLbl; anchors.centerIn: parent; text: setupController.lottiePreset.replace("_"," ").toUpperCase(); font.pixelSize: 9; font.bold: true; color: "#999" }
+                    }
+
+                    // LIVE badge (if VE connected)
+                    Rectangle {
+                        anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 8
+                        width: pvLbl2.implicitWidth + 12; height: 20; radius: 4
+                        color: Qt.rgba(0,0,0,0.5); z: 10
+                        Label { id: pvLbl2; anchors.centerIn: parent; text: previewMonitor.active ? "LIVE" : "PREVIEW"; font.pixelSize: 9; color: previewMonitor.active ? "#00D68F" : "#666" }
+                    }
+
+                // Hidden fallback item (kept for replay animation code compatibility)
                 Item {
-                    anchors.fill: parent
-                    visible: !previewMonitor.active
+                    anchors.fill: parent; visible: false
 
-                Rectangle { anchors.fill: parent; radius: 10; gradient: Gradient { GradientStop { position: 0; color: "#1A1A24" } GradientStop { position: 1; color: "#0A0A10" } } }
-                Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: parent.height*0.15; width: parent.width*0.2; height: parent.height*0.55; color: Qt.rgba(1,1,1,0.03); radius: width*0.1 }
-                Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: parent.height*0.08; width: parent.width*0.08; height: width; radius: width/2; color: Qt.rgba(1,1,1,0.04) }
+                Rectangle { anchors.fill: parent }
+                Rectangle { id: plate; property real animX: 0; property real animY: 0; property real animOpacity: 1; property real animScale: 1; visible: false
+                    Behavior on animX { id: plateBehaviorX; NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+                    Behavior on animY { id: plateBehaviorY; NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+                    Behavior on animOpacity { id: plateBehaviorOp; NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+                    Behavior on animScale { id: plateBehaviorSc; NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
 
-                // ── THE NAMEPLATE — reacts to style + accent color + opacity + animation ──
-                Rectangle {
-                    id: plate
-                    property real animX: 0
-                    property real animY: 0
-                    property real animOpacity: 1
-                    property real animScale: 1
-
-                    x: parent.width * 0.05 + animX
-                    y: parent.height * 0.85 - Math.max(parent.height * 0.13, 40) + animY
-                    width: Math.max(parent.width * 0.48, 220)
-                    height: Math.max(parent.height * 0.13, 40)
-                    radius: 4
-                    color: getBg(root.previewStyleId)
-                    opacity: setupController.backgroundOpacity * animOpacity
-                    scale: animScale
-                    transformOrigin: Item.Left
-
-                    Behavior on animX { id: plateBehaviorX; NumberAnimation { duration: setupController.animEnterFrames * 33; easing.type: Easing.OutCubic } }
-                    Behavior on animY { id: plateBehaviorY; NumberAnimation { duration: setupController.animEnterFrames * 33; easing.type: Easing.OutCubic } }
-                    Behavior on animOpacity { id: plateBehaviorOp; NumberAnimation { duration: setupController.animEnterFrames * 33; easing.type: Easing.OutCubic } }
-                    Behavior on animScale { id: plateBehaviorSc; NumberAnimation { duration: setupController.animEnterFrames * 33; easing.type: Easing.OutCubic } }
-
-                    // Accent bar left — uses user's accent color
-                    Rectangle { anchors.left: parent.left; width: 3; height: parent.height; color: setupController.accentColor; visible: !isWhite(root.previewStyleId) && root.previewStyleId !== "cnn" && root.previewStyleId !== "bbc" && root.previewStyleId !== "luxury" && root.previewStyleId !== "minimal" }
-                    // BBC white bar
-                    Rectangle { anchors.left: parent.left; width: 5; height: parent.height; radius: 2; color: "white"; visible: root.previewStyleId === "bbc" }
-                    // BBC badge
-                    Rectangle { anchors.right: parent.right; anchors.rightMargin: 5; anchors.verticalCenter: parent.verticalCenter; width: plate.height*0.65; height: plate.height*0.65; radius: 3; color: Qt.rgba(1,1,1,0.15); visible: root.previewStyleId === "bbc"; Text { anchors.centerIn: parent; text: "BBC"; color: "white"; font.pixelSize: Math.max(6, plate.height*0.28); font.bold: true } }
-                    // LCI triangle
-                    Canvas { anchors.top: parent.top; anchors.right: parent.right; width: plate.height*0.35; height: plate.height*0.35; visible: root.previewStyleId === "lci"; onPaint: { var c=getContext("2d"); c.fillStyle="#FF6D00"; c.beginPath(); c.moveTo(0,0); c.lineTo(width,0); c.lineTo(width,height); c.fill() } }
-                    // France24 double line
-                    Rectangle { anchors.bottom: parent.bottom; anchors.bottomMargin: 3; width: parent.width; height: 2; color: "#003580"; visible: root.previewStyleId === "france24" }
-                    // Tricolore
-                    Column { anchors.left: parent.left; width: 5; height: parent.height; visible: root.previewStyleId === "politique" || root.previewStyleId === "gouvernement"; Rectangle { width: 5; height: parent.height/3; color: "#002395" } Rectangle { width: 5; height: parent.height/3; color: "#FFFFFF" } Rectangle { width: 5; height: parent.height/3; color: "#ED2939" } }
-                    // Gouvernement RF seal
-                    Rectangle { anchors.right: parent.right; anchors.rightMargin: 5; anchors.verticalCenter: parent.verticalCenter; width: plate.height*0.6; height: plate.height*0.6; radius: width/2; color: "#EEE"; border.color: "#002395"; border.width: 1; visible: root.previewStyleId === "gouvernement"; Text { anchors.centerIn: parent; text: "RF"; color: "#002395"; font.pixelSize: Math.max(6, plate.height*0.22); font.bold: true } }
-                    // AJ badge
-                    Rectangle { anchors.left: parent.left; width: parent.width*0.14; height: parent.height; color: Qt.rgba(0.83,0.63,0.09,0.3); radius: 2; visible: root.previewStyleId === "aljazeera"; Text { anchors.centerIn: parent; text: "AJ"; color: "#D4A017"; font.pixelSize: Math.max(6, plate.height*0.28); font.bold: true } }
-                    // Sports badge — uses user's accent color
-                    Rectangle { anchors.left: parent.left; width: parent.width*0.14; height: parent.height; color: setupController.accentColor; radius: 2; visible: root.previewStyleId === "sports"; Text { anchors.centerIn: parent; text: "10"; color: "white"; font.pixelSize: Math.max(7, plate.height*0.35); font.bold: true } }
-                    // Olympics rings
-                    Row { anchors.left: parent.left; anchors.leftMargin: 5; anchors.verticalCenter: parent.verticalCenter; spacing: 1; visible: root.previewStyleId === "olympics"; Repeater { model: ["#0085C7","#222","#DF0024","#F4C300","#009F3D"]; Rectangle { width: Math.max(5, plate.height*0.17); height: width; radius: width/2; color: "transparent"; border.color: modelData; border.width: 1 } } }
-                    // Tech scanlines + LIVE
-                    Column { anchors.fill: parent; spacing: 2; opacity: 0.08; visible: root.previewStyleId === "tech"; Repeater { model: Math.max(1, Math.floor(plate.height/3)); Rectangle { width: plate.width; height: 1; color: "white" } } }
-                    Rectangle { anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 3; width: plate.width*0.11; height: plate.height*0.3; radius: 2; color: Qt.rgba(0,0.9,1,0.15); visible: root.previewStyleId === "tech"; Text { anchors.centerIn: parent; text: "LIVE"; color: "#00E5FF"; font.pixelSize: Math.max(4, plate.height*0.16); font.bold: true } }
-                    // Luxury/Cinema lines
-                    Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: "#C0C0C0"; visible: root.previewStyleId === "luxury" }
-                    Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: "#C0C0C0"; visible: root.previewStyleId === "luxury" }
-                    Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: "#D4AF37"; visible: root.previewStyleId === "cinema" }
-                    Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: "#D4AF37"; visible: root.previewStyleId === "cinema" }
-                    // Accent line bottom — uses user's accent color
-                    Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: setupController.accentColor }
-
-                    // ── TALENT NAME + ROLE ──────────────────
+                    // ── TALENT PAR DEFAUT ──────────────────
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left; anchors.leftMargin: getTxtMargin(root.previewStyleId)
-                        spacing: 1
+                        anchors.left: parent.left; anchors.leftMargin: 12
+                        spacing: 2
                         Text {
-                            text: getName(root.previewStyleId)
-                            color: getNameColor(root.previewStyleId)
-                            font.pixelSize: Math.max(9, pvBox.height * 0.032)
+                            text: "Marie Dupont"
+                            color: "white"
+                            font.pixelSize: Math.max(10, pvBox.height * 0.035)
                             font.bold: true
-                            font.family: root.previewStyleId === "tech" ? "Menlo" : "Helvetica Neue"
-                            font.letterSpacing: root.previewStyleId === "luxury" ? 2 : 0
+                            font.family: "Helvetica Neue"
                         }
                         Text {
-                            text: getRole(root.previewStyleId)
-                            color: getRoleColor(root.previewStyleId)
+                            text: "Journaliste - Prestige TV"
+                            color: "#AAA"
                             font.pixelSize: Math.max(7, pvBox.height * 0.022)
-                            font.family: root.previewStyleId === "tech" ? "Menlo" : "Helvetica Neue"
-                            font.italic: root.previewStyleId === "cinema" || root.previewStyleId === "politique"
-                            font.capitalization: root.previewStyleId === "luxury" ? Font.AllUppercase : Font.MixedCase
+                            font.family: "Helvetica Neue"
                         }
+                    }
+
+                    // Animation name badge
+                    Rectangle {
+                        anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 4
+                        width: animLbl.implicitWidth + 8; height: 14; radius: 3
+                        color: Qt.rgba(108/255, 92/255, 231/255, 0.4)
+                        Label { id: animLbl; anchors.centerIn: parent; text: setupController.lottiePreset.replace("_", " ").toUpperCase(); font.pixelSize: 6; font.bold: true; color: "#DDD" }
                     }
                 }
 
-                // ── Effect preview — BIG and VISIBLE ──────────
-                // Each effect category shows a clearly distinct visual
+                // ── Lottie animation indicator ──────────
 
-                // === GLOW: bright thick border + outer halo ===
-                Rectangle {
-                    visible: ["neon_glow","edge_glow","bloom","shimmer"].indexOf(setupController.animationType) >= 0
-                    x: plate.x - 10; y: plate.y - 10
-                    width: plate.width + 20; height: plate.height + 20
-                    radius: 10; color: "transparent"
-                    border.color: setupController.accentColor; border.width: 4
-                    opacity: 0.6 + 0.3 * Math.sin(glowTimer.phase)
-                    Rectangle { anchors.fill: parent; anchors.margins: -8; radius: 18; color: "transparent"; border.color: setupController.accentColor; border.width: 2; opacity: 0.3 + 0.2 * Math.sin(glowTimer.phase * 1.5) }
-                    Rectangle { anchors.fill: parent; anchors.margins: -16; radius: 26; color: "transparent"; border.color: setupController.accentColor; border.width: 1; opacity: 0.15 + 0.1 * Math.sin(glowTimer.phase * 2) }
-                }
-
-                // === GLITCH/VHS: strong RGB split + scan lines ===
-                Item {
-                    visible: ["glitch_rgb","vhs_effect","chromatic_aberration"].indexOf(setupController.animationType) >= 0
-                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; z: plate.z + 1
-                    Text { text: getName(root.previewStyleId); color: Qt.rgba(1,0,0,0.5); font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true; x: 4 * Math.sin(glowTimer.phase * 4); anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -6 }
-                    Text { text: getName(root.previewStyleId); color: Qt.rgba(0,1,1,0.5); font.pixelSize: Math.max(9, pvBox.height * 0.032); font.bold: true; x: -4 * Math.sin(glowTimer.phase * 4); anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -6 }
-                    // Scan lines
-                    Column { anchors.fill: parent; spacing: 3; opacity: 0.15; Repeater { model: Math.floor(parent.height / 4); Rectangle { width: plate.width; height: 1; color: "white" } } }
-                }
-
-                // === PARTICLES: big visible animated dots ===
+                // (Effect previews removed — Lottie handles all visual styling)
                 Repeater {
-                    model: ["sparkles","bokeh","rising_particles","fire_embers","confetti","snow","dust"].indexOf(setupController.animationType) >= 0 ? 20 : 0
+                    model: 0
                     Rectangle {
                         property real rx: Math.random()
                         property real ry: Math.random()
@@ -240,170 +257,19 @@ Item {
                     }
                 }
 
-                // === BLUR: frosted glass overlay ===
-                Rectangle {
-                    visible: ["gaussian_blur_in","radial_blur","directional_blur","defocus","blur_in","tilt_shift"].indexOf(setupController.animationType) >= 0
-                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; radius: 4
-                    color: Qt.rgba(1, 1, 1, 0.08 + 0.04 * Math.sin(glowTimer.phase))
-                    border.color: Qt.rgba(1, 1, 1, 0.15); border.width: 1
-                }
-
-                // === COLOR: moving gradient overlay ===
-                Rectangle {
-                    visible: ["color_sweep","gradient_shift","duotone","shadow_drop_animate","outline_stroke"].indexOf(setupController.animationType) >= 0
-                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; radius: 4
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop { position: Math.abs(Math.sin(glowTimer.phase * 0.3)) * 0.5; color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.4) }
-                        GradientStop { position: 0.5 + Math.abs(Math.sin(glowTimer.phase * 0.3)) * 0.5; color: "transparent" }
-                    }
-                }
-
-                // === LOWER THIRD: thick animated accent line ===
-                Rectangle {
-                    visible: ["line_draw","bar_slide","underline_grow","split_reveal"].indexOf(setupController.animationType) >= 0
-                    x: plate.x; y: plate.y + plate.height - 3
-                    width: plate.width * Math.min(1, (glowTimer.phase % 4) / 2); height: 4; radius: 2
-                    color: setupController.accentColor
-                }
-
-                // === SHAPE: thick animated border ===
-                Rectangle {
-                    visible: ["bracket_expand","corner_build","box_wipe","shape_morph","rectangle_build","hexagon_pattern","grid_reveal","circle_expand"].indexOf(setupController.animationType) >= 0
-                    x: plate.x - 4; y: plate.y - 4; width: plate.width + 8; height: plate.height + 8
-                    radius: 4; color: "transparent"
-                    border.color: setupController.accentColor; border.width: 3
-                    opacity: 0.6 + 0.3 * Math.sin(glowTimer.phase * 1.5)
-                }
-
-                // === TRANSITION: wipe bar moving across ===
-                Rectangle {
-                    visible: ["wipe_linear","push_slide","zoom_through","ink_bleed","spin_transition","cross_dissolve","light_leak"].indexOf(setupController.animationType) >= 0
-                    x: plate.x + plate.width * Math.abs(Math.sin(glowTimer.phase * 0.4)) - 5; y: plate.y - 5
-                    width: 10; height: plate.height + 10; radius: 5
-                    color: Qt.rgba(setupController.accentColor.r, setupController.accentColor.g, setupController.accentColor.b, 0.5)
-                }
-
-                // === LIGHT: bright sweep across plate ===
-                Rectangle {
-                    visible: ["lens_flare","light_rays","light_leak","light_streak"].indexOf(setupController.animationType) >= 0
-                    x: plate.x + plate.width * (0.2 + 0.6 * Math.abs(Math.sin(glowTimer.phase * 0.3))); y: plate.y - 15
-                    width: 40; height: plate.height + 30; radius: 20
-                    gradient: Gradient { orientation: Gradient.Horizontal
-                        GradientStop { position: 0; color: "transparent" }
-                        GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.25 + 0.15 * Math.sin(glowTimer.phase)) }
-                        GradientStop { position: 1; color: "transparent" }
-                    }
-                }
-
-                // ═══ AE POST-EFFECT PREVIEW ═══════════════════
-                // Visual indicator for the active AE post-effect on overlay
-
-                // Distortion preview: wave/ripple on nameplate
-                Item {
-                    visible: ["turbulent_displace","twirl","spherize","bulge","ripple","wave_warp","kaleidoscope","mesh_warp","reshape"].indexOf(setupController.aeEffectId) >= 0
-                    x: plate.x; y: plate.y; width: plate.width; height: plate.height
-                    transform: [
-                        Translate { x: Math.sin(glowTimer.phase * 3) * 3 * setupController.aeEffectIntensity; y: Math.cos(glowTimer.phase * 2.5) * 2 * setupController.aeEffectIntensity }
-                    ]
-                    Rectangle { anchors.fill: parent; radius: 4; color: "transparent"; border.color: "#FF6600"; border.width: 2; opacity: 0.5 + 0.3 * Math.sin(glowTimer.phase * 2) }
-                    Label { anchors.centerIn: parent; text: "DISTORTION"; font.pixelSize: 7; font.bold: true; color: "#FF6600"; opacity: 0.7 }
-                }
-
-                // Color correction preview: tinted overlay
-                Rectangle {
-                    visible: ["curves","levels","hue_saturation","brightness_contrast","exposure","tint","tritone","colorama","leave_color","vibrance","photo_filter","gradient_map","black_white","invert","threshold","solarize","color_balance"].indexOf(setupController.aeEffectId) >= 0
-                    x: plate.x; y: plate.y; width: plate.width; height: plate.height; radius: 4
-                    color: Qt.rgba(setupController.aeEffectColor1.r || 0.9, setupController.aeEffectColor1.g || 0.1, setupController.aeEffectColor1.b || 0.1, 0.25 * setupController.aeEffectIntensity)
-                    Label { anchors.centerIn: parent; text: "COLOR"; font.pixelSize: 7; font.bold: true; color: "#FFD700"; opacity: 0.7 }
-                }
-
-                // Generate preview: animated pattern
-                Item {
-                    visible: ["fractal_noise","cell_pattern","grid","gradient_ramp","vegas","radio_waves","audio_spectrum","lens_flare_gen","light_burst","beam","4color_gradient","fill","stroke","circle_burst","checkerboard"].indexOf(setupController.aeEffectId) >= 0
-                    x: plate.x; y: plate.y; width: plate.width; height: plate.height
-                    Repeater {
-                        model: 8
-                        Rectangle {
-                            property real rx: Math.random()
-                            x: rx * (plate.width - 6); y: (index / 8.0) * plate.height
-                            width: 6; height: 6; radius: 3
-                            color: setupController.aeEffectColor1 || "#00FF88"
-                            opacity: 0.4 + 0.5 * Math.sin(glowTimer.phase * 4 + index * 0.8)
-                        }
-                    }
-                    Label { anchors.centerIn: parent; text: "GENERATE"; font.pixelSize: 7; font.bold: true; color: "#00FF88"; opacity: 0.7 }
-                }
-
-                // Stylize preview: edge/texture effect
-                Rectangle {
-                    visible: ["emboss","find_edges","roughen_edges","scatter","stylize_glow","cartoon","halftone","stained_glass","noise","strobe","motion_tile","cross_hatch","oil_paint"].indexOf(setupController.aeEffectId) >= 0
-                    x: plate.x - 2; y: plate.y - 2; width: plate.width + 4; height: plate.height + 4; radius: 6
-                    color: "transparent"; border.color: "#FF00FF"; border.width: 2
-                    opacity: 0.5 + 0.4 * Math.sin(glowTimer.phase * 1.5)
-                    Label { anchors.centerIn: parent; text: "STYLIZE"; font.pixelSize: 7; font.bold: true; color: "#FF00FF"; opacity: 0.7 }
-                }
-
-                // Perspective preview: skewed plate
-                Rectangle {
-                    visible: ["cc_sphere","cc_cylinder","bevel_alpha","drop_shadow","radial_shadow","3d_rotation","reflection"].indexOf(setupController.aeEffectId) >= 0
-                    x: plate.x + 5; y: plate.y + 5; width: plate.width - 4; height: plate.height - 4; radius: 4
-                    color: Qt.rgba(0, 0, 0, 0.3 * setupController.aeEffectIntensity)
-                    Label { anchors.centerIn: parent; text: "3D"; font.pixelSize: 9; font.bold: true; color: "#00CCFF"; opacity: 0.7 }
-                }
-
-                // Time preview: ghosting trail
-                Rectangle {
-                    visible: ["echo","trails","force_motion_blur"].indexOf(setupController.aeEffectId) >= 0
-                    x: plate.x - 8; y: plate.y; width: plate.width; height: plate.height; radius: 4
-                    color: getBg(root.previewStyleId); opacity: 0.3
-                }
-                Rectangle {
-                    visible: ["echo","trails","force_motion_blur"].indexOf(setupController.aeEffectId) >= 0
-                    x: plate.x - 4; y: plate.y; width: plate.width; height: plate.height; radius: 4
-                    color: getBg(root.previewStyleId); opacity: 0.5
-                    Label { anchors.centerIn: parent; text: "TIME"; font.pixelSize: 7; font.bold: true; color: "#FFCC00"; opacity: 0.7 }
-                }
-
-                // Blend mode preview: colored overlay with mode label
-                Rectangle {
-                    visible: setupController.overlayBlendMode !== "normal" && setupController.overlayBlendMode !== ""
-                    x: plate.x; y: plate.y - 18; width: bmLbl.implicitWidth + 10; height: 14; radius: 3
-                    color: Qt.rgba(0.3, 0.2, 0.8, 0.5)
-                    Label { id: bmLbl; anchors.centerIn: parent; text: "BLEND: " + (setupController.overlayBlendMode || "").toUpperCase(); font.pixelSize: 6; font.bold: true; color: "#DDD" }
-                }
-
-                // Wiggle preview: jittering nameplate
-                property real wiggleX: setupController.wiggleEnabled ? Math.sin(glowTimer.phase * (setupController.wiggleFreq || 3) * 2) * (setupController.wiggleAmp || 5) * 0.3 : 0
-                property real wiggleY: setupController.wiggleEnabled ? Math.cos(glowTimer.phase * (setupController.wiggleFreq || 3) * 1.5) * (setupController.wiggleAmp || 5) * 0.2 : 0
-
-                // Effect animation timer
+                // Animation timer for preview
                 Timer { id: glowTimer; interval: 50; running: true; repeat: true; property real phase: 0; onTriggered: phase += 0.1 }
-
-                // Effect name badge (BIG)
-                Rectangle {
-                    visible: setupController.animationType !== "slide_left" && setupController.animationType !== ""
-                    anchors.bottom: plate.top; anchors.left: plate.left; anchors.bottomMargin: 4
-                    width: fxLbl.implicitWidth + 10; height: 16; radius: 3
-                    color: Qt.rgba(91/255, 79/255, 219/255, 0.3)
-                    Label { id: fxLbl; anchors.centerIn: parent; text: setupController.animationType.replace(/_/g, " ").toUpperCase(); font.pixelSize: 7; font.bold: true; color: "#AAA" }
-                }
 
                 } // End QML fallback Item
 
-                // Badges (always visible)
-                Rectangle { anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 8; width: pvLbl.implicitWidth+12; height: 18; radius: 4; color: Qt.rgba(0,0,0,0.4); z: 10
-                    Label { id: pvLbl; anchors.centerIn: parent; text: previewMonitor.active ? "LIVE" : "PREVIEW"; font.pixelSize: 10; color: previewMonitor.active ? "#1DB954" : "#666" } }
-                Rectangle { anchors.top: parent.top; anchors.left: parent.left; anchors.margins: 8; width: stLbl.implicitWidth+12; height: 18; radius: 4; color: Qt.rgba(0,0,0,0.4); z: 10
-                    Label { id: stLbl; anchors.centerIn: parent; text: root.previewStyleId.toUpperCase(); font.pixelSize: 10; font.bold: true; color: "#999" } }
-            }
+            } // End pvBox
 
             // Replay animation button
             Row {
                 spacing: 12
                 Rectangle {
                     width: rpLbl.implicitWidth + 16; height: 28; radius: 6
-                    color: rpMa.containsMouse ? Qt.rgba(91/255,79/255,219/255,0.15) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06))
+                    color: rpMa.containsMouse ? Qt.rgba(108/255,92/255,231/255,0.15) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06))
                     Behavior on color { ColorAnimation { duration: 150 } }
                     Label { id: rpLbl; anchors.centerIn: parent; text: "\u25B6  " + window.t("replay_anim"); font.pixelSize: 11; color: window.darkMode ? "#AAA" : "#444" }
                     MouseArea { id: rpMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: replayAnim() }
@@ -416,45 +282,26 @@ Item {
                     id: configCol; Layout.fillWidth: true; spacing: 10
 
                     Label { text: window.t("accent_color"); font.pixelSize: 13; color: window.darkMode ? "#AAA" : "#444" }
-                    Row { spacing: 5
-                        Repeater { model: ["#E30613","#5B4FDB","#0066CC","#1DB954","#FF6B00","#C8A84E","#00E5FF","#FFF"]; Rectangle { width: 22; height: 22; radius: 11; color: modelData; border.color: modelData===setupController.accentColor.toString()?"white":"transparent"; border.width: 2; MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.accentColor=modelData } } }
+                    RowLayout { spacing: 6
+                        Rectangle { Layout.preferredWidth: 30; Layout.preferredHeight: 30; radius: 6; color: setupController.accentColor; border.color: window.darkMode ? "#444" : "#BBB"; border.width: 1 }
+                        TextField {
+                            Layout.preferredWidth: 90; text: setupController.accentColor.toString().toUpperCase(); font.pixelSize: 11; font.family: "SF Mono, Menlo, monospace"; color: window.darkMode ? "white" : "#1A1A1A"
+                            onTextEdited: { if (text.match(/^#[0-9A-Fa-f]{6}$/i)) setupController.accentColor = text }
+                            background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
+                        }
                         ColorPickerButton { currentColor: setupController.accentColor; onColorSelected: function(c) { setupController.accentColor = c } }
+                        // Quick presets (compact)
+                        Repeater { model: ["#E30613","#6C5CE7","#0066CC","#00D68F","#FF6B00","#D4AF37","#00E5FF","#FFFFFF"]; Rectangle { width: 18; height: 18; radius: 9; color: modelData; border.color: modelData===setupController.accentColor.toString()?"white":"transparent"; border.width: 1.5; MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: setupController.accentColor=modelData } } }
                     }
 
                     Label { text: window.t("opacity"); font.pixelSize: 13; color: window.darkMode ? "#AAA" : "#444" }
                     RowLayout { Slider { from:0.4;to:1;value:setupController.backgroundOpacity;Layout.preferredWidth:140;onMoved:setupController.backgroundOpacity=value } Label { text: Math.round(setupController.backgroundOpacity*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11 } }
 
-                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
-                    Label { text: "Animation (After Effects)"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
-                    ComboBox {
-                        id: animCombo
-                        Layout.fillWidth: true
-                        model: [
-                            "Title 01 — Simple Tag",
-                            "Title 02 — Stacked Blocks",
-                            "Title 03 — Modern Design",
-                            "Title 04 — Angled Bars",
-                            "Title 05 — Clean Bar",
-                            "Title 06 — Text Block",
-                            "Title 07 — Stylish Line",
-                            "Title 08 — Motion Block",
-                            "Title 09 — Wide Bar"
-                        ]
-                        property var values: [
-                            "title_01", "title_02", "title_03", "title_04", "title_05",
-                            "title_06", "title_07", "title_08", "title_09"
-                        ]
-                        currentIndex: Math.max(0, values.indexOf(setupController.lottiePreset))
-                        onActivated: { setupController.lottiePreset = values[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#5B4FDB"; border.width: 1 }
-                        contentItem: Label { text: animCombo.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
-                    }
-
                     // ══════════════════════════════════════════════
                     // AE EASING CURVE (Graph Editor)
                     // ══════════════════════════════════════════════
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
-                    Label { text: "Courbe d'animation (AE)"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
+                    Label { text: "Courbe d'animation (AE)"; font.pixelSize: 13; font.bold: true; color: "#6C5CE7" }
                     ComboBox {
                         Layout.fillWidth: true
                         model: [
@@ -485,7 +332,7 @@ Item {
                         ]
                         currentIndex: 2
                         onActivated: { if (values[currentIndex] !== "") setupController.easingCurve = values[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#5B4FDB"; border.width: 1 }
+                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#6C5CE7"; border.width: 1 }
                         contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
                     }
 
@@ -493,7 +340,7 @@ Item {
                     // AE BLEND MODE (27 modes)
                     // ══════════════════════════════════════════════
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
-                    Label { text: "Mode de fusion (AE)"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
+                    Label { text: "Mode de fusion (AE)"; font.pixelSize: 13; font.bold: true; color: "#6C5CE7" }
                     ComboBox {
                         Layout.fillWidth: true
                         model: [
@@ -514,7 +361,7 @@ Item {
                         ]
                         currentIndex: 0
                         onActivated: { if (values[currentIndex] !== "") setupController.overlayBlendMode = values[currentIndex] }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#5B4FDB"; border.width: 1 }
+                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#6C5CE7"; border.width: 1 }
                         contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
                     }
 
@@ -522,7 +369,7 @@ Item {
                     // AE POST-EFFECTS on Overlay
                     // ══════════════════════════════════════════════
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
-                    Label { text: "Effet AE sur overlay"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
+                    Label { text: "Effet AE sur overlay"; font.pixelSize: 13; font.bold: true; color: "#6C5CE7" }
                     ComboBox {
                         id: aeEffectCombo; Layout.fillWidth: true
                         model: [
@@ -547,7 +394,7 @@ Item {
                         ]
                         currentIndex: 0
                         onActivated: { setupController.aeEffectId = values[currentIndex] || "" }
-                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#5B4FDB"; border.width: 1 }
+                        background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 4; border.color: "#6C5CE7"; border.width: 1 }
                         contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
                     }
 
@@ -556,9 +403,9 @@ Item {
                         visible: setupController.aeEffectId !== ""
                         Layout.fillWidth: true; spacing: 6
 
-                        RowLayout { Label{text:"Intensité:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectIntensity=value} Label{text:Math.round(value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
-                        RowLayout { Label{text:"Param 1:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectParam1=value} Label{text:Math.round(value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
-                        RowLayout { Label{text:"Param 2:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectParam2=value} Label{text:Math.round(value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
+                        RowLayout { Label{text:"Intensité:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{id:slIntensity;from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectIntensity=value} Label{text:Math.round(slIntensity.value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
+                        RowLayout { Label{text:"Param 1:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{id:slParam1;from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectParam1=value} Label{text:Math.round(slParam1.value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
+                        RowLayout { Label{text:"Param 2:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{id:slParam2;from:0;to:1;value:0.5;Layout.preferredWidth:120;onMoved:setupController.aeEffectParam2=value} Label{text:Math.round(slParam2.value*100)+"%";color:window.darkMode?"#888":"#555";font.pixelSize:11} }
 
                         Row { spacing: 5
                             Label { text: "Couleur 1:"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
@@ -573,13 +420,13 @@ Item {
                     // ══════════════════════════════════════════════
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
                     RowLayout {
-                        Label { text: "Expression: Wiggle"; font.pixelSize: 13; font.bold: true; color: "#5B4FDB" }
+                        Label { text: "Expression: Wiggle"; font.pixelSize: 13; font.bold: true; color: "#6C5CE7" }
                         Switch { checked: false; onCheckedChanged: setupController.wiggleEnabled = checked }
                     }
                     RowLayout {
                         visible: setupController.wiggleEnabled
-                        Label{text:"Freq:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:0.5;to:15;value:3;Layout.preferredWidth:80;onMoved:setupController.wiggleFreq=value} Label{text:value.toFixed(1);color:window.darkMode?"#888":"#555";font.pixelSize:11}
-                        Label{text:"Amp:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{from:1;to:30;value:5;Layout.preferredWidth:80;onMoved:setupController.wiggleAmp=value} Label{text:Math.round(value)+"px";color:window.darkMode?"#888":"#555";font.pixelSize:11}
+                        Label{text:"Freq:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{id:slFreq;from:0.5;to:15;value:3;Layout.preferredWidth:80;onMoved:setupController.wiggleFreq=value} Label{text:slFreq.value.toFixed(1);color:window.darkMode?"#888":"#555";font.pixelSize:11}
+                        Label{text:"Amp:";color:window.darkMode?"#999":"#666";font.pixelSize:12} Slider{id:slAmp;from:1;to:30;value:5;Layout.preferredWidth:80;onMoved:setupController.wiggleAmp=value} Label{text:Math.round(slAmp.value)+"px";color:window.darkMode?"#888":"#555";font.pixelSize:11}
                     }
 
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: window.darkMode ? "#222" : "#CCC" }
@@ -660,7 +507,7 @@ Item {
         var dark = {"bfm":"#0B0B10","lci":"#1A1A18","france2":"#F8F8FF","france24":"#0B0B10","cnn":"#CC0000","bbc":"#BB1919","skynews":"#004A9E","aljazeera":"#6B0000","sports":"#0B0B10","football":"#1A4A1A","olympics":"#F8F8FC","politique":"#1B2A4A","gouvernement":"#F8F8FC","cinema":"#000","luxury":"#0D0D0D","tech":"#0A0F1A","minimal":"transparent","dual":"#0B0B10","fullscreen":"#0B0B10","breaking":"#0B0B10"}
         return dark[s] || (window.darkMode ? "#0B0B10" : "#E8E8EE")
     }
-    function getAccent(s) { return ({"bfm":"#E30613","lci":"#FF6D00","france2":"#003189","france24":"#D4001A","cnn":"#FFF","bbc":"#FFF","skynews":"#00A0DC","aljazeera":"#D4A017","sports":"#00FF88","football":"#FFFF00","olympics":"#0033A0","politique":"#002395","gouvernement":"#002395","cinema":"#D4AF37","luxury":"#C0C0C0","tech":"#00E5FF","minimal":"#FFF","dual":"#5B4FDB","fullscreen":"#5B4FDB","breaking":"#CC0000"})[s]||"#E30613" }
+    function getAccent(s) { return ({"bfm":"#E30613","lci":"#FF6D00","france2":"#003189","france24":"#D4001A","cnn":"#FFF","bbc":"#FFF","skynews":"#00A0DC","aljazeera":"#D4A017","sports":"#00FF88","football":"#FFFF00","olympics":"#0033A0","politique":"#002395","gouvernement":"#002395","cinema":"#D4AF37","luxury":"#C0C0C0","tech":"#00E5FF","minimal":"#FFF","dual":"#6C5CE7","fullscreen":"#6C5CE7","breaking":"#CC0000"})[s]||"#E30613" }
     function getNameColor(s) { if(s==="aljazeera"||s==="cinema")return"#D4A017"; if(s==="luxury")return"#F0F0F0"; if(s==="france2"||s==="gouvernement"||s==="olympics")return"#003189"; return"#FFF" }
     function getRoleColor(s) { if(s==="france2"||s==="gouvernement"||s==="olympics")return"#555"; if(s==="tech")return"#00E5FF"; if(s==="sports"||s==="football")return getAccent(s); if(s==="cinema")return"#C0A060"; if(s==="luxury")return"#888"; return"#CCC" }
     function isWhite(s) { return s==="france2"||s==="gouvernement"||s==="olympics" }

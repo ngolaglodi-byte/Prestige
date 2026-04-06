@@ -63,19 +63,22 @@ void PreviewSender::sendFrame(const QImage& compositedFrame)
     if (!m_zmqSocket || compositedFrame.isNull())
         return;
 
-    // Send every 2nd frame to reduce bandwidth (15fps preview is enough)
+    // Send every 2nd frame for smooth ~15fps preview
     m_skipCounter++;
     if (m_skipCounter % 2 != 0)
         return;
 
-    // Downscale to 960x540 for preview
-    QImage preview = compositedFrame.scaled(960, 540, Qt::KeepAspectRatio, Qt::FastTransformation);
+    // Broadcast monitoring: scale to 1280x720 if source is larger
+    // This is standard practice — monitoring at 720p, output at native resolution
+    QImage previewFrame = compositedFrame;
+    if (compositedFrame.width() > 1280)
+        previewFrame = compositedFrame.scaled(1280, 720, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    // Encode JPEG
+    // JPEG 88 — broadcast monitoring quality (visually clean, efficient bandwidth)
     QByteArray jpegData;
     QBuffer buffer(&jpegData);
     buffer.open(QIODevice::WriteOnly);
-    preview.save(&buffer, "JPEG", 75);
+    previewFrame.save(&buffer, "JPEG", 88);
 
     int rc = zmq_send(m_zmqSocket, jpegData.constData(), jpegData.size(), ZMQ_NOBLOCK);
     m_framesSent++;

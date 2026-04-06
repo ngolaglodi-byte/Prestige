@@ -90,6 +90,27 @@ QJsonObject EmissionProfile::toJson() const
     obj["countdown_scale"]       = countdownScale;
     obj["qr_code_scale"]         = qrCodeScale;
 
+    // Overlay offsets
+    obj["ch_logo_off_x"]         = channelLogoOffsetX;
+    obj["ch_logo_off_y"]         = channelLogoOffsetY;
+    obj["ch_name_off_x"]         = channelNameOffsetX;
+    obj["ch_name_off_y"]         = channelNameOffsetY;
+    obj["st_off_x"]              = showTitleOffsetX;
+    obj["st_off_y"]              = showTitleOffsetY;
+    obj["ticker_off_y"]          = tickerOffsetY;
+    obj["sub_off_x"]             = subtitleOffsetX;
+    obj["sub_off_y"]             = subtitleOffsetY;
+    obj["cd_off_x"]              = countdownOffsetX;
+    obj["cd_off_y"]              = countdownOffsetY;
+    obj["clk_off_x"]             = clockOffsetX;
+    obj["clk_off_y"]             = clockOffsetY;
+    obj["qr_off_x"]              = qrCodeOffsetX;
+    obj["qr_off_y"]              = qrCodeOffsetY;
+    obj["sb_off_x"]              = scoreboardOffsetX;
+    obj["sb_off_y"]              = scoreboardOffsetY;
+    obj["wth_off_x"]             = weatherOffsetX;
+    obj["wth_off_y"]             = weatherOffsetY;
+
     // Virtual Studio
     obj["vs_enabled"]            = virtualStudioEnabled;
     obj["vs_studio_id"]          = virtualStudioId;
@@ -222,6 +243,27 @@ EmissionProfile EmissionProfile::fromJson(const QJsonObject& obj)
     p.clockScale          = obj["clock_scale"].toDouble(1.0);
     p.countdownScale      = obj["countdown_scale"].toDouble(1.0);
     p.qrCodeScale         = obj["qr_code_scale"].toDouble(1.0);
+
+    // Overlay offsets
+    p.channelLogoOffsetX  = obj["ch_logo_off_x"].toInt(0);
+    p.channelLogoOffsetY  = obj["ch_logo_off_y"].toInt(0);
+    p.channelNameOffsetX  = obj["ch_name_off_x"].toInt(0);
+    p.channelNameOffsetY  = obj["ch_name_off_y"].toInt(0);
+    p.showTitleOffsetX    = obj["st_off_x"].toInt(0);
+    p.showTitleOffsetY    = obj["st_off_y"].toInt(0);
+    p.tickerOffsetY       = obj["ticker_off_y"].toInt(0);
+    p.subtitleOffsetX     = obj["sub_off_x"].toInt(0);
+    p.subtitleOffsetY     = obj["sub_off_y"].toInt(0);
+    p.countdownOffsetX    = obj["cd_off_x"].toInt(0);
+    p.countdownOffsetY    = obj["cd_off_y"].toInt(0);
+    p.clockOffsetX        = obj["clk_off_x"].toInt(0);
+    p.clockOffsetY        = obj["clk_off_y"].toInt(0);
+    p.qrCodeOffsetX       = obj["qr_off_x"].toInt(0);
+    p.qrCodeOffsetY       = obj["qr_off_y"].toInt(0);
+    p.scoreboardOffsetX   = obj["sb_off_x"].toInt(0);
+    p.scoreboardOffsetY   = obj["sb_off_y"].toInt(0);
+    p.weatherOffsetX      = obj["wth_off_x"].toInt(0);
+    p.weatherOffsetY      = obj["wth_off_y"].toInt(0);
 
     // Virtual Studio
     p.virtualStudioEnabled = obj["vs_enabled"].toBool(false);

@@ -22,8 +22,8 @@ Item {
         Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 4; color: root.accentColor }
         Column {
             anchors.verticalCenter: parent.verticalCenter; anchors.left: parent.left; anchors.leftMargin: 16; spacing: 2
-            Text { text: root.talentName; color: "#003189"; font.pixelSize: 22; font.bold: true }
-            Text { text: root.talentRole; color: "#555555"; font.pixelSize: 13 }
+            Text { text: root.talentName; color: "#003189"; font.pixelSize: 22; font.bold: true; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.15) }
+            Text { text: root.talentRole; color: "#555555"; font.pixelSize: 13; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.15) }
         }
     }
 }

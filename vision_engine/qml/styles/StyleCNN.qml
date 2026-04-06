@@ -4,7 +4,7 @@ Item {
     id: root
     property string talentName: "Nom"
     property string talentRole: "Rôle"
-    property color accentColor: "#CC0000"
+    property color accentColor: "#FFFFFF"
     property bool overlayVisible: false
     property real bgOpacity: 0.95
     width: 380; height: 68
@@ -23,8 +23,14 @@ Item {
             onPaint: { var ctx = getContext("2d"); ctx.fillStyle = "#0A0A0E"; ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(12,height); ctx.lineTo(0,height); ctx.fill() } }
         Column {
             anchors.verticalCenter: parent.verticalCenter; anchors.left: parent.left; anchors.leftMargin: 16; spacing: 2
-            Text { text: root.talentName; color: "#FFFFFF"; font.pixelSize: 26; font.bold: true }
-            Text { text: root.talentRole; color: "#FFCCCC"; font.pixelSize: 14 }
+            Item { width: childrenRect.width; height: 30
+                Text { text: root.talentName; color: "#000000"; font.pixelSize: 26; font.bold: true; x: 1; y: 1; opacity: 0.7 }
+                Text { text: root.talentName; color: "#FFFFFF"; font.pixelSize: 26; font.bold: true }
+            }
+            Item { width: childrenRect.width; height: 18
+                Text { text: root.talentRole; color: "#000000"; font.pixelSize: 14; x: 1; y: 1; opacity: 0.6 }
+                Text { text: root.talentRole; color: "#E0E0E0"; font.pixelSize: 14 }
+            }
         }
     }
 }

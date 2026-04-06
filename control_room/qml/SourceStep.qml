@@ -43,7 +43,7 @@ Item {
                     Layout.preferredHeight: 72
                     radius: 8
                     color: setupController.inputType === modelData.type ? (window.darkMode ? "#1A1A3A" : "#E8E8F5") : (window.darkMode ? "#111114" : "#FFFFFF")
-                    border.color: setupController.inputType === modelData.type ? "#5B4FDB" : (window.darkMode ? "#1E1E22" : "#DDD")
+                    border.color: setupController.inputType === modelData.type ? "#6C5CE7" : (window.darkMode ? "#1E1E22" : "#DDD")
                     border.width: 1
 
                     RowLayout {
@@ -58,12 +58,12 @@ Item {
                         Rectangle {
                             Layout.preferredWidth: 20; Layout.preferredHeight: 20; radius: 10
                             color: "transparent"
-                            border.color: setupController.inputType === modelData.type ? "#5B4FDB" : (window.darkMode ? "#444" : "#AAA")
+                            border.color: setupController.inputType === modelData.type ? "#6C5CE7" : (window.darkMode ? "#444" : "#AAA")
                             border.width: 2
                             Rectangle {
                                 anchors.centerIn: parent
                                 width: 10; height: 10; radius: 5
-                                color: "#5B4FDB"
+                                color: "#6C5CE7"
                                 visible: setupController.inputType === modelData.type
                             }
                         }
@@ -161,7 +161,7 @@ Item {
         Rectangle {
             Layout.preferredWidth: 140; Layout.preferredHeight: 32; Layout.leftMargin: 12; radius: 6
             color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)
-            Label { anchors.centerIn: parent; text: "\u21BB Scanner le matériel"; font.pixelSize: 11; color: "#5B4FDB" }
+            Label { anchors.centerIn: parent; text: "\u21BB Scanner le matériel"; font.pixelSize: 11; color: "#6C5CE7" }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: hardwareScanner.scan() }
         }
 
@@ -220,7 +220,7 @@ Item {
                         width: ListView.view.width
                         height: 40; radius: 6
                         color: setupController.inputSource === modelData ? (window.darkMode ? "#1A1A3A" : "#E8E8F5") : (window.darkMode ? "#0D0D0F" : "#F0F0F4")
-                        border.color: setupController.inputSource === modelData ? "#5B4FDB" : (window.darkMode ? "#222" : "#CCC")
+                        border.color: setupController.inputSource === modelData ? "#6C5CE7" : (window.darkMode ? "#222" : "#CCC")
 
                         RowLayout {
                             anchors.fill: parent; anchors.margins: 10; spacing: 8
@@ -234,7 +234,7 @@ Item {
                                     setupController.inputSource = modelData
                                     ndiCapture.connectSource(modelData)
                                 }
-                                contentItem: Label { text: parent.text; color: "#5B4FDB"; font.pixelSize: 11 }
+                                contentItem: Label { text: parent.text; color: "#6C5CE7"; font.pixelSize: 11 }
                             }
                             Label {
                                 text: window.t("connected")
@@ -255,27 +255,45 @@ Item {
             }
         }
 
-        // Resolution + FPS
+        // Source info — auto-detected, read-only (pro broadcast: never force resolution)
         Rectangle {
             Layout.fillWidth: true; Layout.preferredHeight: 64
             color: window.darkMode ? "#111114" : "#FFFFFF"; radius: 8; border.color: window.darkMode ? "#1E1E22" : "#DDD"
             RowLayout {
-                anchors.fill: parent; anchors.margins: 16; spacing: 24
-                Label { text: window.t("resolution") + " :"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 13 }
-                ComboBox {
-                    model: ["1920x1080 (Full HD)", "3840x2160 (4K UHD)", "1280x720 (HD)"]
-                    Layout.preferredWidth: 220
-                    onActivated: console.log("[Source] Resolution:", currentText)
-                    background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                    contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
+                anchors.fill: parent; anchors.margins: 16; spacing: 20
+
+                // Resolution (auto-detected from source)
+                ColumnLayout { spacing: 2
+                    Label { text: "Resolution"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 10 }
+                    Label {
+                        text: previewMonitor.active ? (previewMonitor.width + " x " + previewMonitor.height) : "—"
+                        color: window.darkMode ? "#F0F0F5" : "#1A1A1A"; font.pixelSize: 14; font.weight: Font.Bold; font.family: "SF Mono, Menlo, monospace"
+                    }
                 }
-                Label { text: "FPS :"; color: window.darkMode ? "#999" : "#666"; font.pixelSize: 13 }
-                ComboBox {
-                    model: ["25", "30", "50", "60"]
-                    Layout.preferredWidth: 80
-                    onActivated: console.log("[Source] FPS:", currentText)
-                    background: Rectangle { color: window.darkMode ? "#1A1A1E" : "#F0F0F4"; radius: 4; border.color: window.darkMode ? "#333" : "#CCC" }
-                    contentItem: Label { text: parent.displayText; color: window.darkMode ? "#CCC" : "#333"; font.pixelSize: 12; leftPadding: 8; verticalAlignment: Text.AlignVCenter }
+
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 32; color: window.darkMode ? Qt.rgba(255,255,255,0.06) : Qt.rgba(0,0,0,0.08) }
+
+                // FPS (auto-detected from pipeline)
+                ColumnLayout { spacing: 2
+                    Label { text: "FPS"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 10 }
+                    Label {
+                        text: previewMonitor.active ? liveController.fps + " fps" : "—"
+                        color: window.darkMode ? "#F0F0F5" : "#1A1A1A"; font.pixelSize: 14; font.weight: Font.Bold; font.family: "SF Mono, Menlo, monospace"
+                    }
+                }
+
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 32; color: window.darkMode ? Qt.rgba(255,255,255,0.06) : Qt.rgba(0,0,0,0.08) }
+
+                // Signal status
+                ColumnLayout { spacing: 2
+                    Label { text: "Signal"; color: window.darkMode ? "#555" : "#999"; font.pixelSize: 10 }
+                    RowLayout { spacing: 5
+                        Rectangle { Layout.preferredWidth: 7; Layout.preferredHeight: 7; radius: 4; color: previewMonitor.active ? "#00D68F" : "#FF3D71" }
+                        Label {
+                            text: previewMonitor.active ? "Actif" : "Pas de source"
+                            color: previewMonitor.active ? "#00D68F" : "#FF3D71"; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                    }
                 }
             }
         }

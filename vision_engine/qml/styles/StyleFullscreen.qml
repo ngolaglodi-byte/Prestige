@@ -4,7 +4,7 @@ Item {
     id: root
     property string talentName: "Nom"
     property string talentRole: "Rôle"
-    property color accentColor: "#5B4FDB"
+    property color accentColor: "#6C5CE7"
     property bool overlayVisible: false
     property real bgOpacity: 0.70
     width: parent ? parent.width : 800; height: 140

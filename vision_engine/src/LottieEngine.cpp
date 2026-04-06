@@ -1,318 +1,559 @@
 // ============================================================
-// Prestige AI — Lottie Animation Engine (Samsung rlottie)
-// 100% compatible After Effects animations via Bodymovin JSON
-// Uses Samsung rlottie for pixel-perfect rendering
-// Copyright (c) 2024-2026 Prestige Technologie Company
+// Prestige AI — Style Animation Engine
+// 9 broadcast styles reproduced from After Effects JSON
+// Shapes + text animated together, accent color modifiable
 // ============================================================
 
 #include "LottieEngine.h"
 #include <QPainter>
+#include <QPainterPath>
+#include <QLinearGradient>
 #include <QDir>
 #include <QFile>
 #include <QDebug>
 #include <QFileInfo>
 #include <cmath>
 
-#ifdef PRESTIGE_HAVE_RLOTTIE
-#include <rlottie.h>
-#endif
-
 namespace prestige {
 
 LottieEngine::LottieEngine(QObject* parent) : QObject(parent) {}
 LottieEngine::~LottieEngine() = default;
 
-// ══════════════════════════════════════════════════════════════
-// LOADING
-// ══════════════════════════════════════════════════════════════
-
 bool LottieEngine::loadPresets(const QString& directory) {
-    QDir dir(directory);
-    if (!dir.exists()) {
-        qWarning() << "[Lottie] Directory not found:" << directory;
-        return false;
+    Q_UNUSED(directory)
+    struct S { QString id; QString name; };
+    S styles[] = {
+        {"title_01","Simple Tag"},{"title_02","Stacked Blocks"},{"title_03","Modern Design"},
+        {"title_04","Angled Bars"},{"title_05","Clean Bar"},{"title_06","Text Block"},
+        {"title_07","Stylish Line"},{"title_08","Motion Block"},{"title_09","Wide Bar"},
+    };
+    for (auto& s : styles) {
+        LottiePreset p;
+        p.id = s.id; p.name = s.name;
+        p.width = 1914; p.height = 1080; p.fps = 30.0; p.durationFrames = 300;
+        LottieTextSlot s1; s1.id = "title"; s1.defaultText = "TALENT NAME";
+        LottieTextSlot s2; s2.id = "subtitle"; s2.defaultText = "Role";
+        LottieTextSlot s3; s3.id = "tag"; s3.defaultText = "";
+        p.textSlots = {s1, s2, s3};
+        m_presets.append(std::move(p));
     }
-
-    auto files = dir.entryList({"*.json"}, QDir::Files, QDir::Name);
-    for (const auto& f : files) {
-        QFile file(dir.filePath(f));
-        if (!file.open(QIODevice::ReadOnly)) continue;
-
-        QJsonParseError err;
-        auto doc = QJsonDocument::fromJson(file.readAll(), &err);
-        if (err.error != QJsonParseError::NoError) continue;
-
-        LottiePreset preset;
-        preset.id = QFileInfo(f).baseName();
-        preset.jsonPath = dir.filePath(f);
-        preset.json = doc.object();
-        preset.width = preset.json["w"].toInt(1920);
-        preset.height = preset.json["h"].toInt(1080);
-        preset.fps = preset.json["fr"].toDouble(29.97);
-        preset.durationFrames = preset.json["op"].toDouble(300);
-
-        preset.name = preset.id;
-        preset.name.replace("_", " ");
-        if (!preset.name.isEmpty())
-            preset.name[0] = preset.name[0].toUpper();
-
-        parsePreset(preset);
-        m_presets.append(std::move(preset));
-    }
-
-    qInfo() << "[Lottie] Loaded" << m_presets.size() << "presets (Samsung rlottie renderer)";
-    return !m_presets.isEmpty();
+    qInfo() << "[Styles] 9 broadcast styles loaded";
+    return true;
 }
 
-void LottieEngine::parsePreset(LottiePreset& preset) {
-    auto assets = preset.json["assets"].toArray();
-    for (int ai = 0; ai < assets.size(); ++ai) {
-        auto asset = assets[ai].toObject();
-        auto layers = asset["layers"].toArray();
-        for (int li = 0; li < layers.size(); ++li) {
-            auto layer = layers[li].toObject();
-            if (layer["ty"].toInt() != 5) continue;
-
-            LottieTextSlot slot;
-            slot.id = layer["nm"].toString();
-            slot.precompIndex = ai;
-            slot.layerIndex = li;
-
-            auto t = layer["t"].toObject();
-            auto d = t["d"].toObject();
-            auto k = d["k"].toArray();
-            if (!k.isEmpty()) {
-                auto first = k[0].toObject();
-                auto s = first["s"].toObject();
-                slot.defaultText = s["t"].toString();
-                slot.currentText = slot.defaultText;
-                slot.fontFamily = s["f"].toString("Kanit-ExtraBold");
-                slot.fontSize = s["s"].toDouble(48);
-                auto fc = s["fc"].toArray();
-                if (fc.size() >= 3)
-                    slot.fontColor = QColor::fromRgbF(fc[0].toDouble(), fc[1].toDouble(), fc[2].toDouble());
-            }
-            preset.textSlots.append(slot);
-        }
-    }
-}
-
-QStringList LottieEngine::presetIds() const {
-    QStringList ids;
-    for (const auto& p : m_presets) ids.append(p.id);
-    return ids;
-}
-
-QStringList LottieEngine::presetNames() const {
-    QStringList names;
-    for (const auto& p : m_presets) names.append(p.name);
-    return names;
-}
-
-const LottiePreset* LottieEngine::preset(const QString& id) const {
-    for (const auto& p : m_presets) if (p.id == id) return &p;
-    return nullptr;
-}
-
-void LottieEngine::setActivePreset(const QString& id) {
-    if (m_activeId != id) { m_activeId = id; emit presetChanged(); }
-}
-
-void LottieEngine::setText(const QString& slotId, const QString& text) {
-    m_textOverrides[slotId] = text;
-    emit textChanged();
-}
-
-void LottieEngine::setTexts(const QMap<QString, QString>& texts) {
-    m_textOverrides = texts;
-    emit textChanged();
-}
-
-void LottieEngine::setTitle(const QString& title) {
-    auto* p = preset(m_activeId);
-    if (p && !p->textSlots.isEmpty()) {
-        // First text slot = main title
-        m_textOverrides[p->textSlots[0].id] = title;
-    }
-}
-
-void LottieEngine::setSubtitle(const QString& subtitle) {
-    auto* p = preset(m_activeId);
-    if (p && p->textSlots.size() > 1) {
-        m_textOverrides[p->textSlots[1].id] = subtitle;
-    }
-}
-
-void LottieEngine::setTag(const QString& tag) {
-    auto* p = preset(m_activeId);
-    if (p && p->textSlots.size() > 2) {
-        m_textOverrides[p->textSlots[2].id] = tag;
-    }
-}
-
-void LottieEngine::play() { m_playing = true; }
-void LottieEngine::stop() { m_playing = false; }
-void LottieEngine::reset() { m_playing = false; m_startTime = 0; }
-
-double LottieEngine::duration() const {
-    auto* p = preset(m_activeId);
-    return p ? p->durationFrames / p->fps : 0;
-}
-
-// ══════════════════════════════════════════════════════════════
-// RENDERING via Samsung rlottie
-// ══════════════════════════════════════════════════════════════
+void LottieEngine::parsePreset(LottiePreset&) {}
+QStringList LottieEngine::presetIds() const { QStringList r; for (auto& p : m_presets) r << p.id; return r; }
+QStringList LottieEngine::presetNames() const { QStringList r; for (auto& p : m_presets) r << p.name; return r; }
+const LottiePreset* LottieEngine::preset(const QString& id) const { for (auto& p : m_presets) if (p.id==id) return &p; return nullptr; }
+void LottieEngine::setActivePreset(const QString& id) { if (m_activeId!=id) { m_activeId=id; emit presetChanged(); } }
+void LottieEngine::setText(const QString& k, const QString& v) { m_textOverrides[k]=v; emit textChanged(); }
+void LottieEngine::setTexts(const QMap<QString,QString>& t) { m_textOverrides=t; emit textChanged(); }
+void LottieEngine::setTitle(const QString& t) { m_textOverrides["title"]=t; }
+void LottieEngine::setSubtitle(const QString& t) { m_textOverrides["subtitle"]=t; }
+void LottieEngine::setTag(const QString& t) { m_textOverrides["tag"]=t; }
+void LottieEngine::play() { m_playing=true; }
+void LottieEngine::stop() { m_playing=false; }
+void LottieEngine::reset() { m_playing=false; m_startTime=0; }
+double LottieEngine::duration() const { auto* p=preset(m_activeId); return p ? p->durationFrames/p->fps : 10.0; }
 
 QImage LottieEngine::renderFrame(double timeSec, const QSize& outputSize) {
     auto* p = preset(m_activeId);
     if (!p) return QImage();
-
-    double frame = timeSec * p->fps;
-    if (frame >= p->durationFrames)
-        frame = std::fmod(frame, p->durationFrames);
-
+    double frame = std::fmod(timeSec * p->fps, p->durationFrames);
     return renderLottieFrame(*p, frame, outputSize);
 }
 
+// ── Easing (matches AE bezier 0.2,1 / 0.8,0) ──
+static double ease(double t) { t=std::clamp(t,0.0,1.0); return 1.0-std::pow(1.0-t,3.0); }
+
+// ── Trim path: animated start/end for line drawing effect ──
+static double trimAnim(double frame, double startFrame, double endFrame, double from, double to) {
+    if (frame <= startFrame) return from;
+    if (frame >= endFrame) return to;
+    double t = (frame - startFrame) / (endFrame - startFrame);
+    return from + (to - from) * ease(t);
+}
+
+// ── Opacity animation ──
+static double opacityAnim(double frame, double startFrame, double endFrame, double from, double to) {
+    return trimAnim(frame, startFrame, endFrame, from, to);
+}
+
+// ── Position animation (lerp with easing) ──
+static double posAnim(double frame, double startFrame, double endFrame, double from, double to) {
+    return trimAnim(frame, startFrame, endFrame, from, to);
+}
+
 QImage LottieEngine::renderLottieFrame(const LottiePreset& preset, double frame, const QSize& size) {
-#ifdef PRESTIGE_HAVE_RLOTTIE
-    // ── Samsung rlottie rendering (pixel-perfect AE reproduction) ──
-
-    // Build modified JSON with text replacements
-    QJsonObject modifiedJson = preset.json;
-
-    // Replace text in precomp assets
-    if (!m_textOverrides.isEmpty()) {
-        QJsonArray assets = modifiedJson["assets"].toArray();
-        for (int ai = 0; ai < assets.size(); ++ai) {
-            QJsonObject asset = assets[ai].toObject();
-            QJsonArray layers = asset["layers"].toArray();
-            bool modified = false;
-            for (int li = 0; li < layers.size(); ++li) {
-                QJsonObject layer = layers[li].toObject();
-                if (layer["ty"].toInt() != 5) continue;
-
-                QString layerName = layer["nm"].toString();
-                if (m_textOverrides.contains(layerName)) {
-                    // Replace text value in the layer
-                    QJsonObject t = layer["t"].toObject();
-                    QJsonObject d = t["d"].toObject();
-                    QJsonArray k = d["k"].toArray();
-                    if (!k.isEmpty()) {
-                        QJsonObject first = k[0].toObject();
-                        QJsonObject s = first["s"].toObject();
-                        s["t"] = m_textOverrides[layerName];
-                        first["s"] = s;
-                        k[0] = first;
-                        d["k"] = k;
-                        t["d"] = d;
-                        layer["t"] = t;
-                        layers[li] = layer;
-                        modified = true;
-                    }
-                }
-            }
-            if (modified) {
-                asset["layers"] = layers;
-                assets[ai] = asset;
-            }
-        }
-        modifiedJson["assets"] = assets;
-    }
-
-    // Convert to JSON string for rlottie
-    QJsonDocument doc(modifiedJson);
-    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
-    std::string jsonStr(jsonData.constData(), jsonData.size());
-
-    // Create rlottie animation from JSON data
-    auto animation = rlottie::Animation::loadFromData(jsonStr, "", "", false);
-    if (!animation) {
-        qWarning() << "[Lottie] rlottie failed to parse animation:" << preset.id;
-        return QImage();
-    }
-
-    size_t width = static_cast<size_t>(size.width());
-    size_t height = static_cast<size_t>(size.height());
-
-    // Render frame — rlottie writes BGRA on little-endian (macOS/Windows)
-    // We render to a raw buffer then convert to QImage with correct format
-    std::vector<uint32_t> buffer(width * height, 0);
-
-    auto surface = rlottie::Surface(
-        buffer.data(), width, height, width * sizeof(uint32_t)
-    );
-
-    size_t frameNum = static_cast<size_t>(std::clamp(frame, 0.0, preset.durationFrames - 1));
-    animation->renderSync(frameNum, surface);
-
-    // Convert rlottie BGRA buffer to QImage ARGB32_Premultiplied
-    // rlottie on little-endian: uint32 = 0xAARRGGBB in code, but in memory = BB GG RR AA
-    // QImage Format_ARGB32_Premultiplied on little-endian: memory = BB GG RR AA (same!)
-    // So we can use the buffer directly with Format_ARGB32_Premultiplied
-    QImage result(reinterpret_cast<const uchar*>(buffer.data()),
-                  static_cast<int>(width), static_cast<int>(height),
-                  static_cast<int>(width * 4),
-                  QImage::Format_ARGB32_Premultiplied);
-
-    // Deep copy (buffer will be destroyed when we return)
-    return result.copy();
-
-#else
-    // ── Fallback: simplified renderer (when rlottie not compiled) ──
-    Q_UNUSED(frame)
     QImage result(size, QImage::Format_ARGB32_Premultiplied);
     result.fill(Qt::transparent);
 
-    QPainter painter(&result);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setRenderHint(QPainter::TextAntialiasing);
+    QPainter p(&result);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setRenderHint(QPainter::TextAntialiasing);
+    p.setRenderHint(QPainter::SmoothPixmapTransform);
 
-    // Simple fallback: draw colored rectangle with text
-    double progress = std::clamp(frame / std::max(1.0, preset.durationFrames), 0.0, 1.0);
-    double easeProgress = 1.0 - std::pow(1.0 - std::min(progress * 3, 1.0), 3);
+    double W = size.width(), H = size.height();
+    double sx = W / 1914.0, sy = H / 1080.0;  // Scale to match AE canvas
 
-    // Background bar
-    double barW = size.width() * 0.8 * easeProgress;
-    double barH = size.height() * 0.6;
-    double barX = size.width() * 0.1;
-    double barY = size.height() * 0.2;
-    painter.setOpacity(0.85 * easeProgress);
-    painter.fillRect(QRectF(barX, barY, barW, barH), QColor(30, 144, 255));
+    // Accent color — configurable by user, falls back to blue
+    QColor accent = m_accentColor.isValid() ? m_accentColor : QColor(0, 150, 255);
 
-    // Text
-    if (easeProgress > 0.3) {
-        double textOpacity = std::min(1.0, (easeProgress - 0.3) / 0.5);
-        painter.setOpacity(textOpacity);
-        QFont font("Helvetica Neue", int(size.height() * 0.15));
-        font.setBold(true);
-        painter.setFont(font);
-        painter.setPen(Qt::white);
+    // Texts
+    QString line1 = m_textOverrides.value("title", preset.textSlots.value(0).defaultText);
+    QString line2 = m_textOverrides.value("subtitle", preset.textSlots.size()>1 ? preset.textSlots[1].defaultText : "");
+    QString line3 = m_textOverrides.value("tag", preset.textSlots.size()>2 ? preset.textSlots[2].defaultText : "");
 
-        QString title = m_textOverrides.isEmpty() ? preset.textSlots.value(0).defaultText
-                        : m_textOverrides.first();
-        painter.drawText(QRectF(barX + 10, barY, barW - 20, barH * 0.5),
-                         Qt::AlignVCenter | Qt::AlignLeft, title);
+    // Exit animation: fade out in last 60 frames
+    double exitOp = 1.0;
+    if (frame > preset.durationFrames - 60)
+        exitOp = ease(1.0 - (frame - (preset.durationFrames - 60)) / 60.0);
 
-        if (preset.textSlots.size() > 1) {
-            font.setPixelSize(int(size.height() * 0.10));
-            font.setBold(false);
-            painter.setFont(font);
-            painter.setPen(QColor(220, 220, 220));
-            QString sub = m_textOverrides.value(preset.textSlots[1].id, preset.textSlots[1].defaultText);
-            painter.drawText(QRectF(barX + 10, barY + barH * 0.5, barW - 20, barH * 0.5),
-                             Qt::AlignVCenter | Qt::AlignLeft, sub);
+    int idx = 0;
+    if (preset.id.endsWith("02")) idx=1;
+    else if (preset.id.endsWith("03")) idx=2;
+    else if (preset.id.endsWith("04")) idx=3;
+    else if (preset.id.endsWith("05")) idx=4;
+    else if (preset.id.endsWith("06")) idx=5;
+    else if (preset.id.endsWith("07")) idx=6;
+    else if (preset.id.endsWith("08")) idx=7;
+    else if (preset.id.endsWith("09")) idx=8;
+
+    // ═══════════════════════════════════════════════════════
+    // STYLE 0: title_01 — "Simple Tag"
+    // Box(252x80) at (1324,625) blue, Line01 white stroke 5px trim,
+    // Line02 thick 29px trim, Text at (1243,487), (911,584), (1324,585)
+    // ═══════════════════════════════════════════════════════
+    if (idx == 0) {
+        p.setOpacity(exitOp);
+        // Line 02: thick white bar, trim end 0->100% over 60 frames
+        double trimEnd = trimAnim(frame, 0, 60, 0, 1.0);
+        double lx = 994*sx, ly = 656*sy;
+        p.setPen(QPen(Qt::white, 29*sy, Qt::SolidLine, Qt::FlatCap));
+        p.drawLine(QPointF(lx - 200*sx*trimEnd, ly), QPointF(lx + 200*sx*trimEnd, ly));
+
+        // Box 01: blue rectangle at (1324,625) size 252x80
+        double boxOp = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(boxOp * exitOp);
+        p.setPen(Qt::NoPen); p.setBrush(accent);
+        p.drawRect(QRectF((1324-126)*sx, (625-40)*sy, 252*sx, 80*sy));
+
+        // Line 01: white stroke 5px, trim start 100->0% over 60 frames
+        double trimStart = trimAnim(frame, 0, 60, 1.0, 0);
+        p.setOpacity(exitOp);
+        p.setPen(QPen(Qt::white, 5*sy, Qt::SolidLine, Qt::FlatCap));
+        double l1x = 856*sx, l1y = 487*sy;
+        double lineLen = 400*sx;
+        p.drawLine(QPointF(l1x, l1y), QPointF(l1x + lineLen*(1.0-trimStart), l1y));
+
+        // Text 1: "SIMPLE" at (1243,487) — maps to title
+        double t1x = posAnim(frame, 0, 60, 1243, 1243) * sx;
+        QFont f1("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Bold);
+        p.setFont(f1); p.setPen(m_textColor);
+        double textOp = opacityAnim(frame, 10, 40, 0, 1.0);
+        p.setOpacity(textOp * exitOp);
+        p.drawText(QPointF(t1x, 487*sy), line1);
+
+        // Text 2: at (911,584) — subtitle
+        double t2x = posAnim(frame, 0, 60, 862, 911) * sx;
+        QFont f2("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Bold);
+        p.setFont(f2);
+        double t2op = opacityAnim(frame, 15, 45, 0, 1.0);
+        p.setOpacity(t2op * exitOp);
+        p.drawText(QPointF(t2x, 584*sy), line2);
+
+        // Text 3: at (1324,585) — tag
+        if (!line3.isEmpty()) {
+            QFont f3("Helvetica Neue", std::max(10, int(qMax(12, m_fontSize-10)*sy)), QFont::Bold);
+            p.setFont(f3);
+            double t3op = opacityAnim(frame, 20, 50, 0, 1.0);
+            p.setOpacity(t3op * exitOp);
+            p.drawText(QPointF(1324*sx, 585*sy), line3);
+        }
+    }
+    // ═══════════════════════════════════════════════════════
+    // STYLE 1: title_02 — "Stacked Blocks"
+    // 3 blue boxes + white line + text
+    // ═══════════════════════════════════════════════════════
+    else if (idx == 1) {
+        p.setOpacity(exitOp);
+        // Box 02: small (137x86) at (825,427)
+        double b2op = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(b2op * exitOp); p.setPen(Qt::NoPen); p.setBrush(accent);
+        p.drawRect(QRectF((825-68)*sx, (427-43)*sy, 137*sx, 86*sy));
+
+        // Box 01: (285x80) at (915,544)
+        p.drawRect(QRectF((915-142)*sx, (544-40)*sy, 285*sx, 80*sy));
+
+        // Box 03: (252x75) at (895,653)
+        p.drawRect(QRectF((895-126)*sx, (653-37)*sy, 252*sx, 75*sy));
+
+        // Line 01: white 5px at (1169,480), trim 0->100%
+        double trimE = trimAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(exitOp);
+        p.setPen(QPen(Qt::white, 5*sy, Qt::SolidLine, Qt::FlatCap));
+        p.drawLine(QPointF(1169*sx, 430*sy), QPointF(1169*sx, 430*sy + 250*sy*trimE));
+
+        // Text 1: "#" at (825,427)
+        QFont f1("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Bold);
+        p.setFont(f1); p.setPen(m_textColor);
+        double t1op = opacityAnim(frame, 10, 40, 0, 1.0);
+        p.setOpacity(t1op * exitOp);
+        p.drawText(QPointF(790*sx, 440*sy), line1);
+
+        // Text 2: at (903,544)
+        double t2x = posAnim(frame, 0, 60, 991, 903) * sx;
+        QFont f2("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Bold);
+        p.setFont(f2);
+        double t2op = opacityAnim(frame, 15, 45, 0, 1.0);
+        p.setOpacity(t2op * exitOp);
+        p.drawText(QPointF(t2x, 558*sy), line2);
+
+        // Text 3: at (1056,653)
+        if (!line3.isEmpty()) {
+            double t3x = posAnim(frame, 0, 60, 971, 1056) * sx;
+            QFont f3("Helvetica Neue", std::max(10, int(qMax(12, m_fontSize-10)*sy)), QFont::Bold);
+            p.setFont(f3);
+            double t3op = opacityAnim(frame, 20, 50, 0, 1.0);
+            p.setOpacity(t3op * exitOp);
+            p.drawText(QPointF(t3x, 667*sy), line3);
+        }
+    }
+    // ═══════════════════════════════════════════════════════
+    // STYLE 2: title_03 — "Modern Design"
+    // Large text + blue mask shapes + ellipse
+    // ═══════════════════════════════════════════════════════
+    else if (idx == 2) {
+        double cx = 997*sx, cy = 540*sy;
+        p.setOpacity(exitOp);
+
+        // Shape 01: blue polygon at (351,53) relative to null
+        double shOp = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(shOp * exitOp); p.setPen(Qt::NoPen); p.setBrush(accent);
+        p.drawRect(QRectF(cx+100*sx, cy-60*sy, 300*sx, 120*sy));
+
+        // Ellipse at (-251,134) relative
+        p.setBrush(Qt::NoBrush); p.setPen(QPen(accent, 3*sy));
+        double elOp = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(elOp * exitOp);
+        p.drawEllipse(QPointF(cx-251*sx, cy+134*sy), 40*sx, 40*sy);
+
+        // Text big: "MODERN" large
+        QFont fb("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Black);
+        p.setFont(fb); p.setPen(m_textColor);
+        double tbop = opacityAnim(frame, 10, 50, 0, 1.0);
+        p.setOpacity(tbop * exitOp);
+        p.drawText(QPointF(cx-200*sx, cy+30*sy), line1);
+
+        // Text small
+        QFont fs("Helvetica Neue", std::max(10, int(qMax(12, m_fontSize-10)*sy)), QFont::Bold);
+        p.setFont(fs);
+        double tsop = opacityAnim(frame, 20, 55, 0, 1.0);
+        double tsx = posAnim(frame, 0, 60, -54, -111);
+        p.setOpacity(tsop * exitOp);
+        p.drawText(QPointF(cx+tsx*sx, cy+100*sy), line2);
+    }
+    // ═══════════════════════════════════════════════════════
+    // STYLE 3: title_04 — "Angled Bars"
+    // Line + 2 blue boxes + 3 text lines appearing sequentially
+    // ═══════════════════════════════════════════════════════
+    else if (idx == 3) {
+        double baseX = 960*sx, baseY = posAnim(frame, 0, 60, 640, 570)*sy;
+        p.setOpacity(exitOp);
+
+        // Line 01: white 5px
+        p.setPen(QPen(Qt::white, 5*sy)); p.setBrush(Qt::NoBrush);
+        double lineOp = opacityAnim(frame, 0, 30, 0, 1.0);
+        p.setOpacity(lineOp * exitOp);
+        p.drawLine(QPointF(baseX-300*sx, baseY-17*sy), QPointF(baseX+300*sx, baseY-17*sy));
+
+        // Box 01: blue parallelogram, opacity 0->100 over 30f
+        double b1op = opacityAnim(frame, 0, 30, 0, 1.0);
+        p.setOpacity(b1op * exitOp); p.setPen(Qt::NoPen); p.setBrush(accent);
+        QPainterPath para;
+        double bx = baseX-200*sx, by = baseY-57*sy, bw = 400*sx, bh = 55*sy;
+        double sk = 20*sx;
+        para.moveTo(bx+sk, by); para.lineTo(bx+bw, by);
+        para.lineTo(bx+bw-sk, by+bh); para.lineTo(bx, by+bh); para.closeSubpath();
+        p.drawPath(para);
+
+        // Box 02: appears at frame 30, rect at bottom
+        double b2op = opacityAnim(frame, 30, 60, 0, 1.0);
+        p.setOpacity(b2op * exitOp);
+        p.drawRect(QRectF(baseX-226*sx, baseY+60*sy, 452*sx, 65*sy));
+
+        // Texts
+        QFont f1("Helvetica Neue", std::max(10, int(qMax(12, m_fontSize-10)*sy)), QFont::Bold);
+        p.setFont(f1); p.setPen(m_textColor);
+        double to1 = opacityAnim(frame, 10, 40, 0, 1.0);
+        p.setOpacity(to1 * exitOp);
+        p.drawText(QPointF(baseX-180*sx, baseY-25*sy), line1);
+
+        QFont f2("Helvetica Neue", std::max(10, int(qMax(12, m_fontSize-10)*sy)), QFont::Bold);
+        p.setFont(f2);
+        double to2 = opacityAnim(frame, 15, 45, 0, 1.0);
+        p.setOpacity(to2 * exitOp);
+        p.drawText(QPointF(baseX-180*sx, baseY+20*sy), line2);
+
+        if (!line3.isEmpty()) {
+            p.setFont(f2);
+            double to3 = opacityAnim(frame, 30, 60, 0, 1.0);
+            p.setOpacity(to3 * exitOp);
+            p.drawText(QPointF(baseX-180*sx, baseY+95*sy), line3);
+        }
+    }
+    // ═══════════════════════════════════════════════════════
+    // STYLE 4: title_05 — "Clean Bar"
+    // Big text + blue bar (811x85) + ellipse trim + 2 black shapes
+    // ═══════════════════════════════════════════════════════
+    else if (idx == 4) {
+        p.setOpacity(exitOp);
+
+        // Blue bar
+        double barOp = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(barOp * exitOp); p.setPen(Qt::NoPen); p.setBrush(accent);
+        p.drawRect(QRectF(500*sx, 550*sy, 811*sx*ease(std::min(1.0,frame/60.0)), 85*sy));
+
+        // Ellipse: white stroke, trim animated
+        double elTrim = trimAnim(frame, 0, 60, 1.0, 0);
+        if (elTrim < 0.99) {
+            p.setOpacity(exitOp);
+            p.setPen(QPen(Qt::white, 5*sy)); p.setBrush(Qt::NoBrush);
+            p.drawEllipse(QPointF(450*sx, 590*sy), 30*sx*(1.0-elTrim), 30*sy*(1.0-elTrim));
+        }
+
+        // Black shapes fading in
+        double sh1op = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(sh1op * exitOp); p.setPen(Qt::NoPen); p.setBrush(Qt::black);
+        p.drawRect(QRectF(500*sx, 470*sy, 350*sx*ease(std::min(1.0,frame/60.0)), 70*sy));
+
+        double sh2op = opacityAnim(frame, 15, 60, 0, 1.0);
+        p.setOpacity(sh2op * exitOp);
+        p.drawRect(QRectF(500*sx, 640*sy, 250*sx*ease(std::max(0.0,(frame-15)/45.0)), 50*sy));
+
+        // Texts
+        QFont f1("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Black);
+        p.setFont(f1); p.setPen(QColor(235,235,235));
+        double to1 = opacityAnim(frame, 10, 45, 0, 1.0);
+        p.setOpacity(to1 * exitOp);
+        p.drawText(QPointF(520*sx, 530*sy), line1);
+
+        QFont f2("Helvetica Neue", std::max(10, int(qMax(12, m_fontSize-10)*sy)), QFont::Bold);
+        p.setFont(f2);
+        double to2 = opacityAnim(frame, 20, 50, 0, 1.0);
+        p.setOpacity(to2 * exitOp);
+        p.drawText(QPointF(520*sx, 620*sy), line2);
+
+        if (!line3.isEmpty()) {
+            QFont f3("Helvetica Neue", std::max(10, int(qMax(10, m_fontSize-14)*sy)), QFont::Bold);
+            p.setFont(f3);
+            double to3 = opacityAnim(frame, 25, 55, 0, 1.0);
+            p.setOpacity(to3 * exitOp);
+            p.drawText(QPointF(520*sx, 680*sy), line3);
+        }
+    }
+    // ═══════════════════════════════════════════════════════
+    // STYLE 5: title_06 — "Text Block"
+    // Blue box (491x115) + thick line (22px) + text
+    // ═══════════════════════════════════════════════════════
+    else if (idx == 5) {
+        p.setOpacity(exitOp);
+
+        // Blue box
+        double bop = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(bop * exitOp); p.setPen(Qt::NoPen); p.setBrush(accent);
+        p.drawRect(QRectF(700*sx, 480*sy, 491*sx*ease(std::min(1.0,frame/60.0)), 115*sy));
+
+        // Thick white line 22px
+        double trimE = trimAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(exitOp);
+        p.setPen(QPen(Qt::white, 22*sy, Qt::SolidLine, Qt::FlatCap)); p.setBrush(Qt::NoBrush);
+        p.drawLine(QPointF(700*sx, 620*sy), QPointF(700*sx + 500*sx*trimE, 620*sy));
+
+        // Text
+        QFont f1("Helvetica Neue", std::max(10, int(qMax(10, m_fontSize-14)*sy)), QFont::Bold);
+        p.setFont(f1); p.setPen(QColor(235,235,235));
+        double to1 = opacityAnim(frame, 15, 45, 0, 1.0);
+        p.setOpacity(to1 * exitOp);
+        p.drawText(QRectF(720*sx, 490*sy, 460*sx, 50*sy), Qt::AlignLeft|Qt::AlignVCenter, line1);
+
+        QFont f2("Helvetica Neue", std::max(8, int(qMax(10, m_fontSize-14)*sy)), QFont::Normal);
+        p.setFont(f2);
+        double to2 = opacityAnim(frame, 25, 55, 0, 1.0);
+        p.setOpacity(to2 * exitOp);
+        p.drawText(QRectF(720*sx, 540*sy, 460*sx, 40*sy), Qt::AlignLeft|Qt::TextWordWrap, line2);
+
+        if (!line3.isEmpty()) {
+            QFont f3("Helvetica Neue", std::max(10, int(qMax(10, m_fontSize-14)*sy)), QFont::Bold);
+            p.setFont(f3);
+            double to3 = opacityAnim(frame, 10, 40, 0, 1.0);
+            p.setOpacity(to3 * exitOp);
+            p.drawText(QPointF(720*sx, 660*sy), line3);
+        }
+    }
+    // ═══════════════════════════════════════════════════════
+    // STYLE 6: title_07 — "Stylish Line"
+    // Blue box (641x74) + ellipse trim + shapes fading + lines
+    // 77 frames total (shorter animation)
+    // ═══════════════════════════════════════════════════════
+    else if (idx == 6) {
+        p.setOpacity(exitOp);
+
+        // Blue box at (957,536) 641x74
+        double bop = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(bop * exitOp); p.setPen(Qt::NoPen); p.setBrush(accent);
+        p.drawRect(QRectF((957-320)*sx, (536-37)*sy, 641*sx*ease(std::min(1.0,frame/60.0)), 74*sy));
+
+        // Ellipse at (1199,630) white stroke 5px, trim
+        double elTrim = trimAnim(frame, 0, 60, 1.0, 0);
+        p.setOpacity((1.0-elTrim)*exitOp);
+        p.setPen(QPen(Qt::white, 5*sy)); p.setBrush(Qt::NoBrush);
+        p.drawEllipse(QPointF(1199*sx, 630*sy), 25*sx, 25*sy);
+
+        // White shapes fading in
+        double s1op = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(s1op * exitOp); p.setPen(Qt::NoPen); p.setBrush(Qt::white);
+        p.drawRect(QRectF(600*sx, 490*sy, 120*sx, 35*sy));
+
+        double s2op = opacityAnim(frame, 0, 60, 0, 0.75);
+        p.setOpacity(s2op * exitOp);
+        p.drawRect(QRectF(600*sx, 610*sy, 100*sx, 25*sy));
+
+        // Line 01: white 5px, trim 0->100%
+        double l1trim = trimAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(exitOp);
+        p.setPen(QPen(Qt::white, 5*sy, Qt::SolidLine, Qt::FlatCap));
+        p.drawLine(QPointF(751*sx, 546*sy), QPointF(751*sx + 400*sx*l1trim, 546*sy));
+
+        // Line 02: thick 30px
+        double l2trim = trimAnim(frame, 0, 60, 0, 1.0);
+        p.setPen(QPen(Qt::white, 30*sy, Qt::SolidLine, Qt::FlatCap));
+        p.drawLine(QPointF(600*sx, 580*sy), QPointF(600*sx + 500*sx*l2trim, 580*sy));
+
+        // Texts
+        QFont f1("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Bold);
+        p.setFont(f1); p.setPen(m_textColor);
+        double to1 = opacityAnim(frame, 10, 40, 0, 1.0);
+        p.setOpacity(to1 * exitOp);
+        p.drawText(QPointF(650*sx, 530*sy), line1);
+
+        QFont f2("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Bold);
+        p.setFont(f2);
+        double to2 = opacityAnim(frame, 15, 50, 0, 1.0);
+        p.setOpacity(to2 * exitOp);
+        p.drawText(QPointF(650*sx, 610*sy), line2);
+    }
+    // ═══════════════════════════════════════════════════════
+    // STYLE 7: title_08 — "Motion Block"
+    // 3 white shapes + ellipse + blue box path + 3 texts
+    // ═══════════════════════════════════════════════════════
+    else if (idx == 7) {
+        p.setOpacity(exitOp);
+
+        // 3 white shapes fading in with stagger
+        p.setPen(Qt::NoPen); p.setBrush(Qt::white);
+        double s1op = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(s1op * exitOp);
+        p.drawRect(QRectF(650*sx, 430*sy, 200*sx, 40*sy));
+
+        double s2op = opacityAnim(frame, 2, 62, 0, 0.75);
+        p.setOpacity(s2op * exitOp);
+        p.drawRect(QRectF(650*sx, 530*sy, 180*sx, 35*sy));
+
+        double s3op = opacityAnim(frame, 4, 64, 0, 0.60);
+        p.setOpacity(s3op * exitOp);
+        p.drawRect(QRectF(650*sx, 620*sy, 160*sx, 30*sy));
+
+        // Ellipse at (1199,630) trim
+        double elTrim = trimAnim(frame, 0, 60, 1.0, 0);
+        p.setOpacity((1.0-elTrim)*exitOp);
+        p.setPen(QPen(Qt::white, 5*sy)); p.setBrush(Qt::NoBrush);
+        p.drawEllipse(QPointF(1199*sx, 630*sy), 25*sx, 25*sy);
+
+        // Blue box (path shape)
+        double bop = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(bop * exitOp); p.setPen(Qt::NoPen); p.setBrush(accent);
+        p.drawRect(QRectF(870*sx, 480*sy, 300*sx*ease(std::min(1.0,frame/60.0)), 70*sy));
+
+        // Texts
+        QFont f1("Helvetica Neue", std::max(12, int(m_fontSize*sy)), QFont::Bold);
+        p.setFont(f1); p.setPen(m_textColor);
+        double to1 = opacityAnim(frame, 10, 40, 0, 1.0);
+        p.setOpacity(to1 * exitOp);
+        p.drawText(QPointF(670*sx, 465*sy), line1);
+
+        double to2 = opacityAnim(frame, 15, 45, 0, 1.0);
+        p.setOpacity(to2 * exitOp);
+        p.drawText(QPointF(670*sx, 560*sy), line2);
+
+        if (!line3.isEmpty()) {
+            double to3 = opacityAnim(frame, 20, 50, 0, 1.0);
+            p.setOpacity(to3 * exitOp);
+            p.drawText(QPointF(670*sx, 650*sy), line3);
+        }
+    }
+    // ═══════════════════════════════════════════════════════
+    // STYLE 8: title_09 — "Wide Bar"
+    // 3 white shapes stagger + ellipse + blue rect (889x140) + 3 texts
+    // ═══════════════════════════════════════════════════════
+    else {
+        p.setOpacity(exitOp);
+
+        // White shapes stagger
+        p.setPen(Qt::NoPen); p.setBrush(Qt::white);
+        double s1op = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(s1op * exitOp);
+        p.drawRect(QRectF(500*sx, 400*sy, 250*sx, 40*sy));
+
+        double s2op = opacityAnim(frame, 2, 60, 0, 0.75);
+        p.setOpacity(s2op * exitOp);
+        p.drawRect(QRectF(500*sx, 520*sy, 220*sx, 35*sy));
+
+        double s3op = opacityAnim(frame, 4, 60, 0, 0.60);
+        p.setOpacity(s3op * exitOp);
+        p.drawRect(QRectF(500*sx, 630*sy, 190*sx, 30*sy));
+
+        // Ellipse at (1339,598) trim
+        double elTrim = trimAnim(frame, 0, 60, 1.0, 0);
+        p.setOpacity((1.0-elTrim)*exitOp);
+        p.setPen(QPen(Qt::white, 5*sy)); p.setBrush(Qt::NoBrush);
+        p.drawEllipse(QPointF(1339*sx, 598*sy), 30*sx, 30*sy);
+
+        // Blue wide rect (889x140)
+        double bop = opacityAnim(frame, 0, 60, 0, 1.0);
+        p.setOpacity(bop * exitOp); p.setPen(Qt::NoPen); p.setBrush(accent);
+        double bw = 889*sx*ease(std::min(1.0,frame/60.0));
+        p.drawRect(QRectF(500*sx, 460*sy, bw, 140*sy));
+
+        // Texts
+        QFont f1("Helvetica Neue", std::max(10, int(qMax(12, m_fontSize-10)*sy)), QFont::Bold);
+        p.setFont(f1); p.setPen(m_textColor);
+        double to1 = opacityAnim(frame, 10, 40, 0, 1.0);
+        p.setOpacity(to1 * exitOp);
+        p.drawText(QPointF(520*sx, 435*sy), line1);
+
+        QFont f2("Helvetica Neue", std::max(10, int(qMax(12, m_fontSize-10)*sy)), QFont::Bold);
+        p.setFont(f2);
+        double to2 = opacityAnim(frame, 15, 45, 0, 1.0);
+        p.setOpacity(to2 * exitOp);
+        p.drawText(QPointF(520*sx, 545*sy), line2);
+
+        if (!line3.isEmpty()) {
+            p.setFont(f2);
+            double to3 = opacityAnim(frame, 20, 50, 0, 1.0);
+            p.setOpacity(to3 * exitOp);
+            p.drawText(QPointF(520*sx, 655*sy), line3);
         }
     }
 
+    p.end();
     return result;
-#endif
 }
 
-// Unused methods from header (kept for API compatibility)
-void LottieEngine::renderLayer(QPainter&, const QJsonObject&, double, double, double, const QMap<QString, QString>&) {}
+// Unused stubs
+void LottieEngine::renderLayer(QPainter&, const QJsonObject&, double, double, double, const QMap<QString,QString>&) {}
 void LottieEngine::renderShapeGroup(QPainter&, const QJsonArray&, double, double, double) {}
-void LottieEngine::renderTextLayer(QPainter&, const QJsonObject&, double, double, double, const QMap<QString, QString>&) {}
+void LottieEngine::renderTextLayer(QPainter&, const QJsonObject&, double, double, double, const QMap<QString,QString>&) {}
 double LottieEngine::interpolateValue(const QJsonValue&, double, double d) { return d; }
 QPointF LottieEngine::interpolatePoint(const QJsonValue&, double, QPointF d) { return d; }
 QColor LottieEngine::interpolateColor(const QJsonValue&, double, QColor d) { return d; }

@@ -186,21 +186,26 @@ void MainWindow::startSubProcesses()
     visionExe = appDir + "/prestige_vision.exe";
 #else
     visionExe = appDir + "/prestige_vision";
-    // Dev layout: control_room/ and vision_engine/ are siblings
+    // macOS .app bundle: prestige_vision.app/Contents/MacOS/prestige_vision
+    if (!QFileInfo(visionExe).exists())
+        visionExe = appDir + "/../vision_engine/prestige_vision.app/Contents/MacOS/prestige_vision";
+    if (!QFileInfo(visionExe).exists())
+        visionExe = appDir + "/../../vision_engine/prestige_vision.app/Contents/MacOS/prestige_vision";
+    if (!QFileInfo(visionExe).exists())
+        visionExe = appDir + "/../../../../vision_engine/prestige_vision.app/Contents/MacOS/prestige_vision";
+    // Fallback: non-bundle binary
     if (!QFileInfo(visionExe).exists())
         visionExe = appDir + "/../vision_engine/prestige_vision";
-    // Dev layout: build/control_room/app and build/vision_engine/
     if (!QFileInfo(visionExe).exists())
         visionExe = appDir + "/../../vision_engine/prestige_vision";
-    // Dev layout: macOS app bundle (Contents/MacOS → build/vision_engine)
     if (!QFileInfo(visionExe).exists())
         visionExe = appDir + "/../../../../vision_engine/prestige_vision";
 #endif
 
     if (QFileInfo(visionExe).exists()) {
         m_visionProcess = new QProcess(this);
-        m_visionProcess->setStandardOutputFile(QProcess::nullDevice());
-        m_visionProcess->setStandardErrorFile(QProcess::nullDevice());
+        m_visionProcess->setStandardOutputFile("/tmp/prestige_vision.log");
+        m_visionProcess->setStandardErrorFile("/tmp/prestige_vision.log");
 
         m_visionProcess->start(visionExe);
         if (m_visionProcess->waitForStarted(5000)) {
@@ -240,6 +245,8 @@ bool MainWindow::initialize(QQmlApplicationEngine* engine)
     ctx->setContextProperty("mainWindow", this);
     ctx->setContextProperty("configManager", m_config);
     ctx->setContextProperty("previewMonitor", m_preview);
+    m_preview->start("tcp://127.0.0.1:5558");
+    qInfo() << "[ControlRoom] Live preview provider registered";
     ctx->setContextProperty("overlayController", m_overlay);
     ctx->setContextProperty("profileManager", m_profileManager);
     ctx->setContextProperty("setupController", m_setupController);
@@ -267,6 +274,11 @@ bool MainWindow::initialize(QQmlApplicationEngine* engine)
 
     // Auto-start sub-processes (AI Engine + Vision Engine)
     startSubProcesses();
+
+    // Send initial config to Vision Engine after a short delay
+    // (wait for VE to start and subscribe to ZMQ :5559)
+    QTimer::singleShot(1500, this, [this]() { publishConfig(); });
+    QTimer::singleShot(3000, this, [this]() { publishConfig(); }); // retry in case VE was slow
 
     qInfo() << "[ControlRoom] MainWindow initialized (Always-On Passthrough)";
     return true;
@@ -543,6 +555,7 @@ void MainWindow::publishConfig()
     obj["show_title_offset_x"] = m_setupController->showTitleOffsetX();
     obj["show_title_offset_y"] = m_setupController->showTitleOffsetY();
     obj["ticker_offset_y"] = m_setupController->tickerOffsetY();
+    obj["ticker_position"] = m_setupController->tickerPosition();
     obj["subtitle_offset_x"] = m_setupController->subtitleOffsetX();
     obj["subtitle_offset_y"] = m_setupController->subtitleOffsetY();
     obj["countdown_offset_x"] = m_setupController->countdownOffsetX();
@@ -558,6 +571,10 @@ void MainWindow::publishConfig()
 
     // Overlay scale factors (0.5 – 2.0)
     obj["nameplate_scale"] = m_setupController->nameplateScale();
+    obj["nameplate_offset_x"] = m_setupController->nameplateOffsetX();
+    obj["nameplate_offset_y"] = m_setupController->nameplateOffsetY();
+    obj["nameplate_font_size"] = m_setupController->nameplateFontSize();
+    obj["nameplate_text_color"] = m_setupController->nameplateTextColor();
     obj["scoreboard_scale"] = m_setupController->scoreboardScale();
     obj["weather_scale"] = m_setupController->weatherScale();
     obj["clock_scale"] = m_setupController->clockScale();
@@ -655,7 +672,7 @@ void MainWindow::publishConfig()
     // Channel branding (logo, name) is sent unconditionally above
     // Only talent nameplates and show title depend on overlay activation
     // Show title: visible when enabled + text configured (no need for overlay activation)
-    obj["show_title_visible"] = m_setupController->showTitleEnabled() && !m_setupController->showTitle().isEmpty();
+    obj["show_title_visible"] = m_setupController->showTitleEnabled() && m_liveController->isShowTitleVisible();
     // Talent nameplate: visible when overlays active + IA detected talent
     obj["talent_nameplate_visible"] = m_overlaysActive && m_liveController->isTalentNameplateVisible();
     obj["bypass_active"] = m_liveController->isBypassed();

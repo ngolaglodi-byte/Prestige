@@ -9,6 +9,9 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+env:
+  APP_VERSION: "1.0.0"
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -16,6 +19,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Extract version from tag
+      if: startsWith(github.ref, 'refs/tags/v')
+      shell: pwsh
+      run: |
+        $version = "${{ github.ref_name }}".TrimStart('v')
+        echo "APP_VERSION=$version" >> $env:GITHUB_ENV
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
@@ -33,12 +43,18 @@ jobs:
     - name: Install ONNX Runtime
       shell: pwsh
       run: |
-        $version = "1.17.0"
-        $url = "https://github.com/microsoft/onnxruntime/releases/download/v$version/onnxruntime-win-x64-$version.zip"
+        $url = "https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-win-x64-1.17.0.zip"
         Invoke-WebRequest -Uri $url -OutFile onnxruntime.zip
         Expand-Archive onnxruntime.zip -DestinationPath onnxruntime
         $dir = Get-ChildItem onnxruntime -Directory | Select-Object -First 1
         echo "ONNXRUNTIME_DIR=$($dir.FullName)" >> $env:GITHUB_ENV
+
+    - name: Download Whisper models
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path resources\models\whisper
+        Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile resources\models\whisper\ggml-tiny.bin
+        Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin" -OutFile resources\models\whisper\ggml-base.bin
 
     - name: Configure CMake
       shell: pwsh
@@ -53,71 +69,104 @@ jobs:
     - name: Build
       run: cmake --build build --config Release --parallel
 
-    - name: Find executables
-      shell: pwsh
-      id: find-exe
-      run: |
-        $ctrl = Get-ChildItem -Recurse build -Filter prestige_control.exe | Select-Object -First 1
-        $vis = Get-ChildItem -Recurse build -Filter prestige_vision.exe | Select-Object -First 1
-        echo "CTRL=$($ctrl.FullName)" >> $env:GITHUB_OUTPUT
-        echo "VIS=$($vis.FullName)" >> $env:GITHUB_OUTPUT
-
     - name: Package application
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path dist\PrestigeAI | Out-Null
 
         # Core executables
-        Copy-Item "${{ steps.find-exe.outputs.CTRL }}" dist\PrestigeAI\prestige_control.exe
-        Copy-Item "${{ steps.find-exe.outputs.VIS }}" dist\PrestigeAI\prestige_vision.exe
+        $ctrl = Get-ChildItem -Recurse build -Filter prestige_control.exe | Select-Object -First 1
+        $vis = Get-ChildItem -Recurse build -Filter prestige_vision.exe | Select-Object -First 1
+        Copy-Item $ctrl.FullName dist\PrestigeAI\prestige_control.exe
+        Copy-Item $vis.FullName dist\PrestigeAI\prestige_vision.exe
 
         # Qt dependencies
         $env:Path = "$env:QT_ROOT_DIR\bin;$env:Path"
         & windeployqt --qmldir control_room\qml --qmldir vision_engine\qml dist\PrestigeAI\prestige_control.exe
         & windeployqt dist\PrestigeAI\prestige_vision.exe
 
-        # ONNX Runtime DLL
+        # ── Lottie animations (9 presets) ──
+        New-Item -ItemType Directory -Force -Path dist\PrestigeAI\animations
+        Copy-Item resources\animations\title_*.json dist\PrestigeAI\animations\ -ErrorAction SilentlyContinue
+
+        # ── Whisper models ──
+        New-Item -ItemType Directory -Force -Path dist\PrestigeAI\models\whisper
+        Copy-Item resources\models\whisper\ggml-*.bin dist\PrestigeAI\models\whisper\ -ErrorAction SilentlyContinue
+
+        # ── AI face detection models ──
+        New-Item -ItemType Directory -Force -Path dist\PrestigeAI\models\buffalo_l
+        Copy-Item ai_engine\models\buffalo_l\*.onnx dist\PrestigeAI\models\buffalo_l\ -ErrorAction SilentlyContinue
+
+        # ── Virtual studio backgrounds ──
+        if (Test-Path "resources\studios") {
+            Copy-Item -Recurse resources\studios dist\PrestigeAI\
+        }
+
+        # ── ONNX Runtime DLL ──
         Copy-Item "$env:ONNXRUNTIME_DIR\lib\onnxruntime.dll" dist\PrestigeAI\
 
-        # FFmpeg DLLs (for RTMP/SRT/File output)
+        # ── FFmpeg DLLs ──
         $vcpkgBin = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin"
         Get-ChildItem "$vcpkgBin\av*.dll","$vcpkgBin\sw*.dll","$vcpkgBin\postproc*.dll" -ErrorAction SilentlyContinue | ForEach-Object {
             Copy-Item $_.FullName dist\PrestigeAI\
         }
 
-        # ZeroMQ DLL
+        # ── ZeroMQ DLL ──
         Get-ChildItem "$vcpkgBin\libzmq*.dll" -ErrorAction SilentlyContinue | ForEach-Object {
             Copy-Item $_.FullName dist\PrestigeAI\
         }
 
-        # AI Models
-        New-Item -ItemType Directory -Force -Path dist\PrestigeAI\models\buffalo_l | Out-Null
-        if (Test-Path "ai_engine\models\buffalo_l") {
-            Copy-Item ai_engine\models\buffalo_l\*.onnx dist\PrestigeAI\models\buffalo_l\ -ErrorAction SilentlyContinue
+        # ── VC++ Redistributable (bundled for clean machines) ──
+        $vcRedist = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\*\VC\Redist\MSVC\*\x64\Microsoft.VC143.CRT"
+        Get-ChildItem $vcRedist -Filter "*.dll" -ErrorAction SilentlyContinue | ForEach-Object {
+            Copy-Item $_.FullName dist\PrestigeAI\
         }
 
-        # Icon
-        Copy-Item resources\prestige.ico dist\PrestigeAI\
+        # ── Icon ──
+        Copy-Item resources\prestige.ico dist\PrestigeAI\ -ErrorAction SilentlyContinue
 
-        # Compile Windows launcher (PrestigeAI.exe — starts both processes)
-        # Use Visual Studio Developer environment for cl.exe
+        # ── Compile Windows launcher ──
         $vsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
         $vsPath = & $vsWhere -latest -property installationPath
         $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+        cmd /c "`"$vcvars`" && cd scripts && rc launcher.rc && cl /Fe:..\dist\PrestigeAI\PrestigeAI.exe launcher_windows.c launcher.res /link /SUBSYSTEM:WINDOWS user32.lib"
 
-        # Compile via cmd with vcvars environment
-        cmd /c "`"$vcvars`" && cd scripts && cl /Fe:..\dist\PrestigeAI\PrestigeAI.exe launcher_windows.c /link /SUBSYSTEM:WINDOWS user32.lib"
+        # ── Third-party licenses ──
+        New-Item -ItemType Directory -Force -Path dist\PrestigeAI\licenses
+        Copy-Item scripts\LICENSE.txt dist\PrestigeAI\licenses\
+        @"
+        Third-Party Software Licenses
+        ==============================
+        Qt Framework - LGPL v3 (https://www.qt.io/licensing/)
+        FFmpeg - LGPL v2.1 / GPL v2 (https://ffmpeg.org/legal.html)
+        ZeroMQ - MPL v2.0 (https://zeromq.org/license/)
+        rlottie - MIT (https://github.com/nickvdp/rlottie)
+        whisper.cpp - MIT (https://github.com/ggerganov/whisper.cpp)
+        ONNX Runtime - MIT (https://github.com/microsoft/onnxruntime)
+        InsightFace - Non-commercial research (https://github.com/deepinsight/insightface)
+        "@ | Out-File -FilePath dist\PrestigeAI\licenses\THIRD_PARTY.txt -Encoding utf8
 
-        # Studio presets
-        if (Test-Path "resources\studios") {
-            Copy-Item -Recurse resources\studios dist\PrestigeAI\
+    - name: Code sign (Authenticode)
+      if: env.WINDOWS_CERT_BASE64 != ''
+      env:
+        WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+        WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+      shell: pwsh
+      run: |
+        $cert = [System.Convert]::FromBase64String($env:WINDOWS_CERT_BASE64)
+        [System.IO.File]::WriteAllBytes("cert.pfx", $cert)
+        $exes = Get-ChildItem dist\PrestigeAI\*.exe
+        foreach ($exe in $exes) {
+            & signtool sign /f cert.pfx /p $env:WINDOWS_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 $exe.FullName
         }
+        Remove-Item cert.pfx
 
     - name: Create Inno Setup installer
       shell: pwsh
       run: |
         choco install innosetup -y --no-progress
-        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" scripts\installer.iss
+        # Pass version to Inno Setup
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=$env:APP_VERSION" scripts\installer.iss
 
     - name: Upload Setup.exe
       uses: actions/upload-artifact@v4

@@ -23,15 +23,8 @@ fi
 ARCH=$(uname -m)
 echo "[OK] Architecture: $ARCH"
 
-# Check Python
-if command -v python3 &>/dev/null; then
-    PY_VER=$(python3 --version 2>&1)
-    echo "[OK] $PY_VER"
-else
-    echo "[!!] Python 3 not found"
-    echo "     Install with: brew install python@3.12"
-    ERRORS=$((ERRORS + 1))
-fi
+# AI engine runs natively in C++ — no Python required
+echo "[OK] AI Engine: C++ ONNX Runtime (no Python needed)"
 
 # Check available disk space (need ~1GB)
 AVAIL_KB=$(df -k "$HOME" | tail -1 | awk '{print $4}')

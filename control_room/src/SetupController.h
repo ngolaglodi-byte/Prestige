@@ -56,6 +56,7 @@ class SetupController : public QObject {
     Q_PROPERTY(QString rtmpKey READ rtmpKey WRITE setRtmpKey NOTIFY outputsChanged)
     Q_PROPERTY(QString srtUrl READ srtUrl WRITE setSrtUrl NOTIFY outputsChanged)
     Q_PROPERTY(QString socialOutputsJson READ socialOutputsJson WRITE setSocialOutputsJson NOTIFY outputsChanged)
+    Q_PROPERTY(QString socialConfigsJson READ socialConfigsJson WRITE setSocialConfigsJson NOTIFY outputsChanged)
     Q_PROPERTY(int outputFps READ outputFps WRITE setOutputFps NOTIFY outputsChanged)
     Q_PROPERTY(int outputBitrate READ outputBitrate WRITE setOutputBitrate NOTIFY outputsChanged)
 
@@ -141,6 +142,10 @@ class SetupController : public QObject {
 
     // Overlay scale factors (0.5 – 2.0, default 1.0 = 100%)
     Q_PROPERTY(double nameplateScale READ nameplateScale WRITE setNameplateScale NOTIFY brandingChanged)
+    Q_PROPERTY(int nameplateOffsetX READ nameplateOffsetX WRITE setNameplateOffsetX NOTIFY brandingChanged)
+    Q_PROPERTY(int nameplateOffsetY READ nameplateOffsetY WRITE setNameplateOffsetY NOTIFY brandingChanged)
+    Q_PROPERTY(int nameplateFontSize READ nameplateFontSize WRITE setNameplateFontSize NOTIFY brandingChanged)
+    Q_PROPERTY(QString nameplateTextColor READ nameplateTextColor WRITE setNameplateTextColor NOTIFY brandingChanged)
     Q_PROPERTY(double scoreboardScale READ scoreboardScale WRITE setScoreboardScale NOTIFY brandingChanged)
     Q_PROPERTY(double weatherScale READ weatherScale WRITE setWeatherScale NOTIFY brandingChanged)
     Q_PROPERTY(double clockScale READ clockScale WRITE setClockScale NOTIFY brandingChanged)
@@ -186,6 +191,7 @@ class SetupController : public QObject {
 
     // Ticker manual text
     Q_PROPERTY(QString tickerManualText READ tickerManualText WRITE setTickerManualText NOTIFY brandingChanged)
+    Q_PROPERTY(QString tickerPosition READ tickerPosition WRITE setTickerPosition NOTIFY brandingChanged)
 
     // Scoreboard timer/period/cards
     Q_PROPERTY(QString scoreboardMatchTime READ scoreboardMatchTime WRITE setScoreboardMatchTime NOTIFY brandingChanged)
@@ -204,8 +210,10 @@ class SetupController : public QObject {
     Q_PROPERTY(QString clockDesign READ clockDesign WRITE setClockDesign NOTIFY brandingChanged)
     Q_PROPERTY(QString weatherDesign READ weatherDesign WRITE setWeatherDesign NOTIFY brandingChanged)
 
-    // ── Lottie Animation Preset ──────────────────────────
+    // ── Lottie Animation Presets ─────────────────────────
     Q_PROPERTY(QString lottiePreset READ lottiePreset WRITE setLottiePreset NOTIFY aeEffectsChanged)
+    Q_PROPERTY(QString lottiePresetChannel READ lottiePresetChannel WRITE setLottiePresetChannel NOTIFY brandingChanged)
+    Q_PROPERTY(QString lottiePresetTitle READ lottiePresetTitle WRITE setLottiePresetTitle NOTIFY showTitleChanged)
 
     // ── AE Effects System ────────────────────────────────
     Q_PROPERTY(QString easingCurve READ easingCurve WRITE setEasingCurve NOTIFY aeEffectsChanged)
@@ -298,6 +306,8 @@ public:
     void setSrtUrl(const QString& url) { if (m_srtUrl != url) { m_srtUrl = url; emit outputsChanged(); } }
     QString socialOutputsJson() const { return m_socialOutputsJson; }
     void setSocialOutputsJson(const QString& json) { if (m_socialOutputsJson != json) { m_socialOutputsJson = json; emit outputsChanged(); } }
+    QString socialConfigsJson() const { return m_socialConfigsJson; }
+    void setSocialConfigsJson(const QString& json) { if (m_socialConfigsJson != json) { m_socialConfigsJson = json; emit outputsChanged(); } }
     int outputFps() const { return m_outputFps; }
     void setOutputFps(int v) { if (m_outputFps != v) { m_outputFps = qBound(24, v, 60); emit outputsChanged(); } }
     int outputBitrate() const { return m_outputBitrate; }
@@ -452,6 +462,14 @@ public:
     // Overlay scale factors
     double nameplateScale() const { return m_nameplateScale; }
     void setNameplateScale(double v);
+    int nameplateOffsetX() const { return m_nameplateOffsetX; }
+    void setNameplateOffsetX(int v) { if (m_nameplateOffsetX != v) { m_nameplateOffsetX = v; emit brandingChanged(); } }
+    int nameplateOffsetY() const { return m_nameplateOffsetY; }
+    void setNameplateOffsetY(int v) { if (m_nameplateOffsetY != v) { m_nameplateOffsetY = v; emit brandingChanged(); } }
+    int nameplateFontSize() const { return m_nameplateFontSize; }
+    void setNameplateFontSize(int v) { if (m_nameplateFontSize != v) { m_nameplateFontSize = v; emit brandingChanged(); } }
+    QString nameplateTextColor() const { return m_nameplateTextColor; }
+    void setNameplateTextColor(const QString& v) { if (m_nameplateTextColor != v) { m_nameplateTextColor = v; emit brandingChanged(); } }
     double scoreboardScale() const { return m_scoreboardScale; }
     void setScoreboardScale(double v);
     double weatherScale() const { return m_weatherScale; }
@@ -509,9 +527,11 @@ public:
     QString scoreboardPosition() const { return m_scoreboardPosition; }
     void setScoreboardPosition(const QString& v);
 
-    // Ticker manual text
+    // Ticker
     QString tickerManualText() const { return m_tickerManualText; }
     void setTickerManualText(const QString& v);
+    QString tickerPosition() const { return m_tickerPosition; }
+    void setTickerPosition(const QString& v) { if (m_tickerPosition != v) { m_tickerPosition = v; emit brandingChanged(); } }
 
     // Scoreboard timer/period/cards
     QString scoreboardMatchTime() const { return m_scoreboardMatchTime; }
@@ -563,9 +583,13 @@ public:
     QString sportEvent() const { return m_sportEvent; }
     void setSportEvent(const QString& v) { if (m_sportEvent != v) { m_sportEvent = v; emit brandingChanged(); } }
 
-    // ── Lottie Preset ─────────────────────────────────
+    // ── Lottie Presets ────────────────────────────────
     QString lottiePreset() const { return m_lottiePreset; }
     void setLottiePreset(const QString& v) { if (m_lottiePreset != v) { m_lottiePreset = v; emit aeEffectsChanged(); } }
+    QString lottiePresetChannel() const { return m_lottiePresetChannel; }
+    void setLottiePresetChannel(const QString& v) { if (m_lottiePresetChannel != v) { m_lottiePresetChannel = v; emit brandingChanged(); } }
+    QString lottiePresetTitle() const { return m_lottiePresetTitle; }
+    void setLottiePresetTitle(const QString& v) { if (m_lottiePresetTitle != v) { m_lottiePresetTitle = v; emit showTitleChanged(); } }
 
     // ── AE Effects getters/setters ─────────────────────
     QString easingCurve() const { return m_easingCurve; }
@@ -692,6 +716,10 @@ private:
 
     // Overlay scale factors
     double  m_nameplateScale = 1.0;
+    int     m_nameplateOffsetX = 0;
+    int     m_nameplateOffsetY = 0;
+    int     m_nameplateFontSize = 28;
+    QString m_nameplateTextColor = "#FFFFFF";
     double  m_scoreboardScale = 1.0;
     double  m_weatherScale = 1.0;
     double  m_clockScale = 1.0;
@@ -726,8 +754,9 @@ private:
     QString m_scoreboardColorB = "#0066CC";
     QString m_scoreboardPosition = "top_left";
 
-    // Ticker manual text
+    // Ticker
     QString m_tickerManualText;
+    QString m_tickerPosition = "bottom";
 
     // Scoreboard timer/period/cards
     QString m_scoreboardMatchTime = "00:00";
@@ -760,6 +789,7 @@ private:
     // Output extras
     QString m_srtUrl;
     QString m_socialOutputsJson;
+    QString m_socialConfigsJson;
     int     m_outputFps = 25;
     int     m_outputBitrate = 8;
 
@@ -780,6 +810,8 @@ private:
 
     // Lottie + AE Effects
     QString m_lottiePreset = "title_01";
+    QString m_lottiePresetChannel = "title_01";
+    QString m_lottiePresetTitle = "title_01";
     QString m_easingCurve = "ease_out_cubic";
     QString m_overlayBlendMode = "normal";
     QString m_aeEffectId;

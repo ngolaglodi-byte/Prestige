@@ -1,12 +1,69 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-// import QtQuick.Effects  // Removed — not available in all Qt builds
 
 Item {
     id: liveView
 
     property int elapsedSeconds: 0
+    // ── DEMO STATE MACHINE ──────────────────────────────────
+    // Simulates the REAL broadcast cycle exactly:
+    //   idle → delay → talent shows + title hides → talent exits → title returns → idle
+    property string demoPhase: "idle"
+    property string demoMode: "single"  // "single" or "multi"
+    property bool demoTalentVisible: demoPhase === "talent_in" || demoPhase === "hold" || demoPhase === "talent_exit"
+    property bool demoTitleHidden: demoPhase === "talent_in" || demoPhase === "hold" || demoPhase === "talent_exit" || demoPhase === "title_wait"
+    property int demoFrameCounter: 0
+
+    // Lottie frame timer — only runs when talent is visible
+    Timer {
+        id: demoTimer; interval: 50; repeat: true
+        running: liveView.demoTalentVisible
+        onTriggered: liveView.demoFrameCounter++
+    }
+
+    // Single timer for all phases — manually started, NOT reactive
+    Timer {
+        id: demoPhaseTimer; repeat: false
+        onTriggered: {
+            if (liveView.demoPhase === "delay") {
+                liveView.demoFrameCounter = 0
+                liveView.demoPhase = "talent_in"
+                // Schedule transition to hold after entry (~3s)
+                demoPhaseTimer.interval = 3000
+                demoPhaseTimer.start()
+            } else if (liveView.demoPhase === "talent_in") {
+                liveView.demoPhase = "hold"
+                // Schedule transition to exit after talentDisplayDurationSec
+                demoPhaseTimer.interval = setupController.talentDisplayDurationSec * 1000
+                demoPhaseTimer.start()
+            } else if (liveView.demoPhase === "hold") {
+                liveView.demoPhase = "talent_exit"
+                // Schedule transition to title_wait after exit animation (2s)
+                demoPhaseTimer.interval = 2000
+                demoPhaseTimer.start()
+            } else if (liveView.demoPhase === "talent_exit") {
+                liveView.demoPhase = "title_wait"
+                // Schedule transition to idle after titleReappearDelaySec
+                demoPhaseTimer.interval = setupController.titleReappearDelaySec * 1000
+                demoPhaseTimer.start()
+            } else if (liveView.demoPhase === "title_wait") {
+                liveView.demoPhase = "idle"
+                // DONE — no more timer starts
+            }
+        }
+    }
+
+    function startDemo(mode) {
+        demoPhaseTimer.stop()
+        if (demoPhase !== "idle") { demoPhase = "idle"; return }  // STOP
+        demoMode = mode || "single"
+        demoFrameCounter = 0
+        demoPhase = "delay"
+        var delayMs = (demoMode === "multi") ? setupController.multiFaceDelayMs : setupController.singleFaceDelayMs
+        demoPhaseTimer.interval = Math.max(100, delayMs)
+        demoPhaseTimer.start()
+    }
     Timer { interval: 1000; running: mainWindow.overlaysActive; repeat: true; onTriggered: liveView.elapsedSeconds++ }
     Connections { target: mainWindow; function onOverlaysActiveChanged() { if (mainWindow.overlaysActive) liveView.elapsedSeconds = 0 } }
 
@@ -79,65 +136,150 @@ Item {
 
         // ── ON AIR Bar ─────────────────────────────────────
         Rectangle {
-            Layout.fillWidth: true; Layout.preferredHeight: 52
+            id: onAirBar
+            Layout.fillWidth: true; Layout.preferredHeight: 48
+
+            property bool isLive: mainWindow.overlaysActive
+
             gradient: Gradient {
                 orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: mainWindow.overlaysActive ? "#CC0000" : "#333333" }
-                GradientStop { position: 0.5; color: mainWindow.overlaysActive ? "#DD0000" : "#444444" }
-                GradientStop { position: 1.0; color: mainWindow.overlaysActive ? "#BB0000" : "#333333" }
+                GradientStop { position: 0.0; color: onAirBar.isLive ? "#B71C1C" : "#1E1E24" }
+                GradientStop { position: 0.3; color: onAirBar.isLive ? "#D32F2F" : "#242428" }
+                GradientStop { position: 0.7; color: onAirBar.isLive ? "#D32F2F" : "#242428" }
+                GradientStop { position: 1.0; color: onAirBar.isLive ? "#B71C1C" : "#1E1E24" }
+            }
+
+            // Top highlight line (subtle broadcast feel)
+            Rectangle {
+                anchors.top: parent.top; width: parent.width; height: 1
+                color: onAirBar.isLive ? Qt.rgba(255, 255, 255, 0.15) : Qt.rgba(255, 255, 255, 0.04)
             }
 
             RowLayout {
-                anchors.fill: parent; anchors.leftMargin: 24; anchors.rightMargin: 24; spacing: 14
+                anchors.fill: parent; anchors.leftMargin: 20; anchors.rightMargin: 20; spacing: 12
 
-                // Pulsing dot with glow
+                // Tally light indicator
                 Item {
-                    Layout.preferredWidth: 16; Layout.preferredHeight: 16
+                    Layout.preferredWidth: 18; Layout.preferredHeight: 18
+
+                    // Outer glow ring
                     Rectangle {
-                        anchors.centerIn: parent; width: 16; height: 16; radius: 8
-                        color: mainWindow.overlaysActive ? Qt.rgba(1, 1, 1, 0.2) : Qt.rgba(1, 1, 1, 0.1)
+                        anchors.centerIn: parent; width: 18; height: 18; radius: 9
+                        color: "transparent"
+                        border.color: onAirBar.isLive ? Qt.rgba(255, 255, 255, 0.25) : Qt.rgba(255, 255, 255, 0.08)
+                        border.width: 1
                     }
+
+                    // Inner tally dot
                     Rectangle {
                         anchors.centerIn: parent; width: 10; height: 10; radius: 5
-                        color: mainWindow.overlaysActive ? "white" : "#888"
+                        color: onAirBar.isLive ? "#FFFFFF" : "#555"
                         SequentialAnimation on opacity {
-                            loops: Animation.Infinite; running: mainWindow.overlaysActive
-                            NumberAnimation { to: 0.3; duration: 800; easing.type: Easing.InOutSine }
-                            NumberAnimation { to: 1.0; duration: 800; easing.type: Easing.InOutSine }
+                            loops: Animation.Infinite; running: onAirBar.isLive
+                            NumberAnimation { to: 0.3; duration: 900; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1.0; duration: 900; easing.type: Easing.InOutSine }
+                        }
+                    }
+
+                    // Glow effect behind tally when live
+                    Rectangle {
+                        anchors.centerIn: parent; width: 24; height: 24; radius: 12
+                        color: Qt.rgba(255, 45, 85, 0.3); visible: onAirBar.isLive; z: -1
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite; running: onAirBar.isLive
+                            NumberAnimation { to: 0.1; duration: 900; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0.6; duration: 900; easing.type: Easing.InOutSine }
                         }
                     }
                 }
 
+                // ON AIR / PASSTHROUGH label
                 Label {
-                    text: mainWindow.overlaysActive ? window.t("overlays_active") : window.t("passthrough")
-                    font.pixelSize: 15; font.weight: Font.Bold
-                    font.letterSpacing: 1; color: "white"
+                    text: onAirBar.isLive ? "ON AIR" : window.t("passthrough")
+                    font.pixelSize: 14; font.weight: Font.Bold
+                    font.letterSpacing: onAirBar.isLive ? 2.5 : 1.2
+                    color: Qt.rgba(1, 1, 1, onAirBar.isLive ? 1.0 : 0.6)
                 }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 24; color: Qt.rgba(1,1,1,0.25); visible: configManager.channelName !== "" }
+                // Separator
+                Rectangle {
+                    Layout.preferredWidth: 1; Layout.preferredHeight: 22
+                    color: Qt.rgba(255, 255, 255, onAirBar.isLive ? 0.20 : 0.08)
+                    visible: configManager.channelName !== ""
+                }
 
-                Label { text: configManager.channelName; font.pixelSize: 15; font.weight: Font.DemiBold; color: Qt.rgba(1,1,1,0.9); visible: configManager.channelName !== "" }
+                // Channel name
+                Label {
+                    text: configManager.channelName
+                    font.pixelSize: 13; font.weight: Font.DemiBold
+                    color: Qt.rgba(1, 1, 1, 0.85)
+                    visible: configManager.channelName !== ""
+                }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 24; color: Qt.rgba(1,1,1,0.25) }
+                // Separator
+                Rectangle {
+                    Layout.preferredWidth: 1; Layout.preferredHeight: 22
+                    color: Qt.rgba(255, 255, 255, onAirBar.isLive ? 0.20 : 0.08)
+                }
 
-                Label { text: setupController.currentProfileName; font.pixelSize: 14; color: Qt.rgba(1,1,1,0.7) }
+                // Profile name
+                Label {
+                    text: setupController.currentProfileName
+                    font.pixelSize: 12; color: Qt.rgba(1, 1, 1, 0.55)
+                }
 
                 Item { Layout.fillWidth: true }
 
-                // Timer with monospace
-                Label {
-                    text: liveController.formattedDuration(liveView.elapsedSeconds)
-                    font.pixelSize: 20; font.weight: Font.Bold; font.family: "Menlo"; color: "white"
+                // Recording indicator (when recording)
+                Rectangle {
+                    Layout.preferredWidth: recRow.implicitWidth + 14; Layout.preferredHeight: 26; radius: 13
+                    color: Qt.rgba(255, 59, 48, 0.2)
+                    border.color: Qt.rgba(255, 59, 48, 0.4)
+                    visible: liveController.isRecording
+
+                    RowLayout {
+                        id: recRow; anchors.centerIn: parent; spacing: 5
+                        Rectangle {
+                            Layout.preferredWidth: 7; Layout.preferredHeight: 7; radius: 4; color: "#FF3B30"
+                            SequentialAnimation on opacity {
+                                loops: Animation.Infinite; running: liveController.isRecording
+                                NumberAnimation { to: 0.3; duration: 600 }
+                                NumberAnimation { to: 1.0; duration: 600 }
+                            }
+                        }
+                        Label { text: "REC"; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1; color: "#FF6B60" }
+                    }
                 }
+
+                // Timer with monospace - broadcast style
+                Rectangle {
+                    Layout.preferredWidth: timerLbl.implicitWidth + 20; Layout.preferredHeight: 28; radius: 6
+                    color: onAirBar.isLive ? Qt.rgba(0, 0, 0, 0.25) : Qt.rgba(255, 255, 255, 0.04)
+
+                    Label {
+                        id: timerLbl; anchors.centerIn: parent
+                        text: liveController.formattedDuration(liveView.elapsedSeconds)
+                        font.pixelSize: 18; font.weight: Font.Bold
+                        font.family: "SF Mono, Menlo, Consolas, monospace"
+                        font.letterSpacing: 1.5
+                        color: onAirBar.isLive ? "white" : Qt.rgba(1, 1, 1, 0.5)
+                    }
+                }
+            }
+
+            // Bottom edge line
+            Rectangle {
+                anchors.bottom: parent.bottom; width: parent.width; height: 1
+                color: onAirBar.isLive ? Qt.rgba(255, 255, 255, 0.08) : Qt.rgba(255, 255, 255, 0.02)
             }
         }
 
-        // ── Video output (full width — no side panel) ────────────────
+        // ── Video output ────────────────
         Rectangle {
+            id: videoContainer
             Layout.fillWidth: true; Layout.fillHeight: true
-            color: "#000000"
+            color: window.darkMode ? "#0A0A0E" : "#E8E8EE"
 
-            // Live composited video from Vision Engine (:5558)
             Image {
                 id: liveImage
                 anchors.fill: parent
@@ -150,6 +292,63 @@ Item {
                 Connections {
                     target: previewMonitor
                     function onFrameUpdated() { liveImage.liveFrameCounter++ }
+                }
+            }
+
+            // ── DEMO TALENT OVERLAY ─────────────────────
+            // Plays the full Lottie animation lifecycle: entry → hold → exit
+            // Visible during talent_in, hold, and talent_out phases
+            Item {
+                id: demoOverlayContainer
+                anchors.fill: parent
+                visible: liveView.demoTalentVisible
+                z: 5
+
+                // Apply user's nameplate scale + offset
+                transform: [
+                    Translate {
+                        // Same normalization as Compositor: both axes use width/1920
+                        x: setupController.nameplateOffsetX * (demoOverlayContainer.width / 1920)
+                        y: setupController.nameplateOffsetY * (demoOverlayContainer.width / 1920)
+                    },
+                    Scale {
+                        xScale: setupController.nameplateScale
+                        yScale: setupController.nameplateScale
+                        origin.x: demoOverlayContainer.width / 2
+                        origin.y: demoOverlayContainer.height * 0.85
+                    }
+                ]
+
+                Image {
+                    id: demoOverlay
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectFit
+                    cache: false
+                    source: demoOverlayContainer.visible
+                        ? "image://lottie/native:" + liveView.demoMode + ":" + setupController.lottiePreset + "?" + liveView.demoFrameCounter
+                        : ""
+                }
+
+                opacity: setupController.backgroundOpacity
+            }
+
+            // DEMO badge — shows current phase
+            Rectangle {
+                anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 10
+                width: demoLabel.implicitWidth + 16; height: 22; radius: 11
+                color: Qt.rgba(108/255, 92/255, 231/255, 0.85)
+                visible: liveView.demoPhase !== "idle"; z: 10
+                Label {
+                    id: demoLabel; anchors.centerIn: parent
+                    text: {
+                        if (liveView.demoPhase === "delay") return "DEMO — Detection..."
+                        if (liveView.demoPhase === "talent_in") return "DEMO — Talent entree"
+                        if (liveView.demoPhase === "hold") return "DEMO — Talent affiche"
+                        if (liveView.demoPhase === "talent_exit") return "DEMO — Talent sortie"
+                        if (liveView.demoPhase === "title_wait") return "DEMO — Retour titre..."
+                        return "DEMO"
+                    }
+                    font.pixelSize: 9; font.weight: Font.Bold; font.letterSpacing: 1; color: "white"
                 }
             }
 
@@ -210,7 +409,7 @@ Item {
                     // Loop: Glow (overlay rectangle that pulses opacity)
                     Rectangle {
                         anchors.fill: parent; radius: 4
-                        color: "transparent"; border.color: "#5B4FDB"; border.width: 2
+                        color: "transparent"; border.color: "#6C5CE7"; border.width: 2
                         visible: setupController.logoLoopAnim === "glow" || setupController.logoLoopAnim === "shimmer"
                         SequentialAnimation on opacity {
                             loops: Animation.Infinite; running: setupController.logoLoopAnim === "glow" || setupController.logoLoopAnim === "shimmer"
@@ -298,7 +497,7 @@ Item {
                     // Loop: Glow border
                     Rectangle {
                         anchors.fill: parent; radius: previewChannelName.radius
-                        color: "transparent"; border.color: setupController.channelNameBorderColor || "#5B4FDB"; border.width: 2
+                        color: "transparent"; border.color: setupController.channelNameBorderColor || "#6C5CE7"; border.width: 2
                         visible: setupController.nameLoopAnim === "glow"
                         SequentialAnimation on opacity {
                             loops: Animation.Infinite; running: setupController.nameLoopAnim === "glow"
@@ -375,7 +574,7 @@ Item {
                     // Loop: Glow border
                     Rectangle {
                         anchors.fill: parent; radius: parent.radius
-                        color: "transparent"; border.color: setupController.showTitleBorderColor || "#5B4FDB"; border.width: 2
+                        color: "transparent"; border.color: setupController.showTitleBorderColor || "#6C5CE7"; border.width: 2
                         visible: setupController.showTitleLoopAnim === "glow"
                         SequentialAnimation on opacity {
                             loops: Animation.Infinite; running: setupController.showTitleLoopAnim === "glow"
@@ -396,7 +595,7 @@ Item {
                     // Accent bar on left
                     Rectangle {
                         width: wysiwygOverlay.pw * 0.002; height: parent.height
-                        color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#5B4FDB"
+                        color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#6C5CE7"
                         visible: setupController.showTitleShape !== "frameless"
                     }
 
@@ -608,7 +807,7 @@ Item {
                     Label {
                         anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottomMargin: wysiwygOverlay.ph * 0.002
-                        text: "SCAN"; font.pixelSize: wysiwygOverlay.ph * 0.007 * wysiwygQrCode.qrScale; font.weight: Font.Bold; color: "#5B4FDB"
+                        text: "SCAN"; font.pixelSize: wysiwygOverlay.ph * 0.007 * wysiwygQrCode.qrScale; font.weight: Font.Bold; color: "#6C5CE7"
                     }
                 }
 
@@ -738,7 +937,7 @@ Item {
                     radius: wysiwygOverlay.ph * 0.004
                     color: Qt.rgba(0, 0, 0, setupController.backgroundOpacity > 0 ? setupController.backgroundOpacity : 0.82)
 
-                    Rectangle { width: wysiwygOverlay.pw * 0.002; height: parent.height; color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#5B4FDB" }
+                    Rectangle { width: wysiwygOverlay.pw * 0.002; height: parent.height; color: setupController.accentColor.toString() !== "#000000" ? setupController.accentColor : "#6C5CE7" }
 
                     ColumnLayout {
                         anchors.centerIn: parent; spacing: 1
@@ -790,7 +989,7 @@ Item {
                     x: previewChannelName.x + previewChannelName.width - 8
                     y: previewChannelName.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragNameMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragNameMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragNameMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: previewChannelNameContainer
@@ -813,7 +1012,7 @@ Item {
                     x: previewLogoContainer.x + previewLogoContainer.width - 8
                     y: previewLogoContainer.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragLogoMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragLogoMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragLogoMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: previewLogoContainer
@@ -839,7 +1038,7 @@ Item {
                     x: previewShowTitle.x + previewShowTitle.width - 8
                     y: previewShowTitle.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragTitleMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragTitleMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragTitleMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: previewShowTitle
@@ -865,7 +1064,7 @@ Item {
                     x: wysiwygScoreboard.x + wysiwygScoreboard.width - 8
                     y: wysiwygScoreboard.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragScoreMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragScoreMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragScoreMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: wysiwygScoreboard
@@ -892,7 +1091,7 @@ Item {
                     x: wysiwygWeather.x + wysiwygWeather.width - 8
                     y: wysiwygWeather.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragWeatherMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragWeatherMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragWeatherMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: wysiwygWeather
@@ -910,7 +1109,7 @@ Item {
                     x: wysiwygClock.x + wysiwygClock.width - 8
                     y: wysiwygClock.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragClockMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragClockMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragClockMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: wysiwygClock
@@ -928,7 +1127,7 @@ Item {
                     x: wysiwygCountdown.x + wysiwygCountdown.width - 8
                     y: wysiwygCountdown.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragCountdownMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragCountdownMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragCountdownMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: wysiwygCountdown
@@ -947,7 +1146,7 @@ Item {
                     x: wysiwygQrCode.x + wysiwygQrCode.width - 8
                     y: wysiwygQrCode.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragQrMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragQrMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragQrMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: wysiwygQrCode
@@ -975,7 +1174,7 @@ Item {
                     x: wysiwygSubtitleBar.x + wysiwygSubtitleBar.width - 8
                     y: wysiwygSubtitleBar.y - 4
                     width: 12; height: 12; radius: 2; z: 20
-                    color: dragSubMa.containsMouse ? "#5B4FDB" : Qt.rgba(1,1,1,0.3)
+                    color: dragSubMa.containsMouse ? "#6C5CE7" : Qt.rgba(1,1,1,0.3)
                     MouseArea {
                         id: dragSubMa; anchors.fill: parent; hoverEnabled: true
                         drag.target: wysiwygSubtitleBar
@@ -1016,125 +1215,182 @@ Item {
                 Label { anchors.horizontalCenter: parent.horizontalCenter; text: window.t("output_live"); color: window.darkMode ? "#555" : "#999"; font.pixelSize: 16; font.weight: Font.DemiBold }
                 Label { anchors.horizontalCenter: parent.horizontalCenter; text: window.t("launch_vision"); color: window.darkMode ? "#444" : "#AAA"; font.pixelSize: 12 }
             }
-        }
+        } // videoContainer
 
-        // ── Detection panel ────────────────────────────────
+        // ── Detection & Control panel ────────────────────────────────
         Rectangle {
-            Layout.fillWidth: true; Layout.preferredHeight: 90
-            color: window.darkMode ? Qt.rgba(1, 1, 1, 0.02) : Qt.rgba(0, 0, 0, 0.02)
-            Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
+            Layout.fillWidth: true; Layout.preferredHeight: 82
+            color: window.darkMode ? "#0B0B10" : "#F0F0F6"
+            Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(255,255,255,0.04) : Qt.rgba(0,0,0,0.06) }
 
             RowLayout {
-                anchors.fill: parent; anchors.leftMargin: 24; anchors.rightMargin: 24; spacing: 16
+                anchors.fill: parent; anchors.leftMargin: 20; anchors.rightMargin: 20; spacing: 14
 
-                // Detection indicator (animated)
-                Rectangle {
-                    Layout.preferredWidth: 12; Layout.preferredHeight: 12; radius: 6
-                    color: liveController.talentDetected ? "#1DB954" : (window.darkMode ? "#333" : "#CCC")
-                    Behavior on color { ColorAnimation { duration: 300 } }
-                    // Pulse when detected
+                // Detection indicator
+                Item {
+                    Layout.preferredWidth: 16; Layout.preferredHeight: 16
+
                     Rectangle {
-                        anchors.centerIn: parent; width: 20; height: 20; radius: 10
-                        color: "transparent"; border.color: liveController.talentDetected ? "#1DB954" : "transparent"; border.width: 1
-                        opacity: 0.4
+                        anchors.centerIn: parent; width: 10; height: 10; radius: 5
+                        color: liveController.talentDetected ? "#00D68F" : (window.darkMode ? "#2C2C34" : "#CCC")
+                        Behavior on color { ColorAnimation { duration: 300 } }
+                    }
+                    // Pulse ring
+                    Rectangle {
+                        anchors.centerIn: parent; width: 16; height: 16; radius: 8
+                        color: "transparent"
+                        border.color: liveController.talentDetected ? Qt.rgba(0, 214, 143, 0.4) : "transparent"
+                        border.width: 1
                         Behavior on border.color { ColorAnimation { duration: 300 } }
+                        SequentialAnimation on scale {
+                            loops: Animation.Infinite; running: liveController.talentDetected
+                            NumberAnimation { from: 1; to: 1.6; duration: 1200; easing.type: Easing.OutQuad }
+                            NumberAnimation { from: 1.6; to: 1; duration: 0 }
+                        }
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite; running: liveController.talentDetected
+                            NumberAnimation { from: 0.6; to: 0; duration: 1200; easing.type: Easing.OutQuad }
+                            NumberAnimation { from: 0; to: 0.6; duration: 0 }
+                        }
                     }
                 }
 
                 // Scene mode pill
                 Rectangle {
                     visible: liveController.talentDetected
-                    Layout.preferredWidth: modeLbl.implicitWidth + 16; Layout.preferredHeight: 28; radius: 14
-                    color: liveController.isMultiFace ? Qt.rgba(91/255,79/255,219/255,0.15) : Qt.rgba(29/255,185/255,84/255,0.15)
-                    border.color: liveController.isMultiFace ? Qt.rgba(91/255,79/255,219/255,0.3) : Qt.rgba(29/255,185/255,84/255,0.3)
+                    Layout.preferredWidth: modeLbl.implicitWidth + 18; Layout.preferredHeight: 26; radius: 13
+                    color: liveController.isMultiFace ? Qt.rgba(108/255,92/255,231/255,0.12) : Qt.rgba(0, 214, 143, 0.10)
+                    border.color: liveController.isMultiFace ? Qt.rgba(108/255,92/255,231/255,0.25) : Qt.rgba(0, 214, 143, 0.20)
                     Behavior on color { ColorAnimation { duration: 300 } }
 
                     Label {
                         id: modeLbl; anchors.centerIn: parent
                         text: liveController.isMultiFace ? liveController.faceCount + " " + window.t("faces") : "1 " + window.t("face")
-                        color: liveController.isMultiFace ? "#8B80E0" : "#1DB954"
-                        font.pixelSize: 11; font.weight: Font.Bold
+                        color: liveController.isMultiFace ? "#8B80E0" : "#00D68F"
+                        font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.3
                     }
                 }
 
                 // Talent info
                 ColumnLayout {
-                    spacing: 3; Layout.fillWidth: true
+                    spacing: 2; Layout.fillWidth: true
                     Label {
                         text: liveController.talentDetected ? liveController.detectedName : window.t("waiting")
-                        font.pixelSize: 18; font.weight: Font.DemiBold
-                        color: liveController.talentDetected ? (window.darkMode ? "white" : "#1A1A1A") : (window.darkMode ? "#444" : "#AAA")
+                        font.pixelSize: 16; font.weight: Font.Bold
+                        color: liveController.talentDetected ? (window.darkMode ? "#F0F0F5" : "#0F0F14") : (window.darkMode ? "#3A3A44" : "#AAA")
                         Behavior on color { ColorAnimation { duration: 400 } }
                     }
                     Label {
                         text: liveController.talentDetected ? liveController.detectedRole : ""
-                        font.pixelSize: 13; color: window.darkMode ? "#777" : "#888"
+                        font.pixelSize: 12; color: window.darkMode ? "#6A6A78" : "#888"
                     }
                 }
 
                 // Confidence pill
                 Rectangle {
                     visible: liveController.talentDetected && !liveController.isMultiFace
-                    Layout.preferredWidth: 52; Layout.preferredHeight: 28; radius: 8
-                    color: liveController.confidence > 0.85 ? Qt.rgba(29/255,185/255,84/255,0.12) : Qt.rgba(255/255,165/255,0/255,0.12)
-                    border.color: liveController.confidence > 0.85 ? Qt.rgba(29/255,185/255,84/255,0.25) : Qt.rgba(255/255,165/255,0/255,0.25)
+                    Layout.preferredWidth: confLbl.implicitWidth + 16; Layout.preferredHeight: 26; radius: 6
+                    color: liveController.confidence > 0.85 ? Qt.rgba(0, 214, 143, 0.10) : Qt.rgba(255, 170, 0, 0.10)
+                    border.color: liveController.confidence > 0.85 ? Qt.rgba(0, 214, 143, 0.20) : Qt.rgba(255, 170, 0, 0.20)
 
                     Label {
-                        anchors.centerIn: parent
+                        id: confLbl; anchors.centerIn: parent
                         text: Math.round(liveController.confidence * 100) + "%"
-                        color: liveController.confidence > 0.85 ? "#1DB954" : "#FFA500"
-                        font.pixelSize: 12; font.weight: Font.Bold
+                        color: liveController.confidence > 0.85 ? "#00D68F" : "#FFAA00"
+                        font.pixelSize: 11; font.weight: Font.Bold; font.family: "SF Mono, Menlo, monospace"
                     }
                 }
 
-                // BYPASS button — cuts ALL overlays for ads/pubs
+                // ── DEMO 1 VISAGE ──
+                Rectangle {
+                    property bool isActive: liveView.demoPhase !== "idle" && liveView.demoMode === "single"
+                    Layout.preferredWidth: demoTxt.implicitWidth + 16; Layout.preferredHeight: 36; radius: 8
+                    color: isActive
+                           ? (msDemo.containsMouse ? Qt.rgba(108/255,92/255,231/255,0.25) : Qt.rgba(108/255,92/255,231/255,0.18))
+                           : (msDemo.containsMouse ? (window.darkMode ? Qt.rgba(255,255,255,0.07) : Qt.rgba(0,0,0,0.07)) : (window.darkMode ? Qt.rgba(255,255,255,0.03) : Qt.rgba(0,0,0,0.03)))
+                    border.color: isActive ? Qt.rgba(108/255,92/255,231/255,0.5) : (window.darkMode ? Qt.rgba(255,255,255,0.08) : Qt.rgba(0,0,0,0.08))
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Label {
+                        id: demoTxt; anchors.centerIn: parent
+                        text: parent.isActive ? "STOP" : "DEMO 1"
+                        color: parent.isActive ? "#6C5CE7" : (window.darkMode ? "#6A6A78" : "#666")
+                        font.pixelSize: 9; font.weight: Font.Bold; font.letterSpacing: 0.8
+                    }
+                    MouseArea {
+                        id: msDemo; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: liveView.startDemo("single")
+                    }
+                }
+
+                // ── DEMO MULTI VISAGE ──
+                Rectangle {
+                    property bool isActive: liveView.demoPhase !== "idle" && liveView.demoMode === "multi"
+                    Layout.preferredWidth: demoMultiTxt.implicitWidth + 16; Layout.preferredHeight: 36; radius: 8
+                    color: isActive
+                           ? (msDemoMulti.containsMouse ? Qt.rgba(108/255,92/255,231/255,0.25) : Qt.rgba(108/255,92/255,231/255,0.18))
+                           : (msDemoMulti.containsMouse ? (window.darkMode ? Qt.rgba(255,255,255,0.07) : Qt.rgba(0,0,0,0.07)) : (window.darkMode ? Qt.rgba(255,255,255,0.03) : Qt.rgba(0,0,0,0.03)))
+                    border.color: isActive ? Qt.rgba(108/255,92/255,231/255,0.5) : (window.darkMode ? Qt.rgba(255,255,255,0.08) : Qt.rgba(0,0,0,0.08))
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Label {
+                        id: demoMultiTxt; anchors.centerIn: parent
+                        text: parent.isActive ? "STOP" : "DEMO 2+"
+                        color: parent.isActive ? "#6C5CE7" : (window.darkMode ? "#6A6A78" : "#666")
+                        font.pixelSize: 9; font.weight: Font.Bold; font.letterSpacing: 0.8
+                    }
+                    MouseArea {
+                        id: msDemoMulti; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: liveView.startDemo("multi")
+                    }
+                }
+
+                // Separator
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 36; color: window.darkMode ? Qt.rgba(255,255,255,0.06) : Qt.rgba(0,0,0,0.08) }
+
+                // BYPASS button
                 Rectangle {
                     id: bypassBtn
                     property bool bypassed: false
-                    Layout.preferredWidth: 100; Layout.preferredHeight: 38; radius: 8
+                    Layout.preferredWidth: 90; Layout.preferredHeight: 36; radius: 8
                     color: bypassed
-                           ? (msBypass.containsMouse ? "#DD0000" : "#CC0000")
-                           : (msBypass.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.08) : Qt.rgba(0,0,0,0.08)) : (window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.04)))
-                    border.color: bypassed ? "#FF3333" : (window.darkMode ? Qt.rgba(1,1,1,0.1) : Qt.rgba(0,0,0,0.1))
+                           ? (msBypass.containsMouse ? "#E53935" : "#D32F2F")
+                           : (msBypass.containsMouse ? (window.darkMode ? Qt.rgba(255,255,255,0.07) : Qt.rgba(0,0,0,0.07)) : (window.darkMode ? Qt.rgba(255,255,255,0.03) : Qt.rgba(0,0,0,0.03)))
+                    border.color: bypassed ? Qt.rgba(255, 61, 113, 0.4) : (window.darkMode ? Qt.rgba(255,255,255,0.08) : Qt.rgba(0,0,0,0.08))
                     Behavior on color { ColorAnimation { duration: 150 } }
 
                     Label {
                         anchors.centerIn: parent
-                        text: bypassBtn.bypassed ? "BYPASS" : "BYPASS"
-                        color: bypassBtn.bypassed ? "white" : (window.darkMode ? "#888" : "#555")
-                        font.pixelSize: 11; font.weight: Font.Bold
+                        text: "BYPASS"
+                        color: bypassBtn.bypassed ? "white" : (window.darkMode ? "#6A6A78" : "#666")
+                        font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1.2
                     }
                     MouseArea {
                         id: msBypass; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             bypassBtn.bypassed = !bypassBtn.bypassed
                             liveController.setBypassed(bypassBtn.bypassed)
-                            if (bypassBtn.bypassed) {
-                                // CUT everything — pub mode
+                            if (bypassBtn.bypassed)
                                 liveController.setOverlaysActive(false)
-                            } else {
-                                // Back to normal — end of pub
+                            else
                                 liveController.setOverlaysActive(true)
-                            }
                         }
                     }
                 }
 
                 // Overlay toggle
                 Rectangle {
-                    Layout.preferredWidth: 130; Layout.preferredHeight: 38; radius: 8
+                    Layout.preferredWidth: 120; Layout.preferredHeight: 36; radius: 8
                     visible: !bypassBtn.bypassed
                     color: liveController.overlaysActive
-                           ? (msOverlay.containsMouse ? Qt.rgba(29/255,185/255,84/255,0.15) : Qt.rgba(29/255,185/255,84/255,0.08))
-                           : (msOverlay.containsMouse ? Qt.rgba(204/255,51/255,51/255,0.15) : Qt.rgba(204/255,51/255,51/255,0.08))
-                    border.color: liveController.overlaysActive ? Qt.rgba(29/255,185/255,84/255,0.3) : Qt.rgba(204/255,51/255,51/255,0.3)
+                           ? (msOverlay.containsMouse ? Qt.rgba(0, 214, 143, 0.14) : Qt.rgba(0, 214, 143, 0.08))
+                           : (msOverlay.containsMouse ? Qt.rgba(255, 61, 113, 0.14) : Qt.rgba(255, 61, 113, 0.08))
+                    border.color: liveController.overlaysActive ? Qt.rgba(0, 214, 143, 0.25) : Qt.rgba(255, 61, 113, 0.25)
                     Behavior on color { ColorAnimation { duration: 200 } }
 
                     Label {
                         anchors.centerIn: parent
                         text: liveController.overlaysActive ? window.t("overlays_on") : window.t("overlays_off")
-                        color: liveController.overlaysActive ? "#1DB954" : "#CC3333"
-                        font.pixelSize: 11; font.weight: Font.Bold
+                        color: liveController.overlaysActive ? "#00D68F" : "#FF3D71"
+                        font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.5
                     }
                     MouseArea { id: msOverlay; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: liveController.toggleOverlays() }
                 }
@@ -1144,11 +1400,11 @@ Item {
         // ── Graphics Queue Bar ───────────────────────────────
         Rectangle {
             id: queueBar
-            Layout.fillWidth: true; Layout.preferredHeight: queueBar.queueExpanded ? 160 : 36
-            color: window.darkMode ? "#0A0A0E" : "#E8E8EE"
+            Layout.fillWidth: true; Layout.preferredHeight: queueBar.queueExpanded ? 160 : 34
+            color: window.darkMode ? "#0A0A0E" : "#EAEAF0"
             property bool queueExpanded: false
 
-            Behavior on Layout.preferredHeight { NumberAnimation { duration: 200 } }
+            Behavior on Layout.preferredHeight { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
 
             Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
 
@@ -1171,7 +1427,7 @@ Item {
                         Label {
                             visible: graphicsQueue.nextItem.type !== undefined
                             text: "NEXT: " + (graphicsQueue.nextItem.name || graphicsQueue.nextItem.text || "")
-                            font.pixelSize: 11; color: "#5B4FDB"; elide: Text.ElideRight; Layout.maximumWidth: 200
+                            font.pixelSize: 11; color: "#6C5CE7"; elide: Text.ElideRight; Layout.maximumWidth: 200
                         }
 
                         // TAKE button
@@ -1226,7 +1482,7 @@ Item {
                                     if (modelData.type === "qr_code") return "QR CODE"
                                     return modelData.type || ""
                                 }
-                                font.pixelSize: 10; font.weight: Font.Bold; color: "#5B4FDB"
+                                font.pixelSize: 10; font.weight: Font.Bold; color: "#6C5CE7"
                             }
                             Label {
                                 text: modelData.name || modelData.text || modelData.url || ""
@@ -1242,7 +1498,7 @@ Item {
                             Label {
                                 text: graphicsQueue.currentIndex === index ? "ON AIR" : (index < graphicsQueue.currentIndex ? "DONE" : "READY")
                                 font.pixelSize: 10; font.weight: Font.Bold
-                                color: graphicsQueue.currentIndex === index ? "#CC0000" : (index < graphicsQueue.currentIndex ? "#1DB954" : (window.darkMode ? "#666" : "#999"))
+                                color: graphicsQueue.currentIndex === index ? "#CC0000" : (index < graphicsQueue.currentIndex ? "#00D68F" : (window.darkMode ? "#666" : "#999"))
                             }
                         }
 
@@ -1254,14 +1510,14 @@ Item {
 
         // ── Broadcast Status Bar ──────────────────────────
         Rectangle {
-            Layout.fillWidth: true; Layout.preferredHeight: 38
-            color: window.darkMode ? "#08080C" : "#E0E0E6"
-            Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(1,1,1,0.04) : Qt.rgba(0,0,0,0.06) }
+            Layout.fillWidth: true; Layout.preferredHeight: 36
+            color: window.darkMode ? "#08080C" : "#E2E2E8"
+            Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: window.darkMode ? Qt.rgba(255,255,255,0.03) : Qt.rgba(0,0,0,0.05) }
 
             RowLayout {
-                anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 16
+                anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14; spacing: 12
 
-                // Output indicators with animated dots
+                // Output indicators
                 Repeater {
                     model: [
                         { label: "SDI",  active: liveController.sdiActive },
@@ -1270,92 +1526,140 @@ Item {
                         { label: "SRT",  active: liveController.srtActive }
                     ]
                     delegate: Row {
-                        spacing: 5
+                        spacing: 4
                         Rectangle {
-                            width: 6; height: 6; radius: 3; anchors.verticalCenter: parent.verticalCenter
-                            color: modelData.active ? "#1DB954" : (window.darkMode ? "#2A2A2E" : "#CCC")
+                            width: 5; height: 5; radius: 3; anchors.verticalCenter: parent.verticalCenter
+                            color: modelData.active ? "#00D68F" : (window.darkMode ? "#252530" : "#CCC")
                             Behavior on color { ColorAnimation { duration: 300 } }
                         }
-                        Label { text: modelData.label; font.pixelSize: 11; color: modelData.active ? (window.darkMode ? "#AAA" : "#444") : (window.darkMode ? "#3A3A3E" : "#BBB") }
+                        Label {
+                            text: modelData.label; font.pixelSize: 10; font.weight: Font.Medium; font.letterSpacing: 0.5
+                            color: modelData.active ? (window.darkMode ? "#8E8E9A" : "#444") : (window.darkMode ? "#2E2E38" : "#BBB")
+                            Behavior on color { ColorAnimation { duration: 300 } }
+                        }
                     }
                 }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: window.darkMode ? Qt.rgba(255,255,255,0.06) : Qt.rgba(0,0,0,0.08) }
 
-                // FPS with color coding
+                // FPS
                 RowLayout { spacing: 4
-                    Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: liveController.fps >= 24 ? "#1DB954" : (liveController.fps >= 15 ? "#FFB800" : "#CC0000") }
-                    Label { text: "FPS " + liveController.fps; font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#AAA" : "#555" }
+                    Rectangle { Layout.preferredWidth: 5; Layout.preferredHeight: 5; radius: 3; color: liveController.fps >= 24 ? "#00D68F" : (liveController.fps >= 15 ? "#FFAA00" : "#FF3D71") }
+                    Label { text: liveController.fps + " fps"; font.pixelSize: 10; font.family: "SF Mono, Menlo, monospace"; color: window.darkMode ? "#8E8E9A" : "#555" }
                 }
 
-                // Latency with color coding
+                // Latency
                 RowLayout { spacing: 4
-                    Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: liveController.latencyMs < 50 ? "#1DB954" : (liveController.latencyMs < 100 ? "#FFB800" : "#CC0000") }
-                    Label { text: liveController.latencyMs + "ms"; font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#AAA" : "#555" }
+                    Rectangle { Layout.preferredWidth: 5; Layout.preferredHeight: 5; radius: 3; color: liveController.latencyMs < 50 ? "#00D68F" : (liveController.latencyMs < 100 ? "#FFAA00" : "#FF3D71") }
+                    Label { text: liveController.latencyMs + " ms"; font.pixelSize: 10; font.family: "SF Mono, Menlo, monospace"; color: window.darkMode ? "#8E8E9A" : "#555" }
                 }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: window.darkMode ? Qt.rgba(255,255,255,0.06) : Qt.rgba(0,0,0,0.08) }
 
                 // AI status
                 RowLayout { spacing: 4
-                    Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: "#1DB954" }
-                    Label { text: "IA"; font.pixelSize: 11; font.weight: Font.Bold; color: window.darkMode ? "#AAA" : "#555" }
+                    Rectangle { Layout.preferredWidth: 5; Layout.preferredHeight: 5; radius: 3; color: "#00D68F" }
+                    Label { text: "AI"; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.5; color: window.darkMode ? "#8E8E9A" : "#555" }
                 }
 
                 // Source
-                Label { text: setupController.inputType || "\u2014"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
+                Label { text: setupController.inputType || "\u2014"; font.pixelSize: 10; color: window.darkMode ? "#505060" : "#999" }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: window.darkMode ? Qt.rgba(255,255,255,0.06) : Qt.rgba(0,0,0,0.08) }
 
-                // VU meter bars (simplified)
+                // VU meter bars (professional segmented look)
                 RowLayout { spacing: 2
-                    Label { text: "VU"; font.pixelSize: 11; color: window.darkMode ? "#666" : "#999" }
-                    Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: audioMeter.levelL * 18; Layout.maximumHeight: 18; radius: 1; color: audioMeter.levelL > 0.8 ? "#CC0000" : "#1DB954"; Layout.alignment: Qt.AlignBottom }
-                    Rectangle { Layout.preferredWidth: 4; Layout.preferredHeight: audioMeter.levelR * 18; Layout.maximumHeight: 18; radius: 1; color: audioMeter.levelR > 0.8 ? "#CC0000" : "#1DB954"; Layout.alignment: Qt.AlignBottom }
+                    Label { text: "VU"; font.pixelSize: 9; font.letterSpacing: 1; color: window.darkMode ? "#505060" : "#999" }
+                    // Left channel
+                    Row {
+                        spacing: 1
+                        Repeater {
+                            model: 8
+                            Rectangle {
+                                width: 3; height: 14; radius: 1
+                                color: {
+                                    var level = audioMeter.levelL * 8
+                                    if (index >= level) return window.darkMode ? "#1A1A22" : "#D0D0D8"
+                                    if (index >= 6) return "#FF3D71"
+                                    if (index >= 4) return "#FFAA00"
+                                    return "#00D68F"
+                                }
+                            }
+                        }
+                    }
+                    // Right channel
+                    Row {
+                        spacing: 1
+                        Repeater {
+                            model: 8
+                            Rectangle {
+                                width: 3; height: 14; radius: 1
+                                color: {
+                                    var level = audioMeter.levelR * 8
+                                    if (index >= level) return window.darkMode ? "#1A1A22" : "#D0D0D8"
+                                    if (index >= 6) return "#FF3D71"
+                                    if (index >= 4) return "#FFAA00"
+                                    return "#00D68F"
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Item { Layout.fillWidth: true }
 
-                // REC
+                // REC button
                 Rectangle {
-                    Layout.preferredWidth: recRow.implicitWidth + 16; Layout.preferredHeight: 28; radius: 6
+                    Layout.preferredWidth: recBtnRow.implicitWidth + 14; Layout.preferredHeight: 26; radius: 6
                     color: liveController.isRecording
-                           ? (msRecBtn.containsMouse ? Qt.rgba(204/255,0,0,0.25) : Qt.rgba(204/255,0,0,0.15))
-                           : (msRecBtn.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : "transparent")
-                    border.color: liveController.isRecording ? "#CC0000" : "transparent"
+                           ? (msRecBtn.containsMouse ? Qt.rgba(255, 59, 48, 0.20) : Qt.rgba(255, 59, 48, 0.12))
+                           : (msRecBtn.containsMouse ? (window.darkMode ? Qt.rgba(255,255,255,0.05) : Qt.rgba(0,0,0,0.05)) : "transparent")
+                    border.color: liveController.isRecording ? Qt.rgba(255, 59, 48, 0.3) : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
 
                     RowLayout {
-                        id: recRow; anchors.centerIn: parent; spacing: 6
+                        id: recBtnRow; anchors.centerIn: parent; spacing: 5
                         Rectangle {
-                            visible: liveController.isRecording; Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: "#CC0000"
+                            Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3
+                            color: liveController.isRecording ? "#FF3B30" : (window.darkMode ? "#3A3A44" : "#AAA")
                             SequentialAnimation on opacity {
                                 loops: Animation.Infinite; running: liveController.isRecording
                                 NumberAnimation { to: 0.3; duration: 500 }
                                 NumberAnimation { to: 1.0; duration: 500 }
                             }
                         }
-                        Rectangle {
-                            visible: !liveController.isRecording; Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: window.darkMode ? "#555" : "#AAA"
+                        Label {
+                            text: liveController.isRecording ? ("REC " + liveController.recordingDuration) : "REC"
+                            font.pixelSize: 10; font.family: "SF Mono, Menlo, monospace"; font.weight: Font.Bold
+                            color: liveController.isRecording ? "#FF6B60" : (window.darkMode ? "#3A3A44" : "#AAA")
                         }
-                        Label { text: liveController.isRecording ? ("REC " + liveController.recordingDuration) : "REC"; font.pixelSize: 11; font.family: "Menlo"; color: liveController.isRecording ? "#CC0000" : (window.darkMode ? "#555" : "#AAA") }
                     }
                     MouseArea { id: msRecBtn; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: liveController.toggleRecording() }
                 }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: window.darkMode ? Qt.rgba(255,255,255,0.06) : Qt.rgba(0,0,0,0.08) }
 
                 // Elapsed
-                Label { text: liveController.formattedDuration(liveView.elapsedSeconds); font.pixelSize: 11; font.family: "Menlo"; color: window.darkMode ? "#888" : "#666" }
+                Label {
+                    text: liveController.formattedDuration(liveView.elapsedSeconds)
+                    font.pixelSize: 10; font.family: "SF Mono, Menlo, monospace"
+                    color: window.darkMode ? "#6A6A78" : "#666"
+                }
 
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 18; color: window.darkMode ? "#333" : "#CCC" }
+                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: window.darkMode ? Qt.rgba(255,255,255,0.06) : Qt.rgba(0,0,0,0.08) }
 
-                // Stop button (subtle)
+                // Stop button
                 Rectangle {
-                    Layout.preferredWidth: stopLabel.implicitWidth + 20; Layout.preferredHeight: 28; radius: 6
-                    color: msStopBtn.containsMouse ? (window.darkMode ? Qt.rgba(1,1,1,0.06) : Qt.rgba(0,0,0,0.06)) : "transparent"
+                    Layout.preferredWidth: stopLabel.implicitWidth + 18; Layout.preferredHeight: 26; radius: 6
+                    color: msStopBtn.containsMouse ? (window.darkMode ? Qt.rgba(255, 61, 113, 0.10) : Qt.rgba(255, 61, 113, 0.08)) : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
-                    Label { id: stopLabel; anchors.centerIn: parent; text: "\u25A0  " + window.t("stop"); color: window.darkMode ? "#666" : "#999"; font.pixelSize: 11 }
+                    Label {
+                        id: stopLabel; anchors.centerIn: parent
+                        text: "\u25A0 " + window.t("stop")
+                        color: msStopBtn.containsMouse ? "#FF3D71" : (window.darkMode ? "#505060" : "#999")
+                        font.pixelSize: 10; font.weight: Font.Medium
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                    }
                     MouseArea { id: msStopBtn; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: stopConfirmDialog.open() }
                 }
             }

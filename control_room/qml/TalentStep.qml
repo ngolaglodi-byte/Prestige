@@ -31,7 +31,7 @@ Item {
                 Button {
                     text: window.t("new_talent")
                     onClicked: addTalentDialog.open()
-                    background: Rectangle { color: "#5B4FDB"; radius: 6 }
+                    background: Rectangle { color: "#6C5CE7"; radius: 6 }
                     contentItem: Label { text: parent.text; color: "white"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter }
                 }
 
@@ -124,7 +124,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: modelData.name ? modelData.name.charAt(0).toUpperCase() : "?"
                                 font.pixelSize: 22; font.bold: true
-                                color: "#5B4FDB"
+                                color: "#6C5CE7"
                                 visible: talentManager.talentPhotoPath(modelData.id) === ""
                             }
                         }
@@ -161,7 +161,7 @@ Item {
                                     photoFileDialog.talentId = modelData.id
                                     photoFileDialog.open()
                                 }
-                                contentItem: Label { text: parent.text; color: "#5B4FDB"; font.pixelSize: 11 }
+                                contentItem: Label { text: parent.text; color: "#6C5CE7"; font.pixelSize: 11 }
                             }
 
                             Button {
@@ -311,7 +311,7 @@ Item {
                 TextField {
                     id: nameField
                     Layout.fillWidth: true
-                    placeholderText: "Ex: Marie Dupont"
+                    placeholderText: "Ex: John Smith"
                     font.pixelSize: 14; color: window.darkMode ? "#FFF" : "#1A1A1A"
                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 6; border.color: window.darkMode ? "#333" : "#CCC" }
                 }
@@ -324,7 +324,7 @@ Item {
                 TextField {
                     id: roleField
                     Layout.fillWidth: true
-                    placeholderText: "Ex: Présentatrice, Journaliste, Invité..."
+                    placeholderText: "Ex: Presenter, Journalist, Guest..."
                     font.pixelSize: 14; color: window.darkMode ? "#FFF" : "#1A1A1A"
                     background: Rectangle { color: window.darkMode ? "#1E1E22" : "#F0F0F4"; radius: 6; border.color: window.darkMode ? "#333" : "#CCC" }
                 }
@@ -354,7 +354,7 @@ Item {
                             talentManager.refreshTalents()
                         }
                     }
-                    background: Rectangle { color: parent.enabled ? "#5B4FDB" : (window.darkMode ? "#333" : "#CCC"); radius: 6 }
+                    background: Rectangle { color: parent.enabled ? "#6C5CE7" : (window.darkMode ? "#333" : "#CCC"); radius: 6 }
                     contentItem: Label { text: parent.text; color: "white"; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter }
                 }
             }

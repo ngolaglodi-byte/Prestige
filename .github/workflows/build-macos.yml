@@ -9,6 +9,9 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+env:
+  APP_VERSION: "1.0.0"
+
 jobs:
   build-macos:
     runs-on: macos-14
@@ -16,6 +19,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Extract version from tag
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: echo "APP_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
@@ -29,11 +36,19 @@ jobs:
 
     - name: Install dependencies
       run: |
-        brew install zeromq ffmpeg ninja pkg-config create-dmg
-        # ONNX Runtime
+        brew install zeromq ffmpeg ninja pkg-config create-dmg whisper-cpp
+        # ONNX Runtime (ARM64)
         wget -q https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-osx-arm64-1.17.0.tgz
         tar xzf onnxruntime-osx-arm64-1.17.0.tgz
         echo "ONNXRUNTIME_DIR=$(pwd)/onnxruntime-osx-arm64-1.17.0" >> $GITHUB_ENV
+
+    - name: Download Whisper models
+      run: |
+        mkdir -p resources/models/whisper
+        curl -L -o resources/models/whisper/ggml-tiny.bin \
+          "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin"
+        curl -L -o resources/models/whisper/ggml-base.bin \
+          "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin"
 
     - name: Build
       run: |
@@ -50,7 +65,7 @@ jobs:
         APP="dist/Prestige AI.app"
         mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
 
-        # Core executables (MACOSX_BUNDLE produces .app, extract binary from it)
+        # Core executables
         if [ -f "build/control_room/prestige_control.app/Contents/MacOS/prestige_control" ]; then
           cp build/control_room/prestige_control.app/Contents/MacOS/prestige_control "$APP/Contents/MacOS/"
         else
@@ -63,41 +78,80 @@ jobs:
         fi
 
         # Info.plist and icon
-        cp scripts/Info.plist "$APP/Contents/Info.plist"
+        sed "s/1.0 Beta/${APP_VERSION}/g" scripts/Info.plist > "$APP/Contents/Info.plist"
         [ -f resources/prestige.icns ] && cp resources/prestige.icns "$APP/Contents/Resources/AppIcon.icns"
 
-        # ONNX Runtime dylib
+        # ── Lottie animations (9 presets) ──
+        mkdir -p "$APP/Contents/Resources/animations"
+        cp resources/animations/title_*.json "$APP/Contents/Resources/animations/" 2>/dev/null || true
+
+        # ── Whisper models (speech-to-text) ──
+        mkdir -p "$APP/Contents/Resources/models/whisper"
+        cp resources/models/whisper/ggml-*.bin "$APP/Contents/Resources/models/whisper/" 2>/dev/null || true
+
+        # ── AI face detection models (ONNX) ──
+        mkdir -p "$APP/Contents/Resources/models/buffalo_l"
+        cp ai_engine/models/buffalo_l/*.onnx "$APP/Contents/Resources/models/buffalo_l/" 2>/dev/null || true
+
+        # ── Virtual studio backgrounds ──
+        [ -d "resources/studios" ] && cp -R resources/studios "$APP/Contents/Resources/"
+
+        # ── ONNX Runtime dylib ──
         cp "${ONNXRUNTIME_DIR}/lib/libonnxruntime."*.dylib "$APP/Contents/Frameworks/"
 
-        # FFmpeg dylibs (for RTMP/SRT/File output)
+        # ── rlottie dylib ──
+        RLOTTIE=$(find /opt/homebrew/lib /usr/local/lib -name "librlottie*.dylib" 2>/dev/null | head -1)
+        [ -n "$RLOTTIE" ] && cp "$RLOTTIE" "$APP/Contents/Frameworks/"
+
+        # ── whisper.cpp dylib ──
+        WHISPERLIB=$(find /opt/homebrew/lib /usr/local/lib -name "libwhisper*.dylib" 2>/dev/null | head -1)
+        [ -n "$WHISPERLIB" ] && cp "$WHISPERLIB" "$APP/Contents/Frameworks/"
+
+        # ── FFmpeg dylibs ──
         for lib in avcodec avformat avutil swscale swresample; do
           DYLIB=$(find /opt/homebrew/lib /usr/local/lib -name "lib${lib}.*.dylib" -not -name "*.dSYM" 2>/dev/null | head -1)
-          if [ -n "$DYLIB" ]; then
-            cp "$DYLIB" "$APP/Contents/Frameworks/"
-          fi
+          [ -n "$DYLIB" ] && cp "$DYLIB" "$APP/Contents/Frameworks/"
         done
 
-        # ZeroMQ dylib
+        # ── ZeroMQ dylib ──
         ZMQLIB=$(find /opt/homebrew/lib /usr/local/lib -name "libzmq.*.dylib" 2>/dev/null | head -1)
         [ -n "$ZMQLIB" ] && cp "$ZMQLIB" "$APP/Contents/Frameworks/"
-        # Fix rpath
+
+        # ── Fix rpaths ──
         install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/prestige_vision" 2>/dev/null || true
         install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/prestige_control" 2>/dev/null || true
 
-        # AI Models (ONNX files — no Python, runs natively via C++ ONNX Runtime)
-        mkdir -p "$APP/Contents/Resources/models/buffalo_l"
-        if [ -d "ai_engine/models/buffalo_l" ]; then
-            cp ai_engine/models/buffalo_l/*.onnx "$APP/Contents/Resources/models/buffalo_l/" 2>/dev/null || true
-        fi
-
-        # Launcher script (starts Vision+AI then Control Room)
+        # ── Launcher script ──
         cp scripts/launcher.sh "$APP/Contents/MacOS/PrestigeAI"
         chmod +x "$APP/Contents/MacOS/PrestigeAI"
 
-        # Studio presets
-        if [ -d "resources/studios" ]; then
-            cp -R resources/studios "$APP/Contents/Resources/"
-        fi
+        # ── Third-party licenses ──
+        mkdir -p "$APP/Contents/Resources/licenses"
+        cat > "$APP/Contents/Resources/licenses/THIRD_PARTY.txt" << 'LICENSES'
+        Third-Party Software Licenses
+        ==============================
+
+        Qt Framework — LGPL v3
+        https://www.qt.io/licensing/
+
+        FFmpeg — LGPL v2.1 / GPL v2
+        https://ffmpeg.org/legal.html
+
+        ZeroMQ — MPL v2.0
+        https://zeromq.org/license/
+
+        rlottie — MIT License
+        https://github.com/nickvdp/rlottie
+
+        whisper.cpp — MIT License
+        https://github.com/ggerganov/whisper.cpp
+
+        ONNX Runtime — MIT License
+        https://github.com/microsoft/onnxruntime
+
+        InsightFace Buffalo_L — Non-commercial research license
+        https://github.com/deepinsight/insightface
+        LICENSES
 
     - name: Bundle Qt frameworks
       run: |
@@ -110,7 +164,41 @@ jobs:
             -qmldir=vision_engine/qml \
             -always-overwrite 2>&1 || true
         fi
-        codesign --force --deep --sign - "$APP" 2>/dev/null || true
+
+    - name: Code sign (Developer ID)
+      if: env.APPLE_DEVELOPER_ID != ''
+      env:
+        APPLE_DEVELOPER_ID: ${{ secrets.APPLE_DEVELOPER_ID }}
+        APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
+        APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+      run: |
+        # Import certificate
+        echo "$APPLE_CERT_BASE64" | base64 --decode > cert.p12
+        security create-keychain -p "" build.keychain
+        security import cert.p12 -k build.keychain -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+        security default-keychain -s build.keychain
+        # Sign all executables and frameworks
+        APP="dist/Prestige AI.app"
+        find "$APP/Contents/Frameworks" -name "*.dylib" -exec codesign --force --sign "$APPLE_DEVELOPER_ID" --options runtime {} \;
+        codesign --force --sign "$APPLE_DEVELOPER_ID" --options runtime "$APP/Contents/MacOS/prestige_vision"
+        codesign --force --sign "$APPLE_DEVELOPER_ID" --options runtime --entitlements scripts/entitlements.plist "$APP/Contents/MacOS/prestige_control"
+        codesign --force --sign "$APPLE_DEVELOPER_ID" --options runtime --entitlements scripts/entitlements.plist "$APP"
+
+    - name: Ad-hoc sign (no certificate)
+      if: env.APPLE_DEVELOPER_ID == ''
+      run: codesign --force --deep --sign - "dist/Prestige AI.app" 2>/dev/null || true
+
+    - name: Notarize (Apple)
+      if: env.APPLE_ID != ''
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      run: |
+        DMG="dist/PrestigeAI-${APP_VERSION}-macOS-arm64.dmg"
+        xcrun notarytool submit "$DMG" --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+        xcrun stapler staple "$DMG"
 
     - name: Create professional DMG
       run: |
@@ -124,16 +212,11 @@ jobs:
           --app-drop-link 480 200 \
           --hide-extension "Prestige AI.app" \
           --no-internet-enable \
-          "dist/PrestigeAI-1.0.0-macOS-arm64.dmg" \
+          "dist/PrestigeAI-${APP_VERSION}-macOS-arm64.dmg" \
           "dist/Prestige AI.app" \
         || {
-          echo "create-dmg failed, using hdiutil..."
-          STAGING="dist/staging"
-          mkdir -p "$STAGING"
-          cp -R "dist/Prestige AI.app" "$STAGING/"
-          ln -sf /Applications "$STAGING/Applications"
-          hdiutil create -volname "Prestige AI" -srcfolder "$STAGING" -ov -format UDZO "dist/PrestigeAI-1.0.0-macOS-arm64.dmg"
-          rm -rf "$STAGING"
+          hdiutil create -volname "Prestige AI" -srcfolder "dist/Prestige AI.app" -ov -format UDZO \
+            "dist/PrestigeAI-${APP_VERSION}-macOS-arm64.dmg"
         }
 
     - name: Upload DMG

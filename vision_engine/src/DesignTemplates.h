@@ -58,7 +58,8 @@ public:
     void render(QPainter& painter, const QString& category, const QString& designId,
                 const QRectF& rect, double timeSec, double scale,
                 const QColor& accentColor, const QString& text = "",
-                const QString& subText = "", const QFont& font = QFont());
+                const QString& subText = "", const QFont& font = QFont(),
+                const QColor& textColor = Qt::white);
 
 private:
     DesignRegistry() { registerAll(); }

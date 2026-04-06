@@ -112,6 +112,27 @@ SetupController::SetupController(ProfileManager* profiles, QObject* parent)
     m_scoreboardDesign = m_profile.scoreboardDesign;
     m_clockDesign = m_profile.clockDesign;
     m_weatherDesign = m_profile.weatherDesign;
+
+    // Overlay offsets
+    m_channelLogoOffsetX = m_profile.channelLogoOffsetX;
+    m_channelLogoOffsetY = m_profile.channelLogoOffsetY;
+    m_channelNameOffsetX = m_profile.channelNameOffsetX;
+    m_channelNameOffsetY = m_profile.channelNameOffsetY;
+    m_showTitleOffsetX = m_profile.showTitleOffsetX;
+    m_showTitleOffsetY = m_profile.showTitleOffsetY;
+    m_tickerOffsetY = m_profile.tickerOffsetY;
+    m_subtitleOffsetX = m_profile.subtitleOffsetX;
+    m_subtitleOffsetY = m_profile.subtitleOffsetY;
+    m_countdownOffsetX = m_profile.countdownOffsetX;
+    m_countdownOffsetY = m_profile.countdownOffsetY;
+    m_clockOffsetX = m_profile.clockOffsetX;
+    m_clockOffsetY = m_profile.clockOffsetY;
+    m_qrCodeOffsetX = m_profile.qrCodeOffsetX;
+    m_qrCodeOffsetY = m_profile.qrCodeOffsetY;
+    m_scoreboardOffsetX = m_profile.scoreboardOffsetX;
+    m_scoreboardOffsetY = m_profile.scoreboardOffsetY;
+    m_weatherOffsetX = m_profile.weatherOffsetX;
+    m_weatherOffsetY = m_profile.weatherOffsetY;
 }
 
 QString SetupController::currentProfileName() const
@@ -272,7 +293,7 @@ void SetupController::setRtmpKey(const QString& key)
 
 void SetupController::setChannelLogoPath(const QString& v) { if (m_channelLogoPath == v) return; m_channelLogoPath = v; emit brandingChanged(); }
 void SetupController::setChannelLogoPosition(const QString& v) { if (m_channelLogoPosition == v) return; m_channelLogoPosition = v; emit brandingChanged(); }
-void SetupController::setChannelLogoSize(int v) { if (m_channelLogoSize == v) return; m_channelLogoSize = qBound(30, v, 120); emit brandingChanged(); }
+void SetupController::setChannelLogoSize(int v) { if (m_channelLogoSize == v) return; m_channelLogoSize = qBound(20, v, 300); emit brandingChanged(); }
 void SetupController::setShowChannelNameText(bool v) { if (m_showChannelNameText == v) return; m_showChannelNameText = v; emit brandingChanged(); }
 void SetupController::setKeepLogoDuringAds(bool v) { if (m_keepLogoDuringAds == v) return; m_keepLogoDuringAds = v; emit brandingChanged(); }
 
@@ -289,7 +310,7 @@ void SetupController::setChannelNameShape(const QString& v) { if (m_channelNameS
 void SetupController::setChannelNameBgColor(const QString& v) { if (m_channelNameBgColor == v) return; m_channelNameBgColor = v; emit brandingChanged(); }
 void SetupController::setChannelNameTextColor(const QString& v) { if (m_channelNameTextColor == v) return; m_channelNameTextColor = v; emit brandingChanged(); }
 void SetupController::setChannelNameBorderColor(const QString& v) { if (m_channelNameBorderColor == v) return; m_channelNameBorderColor = v; emit brandingChanged(); }
-void SetupController::setChannelNameFontSize(int v) { if (m_channelNameFontSize == v) return; m_channelNameFontSize = qBound(8, v, 36); emit brandingChanged(); }
+void SetupController::setChannelNameFontSize(int v) { if (m_channelNameFontSize == v) return; m_channelNameFontSize = qBound(6, v, 72); emit brandingChanged(); }
 
 // ── Entry animations ────────────────────────────────────────
 
@@ -314,7 +335,7 @@ void SetupController::setShowTitleShape(const QString& v) { if (m_showTitleShape
 void SetupController::setShowTitleBgColor(const QString& v) { if (m_showTitleBgColor == v) return; m_showTitleBgColor = v; emit showTitleChanged(); }
 void SetupController::setShowTitleTextColor(const QString& v) { if (m_showTitleTextColor == v) return; m_showTitleTextColor = v; emit showTitleChanged(); }
 void SetupController::setShowTitleBorderColor(const QString& v) { if (m_showTitleBorderColor == v) return; m_showTitleBorderColor = v; emit showTitleChanged(); }
-void SetupController::setShowTitleFontSize(int v) { if (m_showTitleFontSize == v) return; m_showTitleFontSize = qBound(10, v, 28); emit showTitleChanged(); }
+void SetupController::setShowTitleFontSize(int v) { if (m_showTitleFontSize == v) return; m_showTitleFontSize = qBound(8, v, 60); emit showTitleChanged(); }
 void SetupController::setShowTitleEntryAnim(const QString& v) { if (m_showTitleEntryAnim == v) return; m_showTitleEntryAnim = v; emit showTitleChanged(); }
 void SetupController::setShowTitleLoopAnim(const QString& v) { if (m_showTitleLoopAnim == v) return; m_showTitleLoopAnim = v; emit showTitleChanged(); }
 
@@ -359,12 +380,12 @@ void SetupController::setWeatherOffsetY(int v) { if (m_weatherOffsetY == v) retu
 
 // ── Overlay scale factors ───────────────────────────────────
 
-void SetupController::setNameplateScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_nameplateScale, v)) return; m_nameplateScale = v; emit brandingChanged(); }
-void SetupController::setScoreboardScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_scoreboardScale, v)) return; m_scoreboardScale = v; emit brandingChanged(); }
-void SetupController::setWeatherScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_weatherScale, v)) return; m_weatherScale = v; emit brandingChanged(); }
-void SetupController::setClockScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_clockScale, v)) return; m_clockScale = v; emit brandingChanged(); }
-void SetupController::setCountdownScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_countdownScale, v)) return; m_countdownScale = v; emit brandingChanged(); }
-void SetupController::setQrCodeScale(double v) { v = qBound(0.5, v, 2.0); if (qFuzzyCompare(m_qrCodeScale, v)) return; m_qrCodeScale = v; emit brandingChanged(); }
+void SetupController::setNameplateScale(double v) { v = qBound(0.3, v, 4.0); if (qFuzzyCompare(m_nameplateScale, v)) return; m_nameplateScale = v; emit brandingChanged(); }
+void SetupController::setScoreboardScale(double v) { v = qBound(0.3, v, 4.0); if (qFuzzyCompare(m_scoreboardScale, v)) return; m_scoreboardScale = v; emit brandingChanged(); }
+void SetupController::setWeatherScale(double v) { v = qBound(0.3, v, 4.0); if (qFuzzyCompare(m_weatherScale, v)) return; m_weatherScale = v; emit brandingChanged(); }
+void SetupController::setClockScale(double v) { v = qBound(0.3, v, 4.0); if (qFuzzyCompare(m_clockScale, v)) return; m_clockScale = v; emit brandingChanged(); }
+void SetupController::setCountdownScale(double v) { v = qBound(0.3, v, 4.0); if (qFuzzyCompare(m_countdownScale, v)) return; m_countdownScale = v; emit brandingChanged(); }
+void SetupController::setQrCodeScale(double v) { v = qBound(0.3, v, 4.0); if (qFuzzyCompare(m_qrCodeScale, v)) return; m_qrCodeScale = v; emit brandingChanged(); }
 
 // ── Talent display timing ───────────────────────────────────
 
@@ -390,7 +411,7 @@ void SetupController::setScoreboardScoreB(int v) { if (m_scoreboardScoreB == v) 
 
 void SetupController::setTickerBgColor(const QString& v) { if (m_tickerBgColor == v) return; m_tickerBgColor = v; emit brandingChanged(); }
 void SetupController::setTickerTextColor(const QString& v) { if (m_tickerTextColor == v) return; m_tickerTextColor = v; emit brandingChanged(); }
-void SetupController::setTickerFontSize(int v) { if (m_tickerFontSize == v) return; m_tickerFontSize = qBound(10, v, 24); emit brandingChanged(); }
+void SetupController::setTickerFontSize(int v) { if (m_tickerFontSize == v) return; m_tickerFontSize = qBound(8, v, 48); emit brandingChanged(); }
 void SetupController::setTickerSpeed(int v) { if (m_tickerSpeed == v) return; m_tickerSpeed = qBound(1, v, 5); emit brandingChanged(); }
 
 // ── Scoreboard colors & position ────────────────────────────
@@ -556,6 +577,27 @@ void SetupController::saveProfile()
     m_profile.clockDesign = m_clockDesign;
     m_profile.weatherDesign = m_weatherDesign;
 
+    // Overlay offsets
+    m_profile.channelLogoOffsetX = m_channelLogoOffsetX;
+    m_profile.channelLogoOffsetY = m_channelLogoOffsetY;
+    m_profile.channelNameOffsetX = m_channelNameOffsetX;
+    m_profile.channelNameOffsetY = m_channelNameOffsetY;
+    m_profile.showTitleOffsetX = m_showTitleOffsetX;
+    m_profile.showTitleOffsetY = m_showTitleOffsetY;
+    m_profile.tickerOffsetY = m_tickerOffsetY;
+    m_profile.subtitleOffsetX = m_subtitleOffsetX;
+    m_profile.subtitleOffsetY = m_subtitleOffsetY;
+    m_profile.countdownOffsetX = m_countdownOffsetX;
+    m_profile.countdownOffsetY = m_countdownOffsetY;
+    m_profile.clockOffsetX = m_clockOffsetX;
+    m_profile.clockOffsetY = m_clockOffsetY;
+    m_profile.qrCodeOffsetX = m_qrCodeOffsetX;
+    m_profile.qrCodeOffsetY = m_qrCodeOffsetY;
+    m_profile.scoreboardOffsetX = m_scoreboardOffsetX;
+    m_profile.scoreboardOffsetY = m_scoreboardOffsetY;
+    m_profile.weatherOffsetX = m_weatherOffsetX;
+    m_profile.weatherOffsetY = m_weatherOffsetY;
+
     m_profiles->save(m_profile);
     qInfo() << "[SetupController] Profile saved:" << m_profile.name;
 }
@@ -624,6 +666,27 @@ void SetupController::loadProfile(const QString& id)
     m_socialOutputsJson = m_profile.socialOutputsJson;
     m_outputFps = m_profile.outputFps;
     m_outputBitrate = m_profile.outputBitrate;
+
+    // Overlay offsets
+    m_channelLogoOffsetX = m_profile.channelLogoOffsetX;
+    m_channelLogoOffsetY = m_profile.channelLogoOffsetY;
+    m_channelNameOffsetX = m_profile.channelNameOffsetX;
+    m_channelNameOffsetY = m_profile.channelNameOffsetY;
+    m_showTitleOffsetX = m_profile.showTitleOffsetX;
+    m_showTitleOffsetY = m_profile.showTitleOffsetY;
+    m_tickerOffsetY = m_profile.tickerOffsetY;
+    m_subtitleOffsetX = m_profile.subtitleOffsetX;
+    m_subtitleOffsetY = m_profile.subtitleOffsetY;
+    m_countdownOffsetX = m_profile.countdownOffsetX;
+    m_countdownOffsetY = m_profile.countdownOffsetY;
+    m_clockOffsetX = m_profile.clockOffsetX;
+    m_clockOffsetY = m_profile.clockOffsetY;
+    m_qrCodeOffsetX = m_profile.qrCodeOffsetX;
+    m_qrCodeOffsetY = m_profile.qrCodeOffsetY;
+    m_scoreboardOffsetX = m_profile.scoreboardOffsetX;
+    m_scoreboardOffsetY = m_profile.scoreboardOffsetY;
+    m_weatherOffsetX = m_profile.weatherOffsetX;
+    m_weatherOffsetY = m_profile.weatherOffsetY;
 
     emit profileChanged();
     emit styleChanged();

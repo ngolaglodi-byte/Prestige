@@ -1,0 +1,48 @@
+Third-Party Software Licenses
+==============================
+
+Prestige AI uses the following open-source software:
+
+1. Qt Framework
+   License: LGPL v3.0
+   Website: https://www.qt.io/licensing/
+   Usage: User interface, multimedia capture, QML engine
+
+2. FFmpeg
+   License: LGPL v2.1 / GPL v2.0
+   Website: https://ffmpeg.org/legal.html
+   Usage: Video encoding (H.264/H.265), RTMP/SRT streaming, file recording
+
+3. ZeroMQ (libzmq)
+   License: Mozilla Public License v2.0
+   Website: https://zeromq.org/license/
+   Usage: Inter-process communication between Control Room and Vision Engine
+
+4. rlottie
+   License: MIT License
+   Website: https://github.com/nickvdp/rlottie
+   Usage: Lottie animation rendering for broadcast overlay presets
+
+5. whisper.cpp
+   License: MIT License
+   Website: https://github.com/ggerganov/whisper.cpp
+   Usage: Real-time speech-to-text for live subtitles
+
+6. ONNX Runtime
+   License: MIT License
+   Website: https://github.com/microsoft/onnxruntime
+   Usage: AI inference engine for face detection and recognition
+
+7. InsightFace (Buffalo_L models)
+   License: Non-commercial research license
+   Website: https://github.com/deepinsight/insightface
+   Usage: Face detection (RetinaFace/SCRFD) and recognition (ArcFace)
+   Note: Commercial use requires a separate license from InsightFace/ArcSoft
+
+8. Whisper Models (OpenAI)
+   License: MIT License
+   Website: https://github.com/openai/whisper
+   Usage: Speech recognition model weights
+
+All source code for Prestige AI is proprietary.
+Copyright (c) 2024-2026 Prestige Technologie Company. All rights reserved.

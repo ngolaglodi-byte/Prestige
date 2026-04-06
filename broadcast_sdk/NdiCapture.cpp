@@ -228,6 +228,21 @@ void NdiCapture::captureLoop()
             break;
         }
         case NDIlib_frame_type_audio:
+            // Forward audio data before freeing (PCM float planar → interleaved)
+            if (audioFrame.p_data && audioFrame.no_samples > 0) {
+                int samples = audioFrame.no_samples;
+                int channels = audioFrame.no_channels;
+                QByteArray pcmData(samples * channels * sizeof(float), 0);
+                float* dst = reinterpret_cast<float*>(pcmData.data());
+                const float* src = reinterpret_cast<const float*>(audioFrame.p_data);
+                // Interleave channels
+                for (int s = 0; s < samples; ++s) {
+                    for (int c = 0; c < channels; ++c) {
+                        dst[s * channels + c] = src[c * audioFrame.channel_stride_in_bytes / sizeof(float) + s];
+                    }
+                }
+                emit audioReady(pcmData, audioFrame.sample_rate, channels);
+            }
             NDIlib_recv_free_audio_v2(m_recvInstance, &audioFrame);
             break;
         case NDIlib_frame_type_metadata:

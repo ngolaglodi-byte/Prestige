@@ -53,6 +53,7 @@ signals:
     void sourcesChanged();
     void errorOccurred(const QString& error);
     void frameReady(const QImage& frame);
+    void audioReady(const QByteArray& pcmData, int sampleRate, int channels);
     void statsUpdated(double fps, double latencyMs);
 
 private:

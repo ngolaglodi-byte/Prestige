@@ -10,9 +10,9 @@
     <key>CFBundleIdentifier</key>
     <string>com.prestigeai.broadcast</string>
     <key>CFBundleVersion</key>
-    <string>1.0</string>
+    <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0 Beta</string>
+    <string>1.0.0</string>
     <key>CFBundleExecutable</key>
     <string>PrestigeAI</string>
     <key>CFBundleIconFile</key>
@@ -22,9 +22,9 @@
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>NSCameraUsageDescription</key>
-    <string>Prestige AI utilise la caméra pour détecter les visages des talents en direct.</string>
+    <string>Prestige AI needs camera access for live broadcast with AI facial recognition.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Prestige AI peut accéder au micro pour la synchronisation audio/vidéo.</string>
+    <string>Prestige AI needs microphone access for audio monitoring and speech-to-text subtitles.</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>LSApplicationCategoryType</key>

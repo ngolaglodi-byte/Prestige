@@ -259,8 +259,8 @@ bool VideoCapture::openSource(const QString& type, const QString& source)
         emit activeChanged(true);
 
         // Generate SMPTE color bars at 25fps via QTimer
-        auto* timer = new QTimer(this);
-        connect(timer, &QTimer::timeout, this, [this]() {
+        m_testPatternTimer = new QTimer(this);
+        connect(m_testPatternTimer, &QTimer::timeout, this, [this]() {
             QImage bars(1920, 1080, QImage::Format_RGB32);
             QPainter p(&bars);
             // SMPTE color bars: white, yellow, cyan, green, magenta, red, blue
@@ -292,7 +292,7 @@ bool VideoCapture::openSource(const QString& type, const QString& source)
             if (elapsed >= 2000) { m_currentFps = m_fpsFrameCount * 1000.0 / elapsed; m_fpsFrameCount = 0; m_fpsTimer.restart(); emit statsUpdated(); }
             emit frameCaptured(bars, m_frameId, m_captureTimestampMs);
         });
-        timer->start(40); // 25fps
+        m_testPatternTimer->start(40); // 25fps
         qInfo() << "[VideoCapture] Test pattern started (SMPTE 1920x1080 @25fps)";
         return true;
     }
@@ -303,6 +303,13 @@ bool VideoCapture::openSource(const QString& type, const QString& source)
 
 void VideoCapture::close()
 {
+    // Stop test pattern timer if running
+    if (m_testPatternTimer) {
+        m_testPatternTimer->stop();
+        delete m_testPatternTimer;
+        m_testPatternTimer = nullptr;
+    }
+
     if (m_camera) {
         m_camera->stop();
         delete m_camera;

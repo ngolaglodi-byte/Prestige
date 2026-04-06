@@ -82,10 +82,21 @@ void PreviewMonitor::receiveLoop(const QString& address)
     constexpr int BUF_SIZE = 512 * 1024; // 512KB max JPEG
     char buffer[BUF_SIZE];
 
+    int recvCount = 0;
+    int failCount = 0;
+    qInfo() << "[PreviewMonitor] Entering receive loop, address:" << address;
     while (m_running) {
         int nbytes = zmq_recv(socket, buffer, BUF_SIZE, 0);
-        if (nbytes <= 0)
+        if (nbytes <= 0) {
+            failCount++;
+            if (failCount == 20)
+                qWarning() << "[PreviewMonitor] No frames after 20 attempts (~4s), zmq_errno:" << zmq_errno();
             continue;
+        }
+
+        recvCount++;
+        if (recvCount <= 3)
+            qInfo() << "[PreviewMonitor] Received frame" << recvCount << "size:" << nbytes << "bytes";
 
         // Decode JPEG
         QByteArray jpegData(buffer, nbytes);
@@ -113,12 +124,10 @@ void PreviewMonitor::receiveLoop(const QString& address)
         m_frameCount++;
         fpsCount++;
 
-        // Update FPS and notify QML (throttled to ~15fps signal rate)
-        if (m_frameCount % 2 == 0) {
-            QMetaObject::invokeMethod(this, [this]() {
-                emit frameUpdated();
-            }, Qt::QueuedConnection);
-        }
+        // Notify QML for every received frame — full refresh rate
+        QMetaObject::invokeMethod(this, [this]() {
+            emit frameUpdated();
+        }, Qt::QueuedConnection);
 
         if (fpsTimer.elapsed() >= 2000) {
             m_fps = fpsCount * 1000.0 / fpsTimer.elapsed();

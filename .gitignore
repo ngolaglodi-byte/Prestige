@@ -31,3 +31,6 @@ resources/*.iconset/
 
 # Config
 *.user
+
+# Whisper models (downloaded by CI — too large for git)
+resources/models/whisper/*.bin

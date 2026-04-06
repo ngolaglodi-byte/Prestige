@@ -71,7 +71,8 @@ private:
         int                            bitrateMbps = 8;
         int                            fps         = 25;
         bool                           active      = false;
-        bool                           initialized = false; // lazy init on first frame
+        bool                           initialized = false;
+        int                            failCount   = 0; // consecutive write failures for auto-reconnect
     };
 
     bool initializeEntry(OutputEntry& entry, int width, int height);

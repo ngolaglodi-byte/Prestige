@@ -45,7 +45,17 @@ set(VISION_HEADERS
     src/LottieEngine.h
 )
 
-qt_add_executable(prestige_vision WIN32 ${VISION_SOURCES} ${VISION_HEADERS})
+qt_add_executable(prestige_vision WIN32 MACOSX_BUNDLE ${VISION_SOURCES} ${VISION_HEADERS})
+
+if(APPLE)
+    set_target_properties(prestige_vision PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER com.prestigeai.visionengine
+        MACOSX_BUNDLE_BUNDLE_NAME "Prestige Vision"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
+    )
+endif()
 
 # ── QML module ──────────────────────────────────────────────
 qt_add_qml_module(prestige_vision

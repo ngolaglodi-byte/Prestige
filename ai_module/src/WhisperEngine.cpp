@@ -32,7 +32,7 @@ WhisperEngine::~WhisperEngine()
     stop();
 #ifdef PRESTIGE_HAVE_WHISPER
     if (m_whisperCtx) {
-        whisper_free(m_whisperCtx);
+        whisper_free(static_cast<whisper_context*>(m_whisperCtx));
         m_whisperCtx = nullptr;
     }
 #endif
@@ -181,12 +181,12 @@ void WhisperEngine::processAudioChunk()
     }
 
     // Run inference
-    int result = whisper_full(m_whisperCtx, wparams, pcmf32.data(), static_cast<int>(pcmf32.size()));
+    int result = whisper_full(static_cast<whisper_context*>(m_whisperCtx), wparams, pcmf32.data(), static_cast<int>(pcmf32.size()));
 
     if (result == 0) {
-        int nSegments = whisper_full_n_segments(m_whisperCtx);
+        int nSegments = whisper_full_n_segments(static_cast<whisper_context*>(m_whisperCtx));
         for (int i = 0; i < nSegments; ++i) {
-            const char* text = whisper_full_get_segment_text(m_whisperCtx, i);
+            const char* text = whisper_full_get_segment_text(static_cast<whisper_context*>(m_whisperCtx), i);
             if (text && text[0] != '\0') {
                 QString transcription = QString::fromUtf8(text).trimmed();
                 if (!transcription.isEmpty() && transcription != m_lastText) {
@@ -195,7 +195,7 @@ void WhisperEngine::processAudioChunk()
                     // Detect language if auto
                     QString detectedLang = m_language;
                     if (wparams.detect_language) {
-                        int langId = whisper_full_lang_id(m_whisperCtx);
+                        int langId = whisper_full_lang_id(static_cast<whisper_context*>(m_whisperCtx));
                         if (langId >= 0) {
                             detectedLang = QString::fromUtf8(whisper_lang_str(langId));
                         }

@@ -103,6 +103,27 @@ struct EmissionProfile {
     double      countdownScale = 1.0;
     double      qrCodeScale = 1.0;
 
+    // Overlay offsets (all default to 0)
+    int         channelLogoOffsetX = 0;
+    int         channelLogoOffsetY = 0;
+    int         channelNameOffsetX = 0;
+    int         channelNameOffsetY = 0;
+    int         showTitleOffsetX = 0;
+    int         showTitleOffsetY = 0;
+    int         tickerOffsetY = 0;
+    int         subtitleOffsetX = 0;
+    int         subtitleOffsetY = 0;
+    int         countdownOffsetX = 0;
+    int         countdownOffsetY = 0;
+    int         clockOffsetX = 0;
+    int         clockOffsetY = 0;
+    int         qrCodeOffsetX = 0;
+    int         qrCodeOffsetY = 0;
+    int         scoreboardOffsetX = 0;
+    int         scoreboardOffsetY = 0;
+    int         weatherOffsetX = 0;
+    int         weatherOffsetY = 0;
+
     // Virtual Studio
     bool        virtualStudioEnabled = false;
     int         virtualStudioId = 0;

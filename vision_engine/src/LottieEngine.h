@@ -82,6 +82,9 @@ public:
     void setTitle(const QString& title);
     void setSubtitle(const QString& subtitle);
     void setTag(const QString& tag);
+    void setAccentColor(const QColor& c) { m_accentColor = c; }
+    void setFontSize(int s) { m_fontSize = s; }
+    void setTextColor(const QColor& c) { m_textColor = c; }
 
     // Render a frame at a given time (seconds from start)
     QImage renderFrame(double timeSec, const QSize& outputSize = {1920, 1080});
@@ -129,6 +132,9 @@ private:
     QList<LottiePreset> m_presets;
     QString m_activeId;
     QMap<QString, QString> m_textOverrides;
+    QColor m_accentColor;
+    QColor m_textColor = Qt::white;
+    int m_fontSize = 28;
     bool m_playing = false;
     double m_startTime = 0;
 };

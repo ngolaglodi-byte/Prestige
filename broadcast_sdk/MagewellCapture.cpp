@@ -4,6 +4,8 @@
 
 #include "MagewellCapture.h"
 #include <QDebug>
+#include <QTimer>
+#include <QDateTime>
 #include <QFile>
 
 namespace prestige {
@@ -102,7 +104,34 @@ bool MagewellCapture::open(const QString& deviceName, const QSize& resolution, i
 
     m_connected = true;
     emit connectionChanged(true);
-    qInfo() << "[Magewell] Opened:" << deviceName << resolution << fps << "fps";
+
+    // Start capture loop — read frames from Magewell at target fps
+    m_captureTimer = new QTimer(this);
+    m_captureTimer->setInterval(1000 / qMax(1, fps));
+    connect(m_captureTimer, &QTimer::timeout, this, [this]() {
+        if (!m_channel || !m_connected) return;
+
+        // Capture video frame from Magewell
+        int frameW = m_resolution.width();
+        int frameH = m_resolution.height();
+        int stride = frameW * 4; // RGBA
+        QByteArray buffer(stride * frameH, 0);
+
+        HRESULT hr = MWCaptureVideoFrameToVirtualAddress(
+            m_channel, -1, reinterpret_cast<MWCAP_PTR>(buffer.data()),
+            stride * frameH, stride, FALSE, NULL,
+            MWFOURCC_RGBA, frameW, frameH);
+
+        if (SUCCEEDED(hr)) {
+            QImage frame(reinterpret_cast<const uchar*>(buffer.constData()),
+                         frameW, frameH, stride, QImage::Format_RGBA8888);
+            m_frameId++;
+            emit frameReady(frame.copy(), QDateTime::currentMSecsSinceEpoch());
+        }
+    });
+    m_captureTimer->start();
+
+    qInfo() << "[Magewell] Opened:" << deviceName << resolution << fps << "fps — capture started";
     return true;
 #else
     Q_UNUSED(deviceName)
@@ -113,6 +142,11 @@ bool MagewellCapture::open(const QString& deviceName, const QSize& resolution, i
 
 void MagewellCapture::close()
 {
+    if (m_captureTimer) {
+        m_captureTimer->stop();
+        delete m_captureTimer;
+        m_captureTimer = nullptr;
+    }
 #ifdef PRESTIGE_HAVE_MAGEWELL
     if (m_channel) {
         MWCloseChannel(m_channel);

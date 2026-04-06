@@ -61,9 +61,11 @@ bool VideoEncoder::initialize(const EncoderConfig& config)
 
     if (config.codec == "h264") {
 #ifdef PRESTIGE_PLATFORM_MACOS
-        m_impl->codec = avcodec_find_encoder_by_name("h264_videotoolbox");
-        if (m_impl->codec) {
-            codecName = "h264_videotoolbox";
+        // Use VideoToolbox ONLY for non-CBR (local recording, NDI, etc.)
+        // For CBR streaming (RTMP/SRT), use libx264 which properly supports CBR + filler
+        if (config.rateControl != "cbr") {
+            m_impl->codec = avcodec_find_encoder_by_name("h264_videotoolbox");
+            if (m_impl->codec) codecName = "h264_videotoolbox";
         }
 #endif
         if (!m_impl->codec) {
@@ -173,11 +175,41 @@ bool VideoEncoder::initialize(const EncoderConfig& config)
     }
 
     if (config.lowLatency) {
-        ctx->max_b_frames = 0;
-        ctx->flags |= AV_CODEC_FLAG_LOW_DELAY;
         if (QString::fromUtf8(codecName).contains("libx264")) {
-            av_opt_set(ctx->priv_data, "preset", "ultrafast", 0);
-            av_opt_set(ctx->priv_data, "tune", "zerolatency", 0);
+            if (config.rateControl == "cbr") {
+                // ── OBS Studio-compatible CBR streaming settings ──
+                // Matches OBS x264 defaults for YouTube/Twitch RTMP
+                av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
+                // NO tune — OBS doesn't set tune for streaming
+
+                // VBV strict CBR: maxrate = bufsize = bitrate (OBS default)
+                ctx->rc_max_rate = ctx->bit_rate;
+                ctx->rc_min_rate = ctx->bit_rate;
+                ctx->rc_buffer_size = static_cast<int>(ctx->bit_rate); // 1 second buffer
+
+                // B-frames for better compression (OBS uses bframes=2)
+                ctx->max_b_frames = 2;
+
+                // Keyframe every 2 seconds (YouTube/Twitch requirement)
+                int fpsInt = ctx->framerate.den > 0 ? ctx->framerate.num / ctx->framerate.den : 30;
+                ctx->gop_size = fpsInt * 2;
+
+                // x264-specific: rc-lookahead for stable bitrate + force-cfr
+                av_opt_set(ctx->priv_data, "rc-lookahead", "60", 0);
+                av_opt_set(ctx->priv_data, "force-cfr", "1", 0);
+                // Profile High (YouTube recommended, enables CABAC)
+                av_opt_set(ctx->priv_data, "profile", "high", 0);
+            } else {
+                // Non-streaming: ultrafast + zerolatency for minimum latency
+                ctx->max_b_frames = 0;
+                ctx->flags |= AV_CODEC_FLAG_LOW_DELAY;
+                av_opt_set(ctx->priv_data, "preset", "ultrafast", 0);
+                av_opt_set(ctx->priv_data, "tune", "zerolatency", 0);
+            }
+        } else {
+            // Hardware encoder (VideoToolbox, NVENC)
+            ctx->max_b_frames = 0;
+            ctx->flags |= AV_CODEC_FLAG_LOW_DELAY;
         }
     }
 

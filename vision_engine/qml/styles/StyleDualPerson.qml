@@ -4,7 +4,7 @@ Item {
     id: root
     property string talentName: "Nom"
     property string talentRole: "Rôle"
-    property color accentColor: "#5B4FDB"
+    property color accentColor: "#6C5CE7"
     property bool overlayVisible: false
     property real bgOpacity: 0.85
     property string talentName2: "Invité"
@@ -15,8 +15,8 @@ Item {
 
     states: [ State { name: "shown"; when: overlayVisible; PropertyChanges { target: root; opacity: 1 } },
               State { name: "hidden"; when: !overlayVisible; PropertyChanges { target: root; opacity: 0 } } ]
-    transitions: [ Transition { to: "shown"; NumberAnimation { property: "opacity"; duration: 500 } },
-                   Transition { to: "hidden"; NumberAnimation { property: "opacity"; duration: 300 } } ]
+    transitions: [ Transition { to: "shown"; NumberAnimation { property: "opacity"; duration: 500; easing.type: Easing.OutCubic } },
+                   Transition { to: "hidden"; NumberAnimation { property: "opacity"; duration: 300; easing.type: Easing.InQuad } } ]
     y: root.parent ? root.parent.height * 0.78 : 400
 
     Row {
